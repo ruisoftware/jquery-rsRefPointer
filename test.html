@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Reference Pointer</title>
+    <script src="jquery.2.0.0.min.js"></script>
+    <script src="jquery.rsRefPointer.js"></script>
+    <script>
+        $(document).ready(function () {
+          $("a").rsRefPointer();
+        });
+    </script>
+
+    <style>
+      .target {
+        background-color: #ddd;
+      }
+      #p {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background-color: red;
+      }
+    </style>
+
+  </head>
+  <body>
+    <div id="p"></div>
+    <p class="target">first target</p>
+    <button>test bbbbbbbbb click</button>
+    This is a diagram with <a tabindex="0" href="#">2 references.</a><br>
+    This is the <span class="target">second target</span>
+    <br><br><br><br><br>
+    and the second instance <a tabindex="1" href="#">here</a>
+  </body>
+</html>
