@@ -15,7 +15,7 @@
                 ns: 'http://www.w3.org/2000/svg',
                 svgClass: 'refpointer',
                 points: {
-                    start: null,    // Starting point of all arrows, e.g. {x: 4, y: 6}
+                    start: null,    // Starting point of all arrows, e.g. {x: 4, y: 6}. All arrows share the same starting point.
                     $mid: null,     // Array of arrays of middle points, if any. The inner array represents the middle points for each arrow,
                                     // e.g. the middle points for 3 arrows, consisting of a bezier, a straight line and a polyline, is
                                     //   [ [{x:3, y:2}, {x:10, y:10}], [], [{x:50, y:40}] ]
@@ -114,7 +114,7 @@
                             $arrow;
                         if (hasBorder) {
                             attrs.stroke = opts.arrows.borderColor;
-                            attrs['stroke-width'] = opts.arrows.borderWidth + opts.arrows.strokeWidth;
+                            attrs['stroke-width'] = opts.arrows.borderWidth*2 + opts.arrows.strokeWidth;
                             DOM.$svg.append(DOM.createSvgDom('line', attrs));
                         }
                         attrs.stroke = opts.arrows.strokeColor;
@@ -166,8 +166,8 @@
                                         id: this.ids[id],
                                         markerWidth: optsMarker.size,
                                         markerHeight: optsMarker.size,
-                                        refX: optsMarker.size/2,
-                                        refY: optsMarker.size/2
+                                        refX: Math.round(optsMarker.size/2),
+                                        refY: Math.round(optsMarker.size/2)
                                     });
                                     break;
                                 case 'square':
@@ -176,8 +176,8 @@
                                         id: this.ids[id],
                                         markerWidth: optsMarker.size,
                                         markerHeight: optsMarker.size,
-                                        refX: optsMarker.size/2,
-                                        refY: optsMarker.size/2
+                                        refX: Math.round(optsMarker.size/2),
+                                        refY: Math.round(optsMarker.size/2)
                                     });
                                     break;
                                 case 'triangle':
@@ -186,8 +186,8 @@
                                         id: this.ids[id],
                                         markerWidth: optsMarker.size,
                                         markerHeight: optsMarker.size/1.25,
-                                        refX: optsMarker.size - opts.arrows.borderWidth,
-                                        refY: optsMarker.size/2.5,
+                                        refX: Math.round(optsMarker.size - opts.arrows.borderWidth),
+                                        refY: Math.round(optsMarker.size/2.5),
                                         orient: 'auto'
                                     });
                             }
@@ -198,13 +198,14 @@
                         return null;
                     },
                     getMarkerShape: function (type, optsMarker, hasBorder) {
-                        var style = 'fill:' + opts.arrows.strokeColor + (hasBorder ? '; stroke:' + opts.arrows.borderColor : '');
+                        var style = 'fill:' + opts.arrows.strokeColor +
+                            (hasBorder ? '; stroke:' + opts.arrows.borderColor + '; stroke-width:' + opts.arrows.borderWidth/2 : '');
                         switch (type) {
                             case 'circle':
                                 return DOM.createSvgDom('circle', {
                                     cx: optsMarker.size/2,
                                     cy: optsMarker.size/2,
-                                    r: optsMarker.size/2 - opts.arrows.borderWidth,
+                                    r: optsMarker.size/2 - 1,
                                     style: style
                                 });
 
@@ -214,7 +215,7 @@
                                     y: 0,
                                     width: optsMarker.size,
                                     height: optsMarker.size,
-                                    style: style + (hasBorder ? '; stroke-width:' + opts.arrows.borderWidth : '')
+                                    style: style
                                 });
 
                             case 'triangle':
@@ -241,26 +242,59 @@
                         return this.$defs;
                     },
                     getDesignModePoint: function (pnt) {
-                        var maxSize = Math.max(opts.arrows.startMarker.size, Math.max(opts.arrows.midMarker.size, opts.arrows.endMarker.size));
-                        return DOM.createSvgDom('circle', {
-                            cx: maxSize/2 + pnt.x,
-                            cy: maxSize/2 + pnt.y,
-                            r: maxSize/2,
-                            style: 'fill: transparent; stroke: red'
+                        var maxSize = Math.max(opts.arrows.startMarker.size, Math.max(opts.arrows.midMarker.size, opts.arrows.endMarker.size)),
+                            $point = DOM.createSvgDom('circle', {
+                                cx: pnt.x,
+                                cy: pnt.y,
+                                r: maxSize/1.5,
+                                style: 'fill:transparent; stroke:rgba(255,0,0,.5); stroke-width:3'
+                            });
+                        $point.mouseover(function () {
+                            $point.css({
+                                'stroke': 'red',
+                                'cursor': 'move'
+                            });
+                        }).mousedown(function (a,b) {
+                            designMode.UI.dragInfo.draggingPoint = $(this);
+                            $point.css('cursor', 'none');
+                        }).mouseup(function (a,b) {
+                            $point.css('cursor', 'move');
+                        }).mouseleave(function () {
+                            $point.css({
+                                'stroke': 'rgba(255,0,0,.5)',
+                                'cursor': ''
+                            });
                         });
+                        return $point;
                     }
                 }
             },
             designMode = {
                 arrows: [],
                 UI: {
+                    dragInfo: {
+                        draggingPoint: null
+                    },
                     points: {
                         $start: null,   // jQuery object with length 1, since all arrows share the same starting point
                         $mid: null,     // jQuery object with length 0 or greater
                         $end: null      // jQuery object with length 1 or greater
                     },
                     init: function () {
+                        DOM.$svg.mousemove(function (e) {
+                            if (designMode.UI.dragInfo.draggingPoint) {
+                                designMode.UI.dragInfo.draggingPoint.attr({
+                                    'cx': e.pageX,
+                                    'cy': e.pageY
+                                });
+                            }
+                        }).mouseup(function () {
+                            designMode.UI.dragInfo.draggingPoint = null;
+                        });
+
+                        // insert point anchors to the DOM
                         this.points.$start = DOM.markers.getDesignModePoint(data.points.start);
+
                         data.points.$mid.each(function (index, pnts) {
                             for(var pnt in pnts) {
                                 var $p = DOM.markers.getDesignModePoint(pnts[pnt]);
@@ -367,14 +401,14 @@
             strokeWidth: 2,
             strokeColor: 'black',
             borderWidth: 1,
-            borderColor: 'white',
+            borderColor: 'yellow',
             startMarker: {
                 type: 'circle',
-                size: 8
+                size: 6
             },
             midMarker: {
                 type: null,
-                size: 8
+                size: 6
             },
             endMarker: {
                 type: 'triangle',
