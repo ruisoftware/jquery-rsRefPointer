@@ -6,7 +6,13 @@
     <script src="jquery.rsRefPointer.js"></script>
     <script>
         $(document).ready(function () {
-          $("a").rsRefPointer();
+          $("a").eq(0).rsRefPointer({
+            designMode: true
+          });
+
+          $("button").click(function () {
+            $("a").rsRefPointer('destroy');
+          });
         });
     </script>
 
