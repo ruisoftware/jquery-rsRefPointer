@@ -4,11 +4,10 @@
     <title>Reference Pointer</title>
     <script src="jquery.2.0.0.min.js"></script>
     <script src="jquery.rsRefPointer.js"></script>
+    <script src="jquery.rsRefPointer-design.js"></script>
     <script>
         $(document).ready(function () {
-          $("a").eq(0).rsRefPointer({
-            designMode: true
-          });
+          $("a").eq(0).rsRefPointer();
 
           $("button").click(function () {
             $("a").rsRefPointer('destroy');

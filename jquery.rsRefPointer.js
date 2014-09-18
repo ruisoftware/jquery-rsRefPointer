@@ -13,27 +13,35 @@
     var RefPointerClass = function ($elem, opts) {
         var data = {
                 ns: 'http://www.w3.org/2000/svg',
-                svgClass: 'refpointer',
+                svgClass: 'refPointer',
+                arrowTypes: null,  // Specifies the type of each arrow: 'line', 'polyline' and 'path' (for bezier arrows)
+                outline: false,    // Whether each row has an outline border
                 points: {
-                    start: null,    // Starting point of all arrows, e.g. {x: 4, y: 6}. All arrows share the same starting point.
-                    $mid: null,     // Array of arrays of middle points, if any. The inner array represents the middle points for each arrow,
-                                    // e.g. the middle points for 3 arrows, consisting of a bezier, a straight line and a polyline, is
-                                    //   [ [{x:3, y:2}, {x:10, y:10}], [], [{x:50, y:40}] ]
-                    $end: null,     // Array for all destinations points, e.g.
-                                    //   [ {x:15, y:15}, {x:18, y:-6}, {x:55, y:45} ]
+
+                    start: null,   // Starting points for all arrows, e.g. points for 3 arrows, consisting of a bezier, a straight line and a polyline, is
+                                   // [ {x: 4, y: 6}, {x: 4, y: 6}, {x: 9, y: 8} ]. By default, all arrows start from the same point.
+                    mid: null,     // Array of arrays of middle points, if any. The inner array represents the middle points for each arrow,
+                                   //   [ [{x:3, y:2}, {x:10, y:10}], [], [{x:50, y:40}] ]
+                    end: null,     // Array for all destinations points, e.g.
+                                   //   [ {x:15, y:15}, {x:18, y:-6}, {x:55, y:45} ]
+
+                                   // The length of arrowTypes, start, mid and end is always the same.
                     init: function () {
                         var pos = $elem.offset(),
-                            $targets = opts.targetSelector ? $(opts.targetSelector) : $();
-                        this.start = {
-                            x: pos.left + $elem.width()/2,
-                            y: pos.top + $elem.height()/2
-                        };
-                        this.$mid = [];
+                            $targets = opts.targetSelector ? $(opts.targetSelector) : $(),
+                            startPoint = {
+                                x: pos.left + $elem.width()/2,
+                                y: pos.top + $elem.height()/2
+                            };
+                        data.arrowTypes = [];
+                        this.start = [];
+                        this.mid = [];
                         $targets.each(function () {
-                            data.points.$mid.push([]);
+                            data.arrowTypes.push('line');
+                            data.points.start.push(startPoint);
+                            data.points.mid.push([]);
                         });
-                        this.$mid = $(this.$mid);
-                        this.$end = $targets.map(function (index, e) {
+                        this.end = $targets.map(function (index, e) {
                             var $target = $(e),
                                 targetPos = $target.offset(),
                                 // this is way to retrieve the content dimensions for blocked elements
@@ -46,33 +54,23 @@
                             } finally {
                                 $targetSpan.contents().unwrap();
                             }
-                        });
+                        }).get();
                     }
                 },
-                getBoundRect: function () {
-                    if (opts.designMode) {
-                        var $document = $(document);
-                        return {
-                            top: 0,
-                            right: $document.width(),
-                            bottom: $document.height(),
-                            left: 0
-                        }
-                    }
+                getBoundsRect: opts.overrideGetBoundsRect || function () {
                     var bounds = {},
                         maxOffset = Math.max(opts.arrows.startMarker.size, Math.max(opts.arrows.midMarker.size, opts.arrows.endMarker.size)),
-                        setBounds = function (index, pnt) {
-                            bounds.top = Math.min(bounds.top, pnt.y);
-                            bounds.right = Math.max(bounds.right, pnt.x);
-                            bounds.bottom = Math.max(bounds.bottom, pnt.y);
-                            bounds.left = Math.min(bounds.left, pnt.x);
+                        setBounds = function (pnt) {
+                            bounds.top = Math.min(bounds.top === undefined ? pnt.y : bounds.top, pnt.y);
+                            bounds.right = Math.max(bounds.right === undefined ? pnt.x : bounds.right, pnt.x);
+                            bounds.bottom = Math.max(bounds.bottom === undefined ? pnt.y : bounds.bottom, pnt.y);
+                            bounds.left = Math.min(bounds.left === undefined ? pnt.x : bounds.left, pnt.x);
                         };
-                    bounds['left'] = bounds['right'] = this.points.start.x;
-                    bounds['top'] = bounds['bottom'] = this.points.start.y;
-                    this.points.$end.each(setBounds);
-                    this.points.$mid.each(function (index, pnts) {
+                    this.points.start.forEach(setBounds);
+                    this.points.end.forEach(setBounds);
+                    this.points.mid.forEach(function (pnts) {
                         for(var pnt in pnts) {
-                            setBounds(pnt, pnts[pnt]);
+                            setBounds(pnts[pnt]);
                         }
                     });
                     bounds.top -= maxOffset;
@@ -83,16 +81,14 @@
                 },
                 init: function () {
                     this.points.init();
-                    var bounds = this.getBoundRect(),
-                        hasBorder = opts.arrows.borderWidth && opts.arrows.borderColor !== 'transparent',
+                    this.outline = opts.arrows.borderWidth && opts.arrows.borderColor !== 'transparent';
+                    var bounds = this.getBoundsRect(),
                         css = {
                             position: 'absolute',
                             left: bounds.left + 'px',
-                            top: bounds.top + 'px'
+                            top: bounds.top + 'px',
+                            'pointer-events': 'none'
                         };
-                    if (!opts.designMode) {
-                        css['pointer-events'] = 'none';
-                    }
                     DOM.$svg = DOM.createSvgDom('svg', {
                         width: (bounds.right - bounds.left) + 'px',
                         height: (bounds.bottom - bounds.top) + 'px',
@@ -101,44 +97,43 @@
                         class: this.svgClass
                     }).css(css);
 
-                    DOM.$svg.append(DOM.markers.init(hasBorder));
+                    DOM.$svg.append(DOM.markers.init());
 
-                    this.points.$end.each(function (index, e) {
-                        var attrs = {
-                                x1: Math.round(data.points.start.x - bounds.left) + .5,
-                                y1: Math.round(data.points.start.y - bounds.top) + .5,
-                                x2: Math.round(e.x - bounds.left) + .5,
-                                y2: Math.round(e.y - bounds.top) + .5,
-                                'stroke-linecap': 'round'
-                            },
-                            $arrow;
-                        if (hasBorder) {
-                            attrs.stroke = opts.arrows.borderColor;
-                            attrs['stroke-width'] = opts.arrows.borderWidth*2 + opts.arrows.strokeWidth;
-                            DOM.$svg.append(DOM.createSvgDom('line', attrs));
-                        }
-                        attrs.stroke = opts.arrows.strokeColor;
-                        attrs['stroke-width'] = opts.arrows.strokeWidth;
-                        ['start', 'mid', 'end'].forEach(function (e) { 
-                            if (DOM.markers.ids[e]) {
-                                attrs['marker-' + e] = 'url(#' + DOM.markers.ids[e] + ')';
+                    this.points.end.forEach(function (e, index) {
+                        if (data.arrowTypes[index] === 'line') {
+                            var attrs = {
+                                    x1: Math.round(data.points.start[index].x - bounds.left) + .5,
+                                    y1: Math.round(data.points.start[index].y - bounds.top) + .5,
+                                    x2: Math.round(e.x - bounds.left) + .5,
+                                    y2: Math.round(e.y - bounds.top) + .5,
+                                    'stroke-linecap': 'round'
+                                },
+                                $arrow;
+                            if (data.outline) {
+                                attrs.stroke = opts.arrows.borderColor;
+                                attrs['stroke-width'] = opts.arrows.borderWidth*2 + opts.arrows.strokeWidth;
+                                DOM.$svg.append(DOM.createSvgDom('line', attrs));
                             }
-                        });
-                        $arrow = DOM.createSvgDom('line', attrs);
-                        DOM.$svg.append($arrow);
-                        if (opts.designMode) {
-                            designMode.arrows.push($arrow);
+                            attrs.stroke = opts.arrows.strokeColor;
+                            attrs['stroke-width'] = opts.arrows.strokeWidth;
+                            ['start', 'mid', 'end'].forEach(function (e) { 
+                                if (DOM.markers.ids[e]) {
+                                    attrs['marker-' + e] = 'url(#' + DOM.markers.ids[e] + ')';
+                                }
+                            });
+                            $arrow = DOM.createSvgDom('line', attrs);
+                            DOM.$svg.append($arrow);
+                            DOM.arrows.push($arrow);
                         }
                     });
                     DOM.$svg.hide();
-                    if (opts.designMode) {
-                        designMode.UI.init();
-                    }
                     $("body").append(DOM.$svg);
+                    events.bindAll();
                 }
             },
             DOM = {
                 $svg: null,
+                arrows: [],
                 createSvgDom: function (tag, attrs) {
                     var el = document.createElementNS(data.ns, tag);
                     for (var k in attrs)
@@ -152,7 +147,7 @@
                         mid: null,
                         end: null
                     },
-                    getMarker: function (type, id, hasBorder) {
+                    getMarker: function (type, id) {
                         var $marker = null,
                             getNewId = function () {
                                 return DOM.markers.ids[id] = 'refP' + $('svg.' + data.svgClass).length + id.charAt(0) + (+ new Date());
@@ -192,14 +187,14 @@
                                     });
                             }
                             if ($marker) {
-                                return $marker.append(this.getMarkerShape(type, optsMarker, hasBorder));
+                                return $marker.append(this.getMarkerShape(type, optsMarker));
                             }
                         }
                         return null;
                     },
-                    getMarkerShape: function (type, optsMarker, hasBorder) {
+                    getMarkerShape: function (type, optsMarker) {
                         var style = 'fill:' + opts.arrows.strokeColor +
-                            (hasBorder ? '; stroke:' + opts.arrows.borderColor + '; stroke-width:' + opts.arrows.borderWidth/2 : '');
+                            (data.outline ? '; stroke:' + opts.arrows.borderColor + '; stroke-width:' + opts.arrows.borderWidth/2 : '');
                         switch (type) {
                             case 'circle':
                                 return DOM.createSvgDom('circle', {
@@ -226,8 +221,8 @@
                         }
                         return null;
                     },
-                    initMarker: function (type, id, hasBorder) {
-                        var $marker = this.getMarker(type, id, hasBorder);
+                    initMarker: function (type, id) {
+                        var $marker = this.getMarker(type, id);
                         if ($marker) {
                             if (!this.$defs) {
                                 this.$defs = DOM.createSvgDom('defs');
@@ -235,94 +230,12 @@
                             this.$defs.append($marker);
                         }
                     },
-                    init: function (hasBorder) {
-                        this.initMarker(opts.arrows.startMarker.type, 'start', hasBorder);
-                        this.initMarker(opts.arrows.midMarker.type, 'mid', hasBorder);
-                        this.initMarker(opts.arrows.endMarker.type, 'end', hasBorder);
-                        return this.$defs;
-                    },
-                    getDesignModePoint: function (pnt) {
-                        var maxSize = Math.max(opts.arrows.startMarker.size, Math.max(opts.arrows.midMarker.size, opts.arrows.endMarker.size)),
-                            $point = DOM.createSvgDom('circle', {
-                                cx: pnt.x,
-                                cy: pnt.y,
-                                r: maxSize/1.5,
-                                style: 'fill:transparent; stroke:rgba(255,0,0,.5); stroke-width:3'
-                            });
-                        $point.mouseover(function () {
-                            $point.css({
-                                'stroke': 'red',
-                                'cursor': 'move'
-                            });
-                        }).mousedown(function (a,b) {
-                            designMode.UI.dragInfo.draggingPoint = $(this);
-                            $point.css('cursor', 'none');
-                        }).mouseup(function (a,b) {
-                            $point.css('cursor', 'move');
-                        }).mouseleave(function () {
-                            $point.css({
-                                'stroke': 'rgba(255,0,0,.5)',
-                                'cursor': ''
-                            });
-                        });
-                        return $point;
-                    }
-                }
-            },
-            designMode = {
-                arrows: [],
-                UI: {
-                    dragInfo: {
-                        draggingPoint: null
-                    },
-                    points: {
-                        $start: null,   // jQuery object with length 1, since all arrows share the same starting point
-                        $mid: null,     // jQuery object with length 0 or greater
-                        $end: null      // jQuery object with length 1 or greater
-                    },
                     init: function () {
-                        DOM.$svg.mousemove(function (e) {
-                            if (designMode.UI.dragInfo.draggingPoint) {
-                                designMode.UI.dragInfo.draggingPoint.attr({
-                                    'cx': e.pageX,
-                                    'cy': e.pageY
-                                });
-                            }
-                        }).mouseup(function () {
-                            designMode.UI.dragInfo.draggingPoint = null;
-                        });
-
-                        // insert point anchors to the DOM
-                        this.points.$start = DOM.markers.getDesignModePoint(data.points.start);
-
-                        data.points.$mid.each(function (index, pnts) {
-                            for(var pnt in pnts) {
-                                var $p = DOM.markers.getDesignModePoint(pnts[pnt]);
-                                designMode.UI.points.$mid = designMode.UI.points.$mid === null ? $p : designMode.UI.points.$mid.add($p);
-                            }
-                        });
-                        data.points.$end.each(function (index, pnt) {
-                            var $p = DOM.markers.getDesignModePoint(pnt);
-                            designMode.UI.points.$end = designMode.UI.points.$end === null ? $p : designMode.UI.points.$end.add($p);
-                        });
-                        DOM.$svg.append(this.points.$start).append(this.points.$mid).append(this.points.$end);
+                        this.initMarker(opts.arrows.startMarker.type, 'start');
+                        this.initMarker(opts.arrows.midMarker.type, 'mid');
+                        this.initMarker(opts.arrows.endMarker.type, 'end');
+                        return this.$defs;
                     }
-                },
-                init: function () {
-                    var $window = $(window),
-                        $document = $(document),
-                        docWidth = $document.width(),
-                        docHeight = $document.height(),
-                        doResize = function () {
-                            DOM.$svg.attr({
-                                'width': Math.max($window.width(), docWidth) + 'px',
-                                'height': Math.max($window.height(), docHeight) + 'px'
-                            });
-                        };
-                    DOM.$svg.css('background-color', 'rgba(255,255,255,.7)');
-                    $window.resize(doResize);
-                    doResize();
-                    events.onShow();
                 }
             },
             events = {
@@ -333,23 +246,29 @@
                     DOM.$svg.hide();
                 },
                 onDestroy: function () {
-                    $elem.
-                        unbind('mouseenter.rsRefPointer focus.rsRefPointer', events.onShow).
-                        unbind('mouseleave.rsRefPointer blur.rsRefPointer', events.oneHide).
-                        unbind('destroy.rsRefPointer', events.onDestroy);
+                    this.unbindAll();
                     DOM.$svg.remove(); 
+                },
+                bindAll: function () {
+                    $elem.
+                        bind('mouseenter.rsRefPointer focus.rsRefPointer', this.onShow).
+                        bind('mouseleave.rsRefPointer blur.rsRefPointer', this.onHide).
+                        bind('destroy.rsRefPointer', this.onDestroy);
+                },
+                unbindAll: function () {
+                    $elem.
+                        unbind('mouseenter.rsRefPointer focus.rsRefPointer', this.onShow).
+                        unbind('mouseleave.rsRefPointer blur.rsRefPointer', this.onHide).
+                        unbind('destroy.rsRefPointer', this.onDestroy);
                 }
             };
 
         data.init();
-        if (opts.designMode) {
-            designMode.init();
-        } else {
-            $elem.
-                bind('mouseenter.rsRefPointer focus.rsRefPointer', events.onShow).
-                bind('mouseleave.rsRefPointer blur.rsRefPointer', events.onHide).
-                bind('destroy.rsRefPointer', events.onDestroy);
-        }
+        return {
+            data: data,
+            DOM: DOM,
+            events: events
+        };
     };
 
     $.fn.rsRefPointer = function (options) {
@@ -365,6 +284,7 @@
                 this.trigger('destroy.rsRefPointer');
             };
 
+
         if (typeof options === 'string') {
             var otherArgs = Array.prototype.slice.call(arguments, 1);
             switch (options) {
@@ -373,29 +293,22 @@
                 default: return this;
             }
         }
-        if (options.designMode && this.length > 1) {
-            alert('Design mode is not possible for ' + this.length + ' simultaneous plug-in instances!\n' +
-                  'Make sure you invoke design mode for one instance only.\n\nE.g. if you have 2 anchors on your page, then this fails:\n' + 
-                  '   $("a").rsRefPointer({ designMode: true });\n' + 
-                  'What you need is to run for the first only:\n' +
-                  '   $("a").eq(0).rsRefPointer({ designMode: true });\n' +
-                  'then edit previous line and run for the second one:\n' +
-                  '   $("a").eq(1).rsRefPointer({ designMode: true });\n\n' +
-                  'This restriction does not aply at run-time mode.\nMultiple instances are allowed:\n' +
-                  '   $("a").rsRefPointer({ designMode: false });');
-            options.designMode = false;
-        }
         var opts = $.extend({}, $.fn.rsRefPointer.defaults, options);
         opts.arrows = $.extend({}, $.fn.rsRefPointer.defaults.arrows, options ? options.arrows : options);
         opts.arrows.markers = $.extend({}, $.fn.rsRefPointer.defaults.arrows.markers, options ? (options.arrows ? options.arrows.markers : options.arrows) : options);
-        return this.each(function () {
-            new RefPointerClass($(this), opts);
+        
+        var $allRefPointers = this.each(function () {
+            // designData is used by the design time version of this plugin, to grab this specific instance of the runtime
+            $.fn.rsRefPointer.designData = new RefPointerClass($(this), opts);
         });
+        if ($.fn.rsRefPointer.designData) {
+            $.fn.rsRefPointer.designData.opts = opts;
+        }
+        return $allRefPointers;
     };
 
     // public access to the default input parameters
     $.fn.rsRefPointer.defaults = {
-        designMode: false,
         targetSelector: ".target",
         arrows: {
             strokeWidth: 2,
