@@ -61,8 +61,98 @@
                         $mid: null,     // jQuery set containing 0 or more DOM middle drag-and-drop points
                         $end: null      // jQuery set containing 1 or more DOM ending drag-and-drop points
                     },
+                    menu: {
+                        init: function () {
+                            var $menu = $('<menu class="refPointer design">' +
+                                            '<a href="#">Toggle Menu Position</a>' +
+                                            '<hr>' +
+                                            '<a href="#">New Line</a>' +
+                                            '<a href="#">New Bezier Curve</a>' +
+                                            '<section></section>' +
+                                            '<a href="#" class="disabled">Add Middle Point</a>' +
+                                            '<aside>Double click on point to delete it</aside>' +
+                                            '<hr>' +
+                                            '<a href="#">Generate Code to Console</a>' +
+                                          '</menu>');
+                            $('head').append(
+                                '<style> ' + 
+                                    'menu.refPointer.design {' +
+                                        'background-color: #ddd;' +
+                                        'box-shadow: 0 0 10px 2px grey;' +
+                                        'border-radius: 10%/6%;' +
+                                        'font-size: 12px;' +
+                                        'font-family: arial;' +
+                                        'display: inline-block;' +
+                                        'position: absolute;' +
+                                        'left: 5px;' +
+                                        'top: 50px;' +
+                                        'padding: 5px;' +
+                                    '}' +
+                                    'menu.refPointer.design a:first-child:after,' +
+                                    'menu.refPointer.design.right a:first-child:before {' +
+                                        'content: ">";' +
+                                        'font-size: 17px;' +
+                                        'position: relative;' +
+                                        'left: 6px;' +
+                                        'top: 2px;' +
+                                    '}' +
+                                    'menu.refPointer.design.right a:first-child:before {' +
+                                        'content: "<";' +
+                                        'left: 0;' +
+                                        'margin-right: 6px;' +
+                                    '}' +
+                                    'menu.refPointer.design.right a:first-child:after {' +
+                                        'content: ""' +
+                                    '}' +
+                                    'menu.refPointer.design.right {' +
+                                        'left: auto;' +
+                                        'right: 5px;' +
+                                    '}' +
+                                    'menu.refPointer.design aside {' +
+                                        'font-size: 9px;' +
+                                        'color: grey;' +
+                                        'padding-left: 5px;' +
+                                    '}' +
+                                    'menu.refPointer.design a {' +
+                                        'display: block;' +
+                                        'padding: 5px;' +
+                                        'text-decoration: none;' +
+                                        'line-height: 12px;' +
+                                        'border-radius: 5px;' +
+                                    '}' +
+                                    'menu.refPointer.design a:hover {' +
+                                        'background-color: grey;' +
+                                        'color: white;' +
+                                    '}' +
+                                    'menu.refPointer.design section {' +
+                                        'border: 1px #777 solid;' +
+                                        'overflow: auto;' +
+                                        'height: 200px;' +
+                                        'margin: 5px;' +
+                                    '}' +
+                                    'menu.refPointer.design a.disabled {' +
+                                        'color: grey;' +
+                                    '}' +
+                                    'menu.refPointer.design a.disabled:hover {' +
+                                        'background-color: inherit;' +
+                                        'cursor: default;' +
+                                    '}' +
+                                '</style>'
+                            );
+                            $('body').append($menu);
+                            $('menu.refPointer.design a:first-child').click(function (e) {
+                                e.preventDefault();
+                                $(this).parent().toggleClass('right');
+                            });
+                            $('menu.refPointer.design a.disabled').click(function (e) {
+                                e.preventDefault();
+                            });
+                        }
+                    },
                     init: function () {
-                        DOM.$svg.mousemove(function (e) {
+                        this.menu.init();
+
+                        DOM.$svg.add($("menu.refPointer.design")).mousemove(function (e) {
                             if (designMode.UI.dragInfo.$point) {
                                 designMode.UI.dragInfo.$point.attr({
                                     'cx': e.pageX,
