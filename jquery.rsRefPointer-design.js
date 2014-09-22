@@ -62,13 +62,20 @@
                         $end: null      // jQuery set containing 1 or more DOM ending drag-and-drop points
                     },
                     menu: {
+                        positionX: 0,
+                        positionY: 0,
+                        dragInfo: { // dragging the menu
+                            dragging: false,
+                            startX: 0,
+                            startY: 0
+                        },
                         init: function () {
                             var $menu = $('<menu class="refPointer design">' +
-                                            '<a href="#">Toggle Menu Position</a>' +
+                                            '<header>Draggable Menu</header>' +
                                             '<hr>' +
                                             '<a href="#">New Line</a>' +
                                             '<a href="#">New Bezier Curve</a>' +
-                                            '<section></section>' +
+                                            '<ul><li>1<a href="#">&#x2715;</a></li><li>2</li></ul>' +
                                             '<a href="#" class="disabled">Add Middle Point</a>' +
                                             '<aside>Double click on point to delete it</aside>' +
                                             '<hr>' +
@@ -78,8 +85,8 @@
                                 '<style> ' + 
                                     'menu.refPointer.design {' +
                                         'background-color: #ddd;' +
-                                        'box-shadow: 0 0 10px 2px grey;' +
-                                        'border-radius: 10%/6%;' +
+                                        'box-shadow: 0 0 10px black;' +
+                                        'border-radius: 3%/10%;' +
                                         'font-size: 12px;' +
                                         'font-family: arial;' +
                                         'display: inline-block;' +
@@ -87,63 +94,95 @@
                                         'left: 5px;' +
                                         'top: 50px;' +
                                         'padding: 5px;' +
+                                        '-moz-user-select: none;' +
+                                        '-ms-user-select: none;' +
+                                        '-webkit-user-select: none;' +
+                                        'user-select: none;' +
                                     '}' +
-                                    'menu.refPointer.design a:first-child:after,' +
-                                    'menu.refPointer.design.right a:first-child:before {' +
-                                        'content: ">";' +
-                                        'font-size: 17px;' +
-                                        'position: relative;' +
-                                        'left: 6px;' +
-                                        'top: 2px;' +
-                                    '}' +
-                                    'menu.refPointer.design.right a:first-child:before {' +
-                                        'content: "<";' +
-                                        'left: 0;' +
-                                        'margin-right: 6px;' +
-                                    '}' +
-                                    'menu.refPointer.design.right a:first-child:after {' +
-                                        'content: ""' +
-                                    '}' +
-                                    'menu.refPointer.design.right {' +
-                                        'left: auto;' +
-                                        'right: 5px;' +
+                                    'menu.refPointer.design header {' +
+                                        'cursor: move;' +
+                                        'padding: 3px 5px 0;' +
                                     '}' +
                                     'menu.refPointer.design aside {' +
                                         'font-size: 9px;' +
                                         'color: grey;' +
                                         'padding-left: 5px;' +
                                     '}' +
-                                    'menu.refPointer.design a {' +
+                                    'menu.refPointer.design > a {' +
                                         'display: block;' +
                                         'padding: 5px;' +
                                         'text-decoration: none;' +
                                         'line-height: 12px;' +
-                                        'border-radius: 5px;' +
+                                        'border-radius: 2px;' +
                                     '}' +
-                                    'menu.refPointer.design a:hover {' +
+                                    'menu.refPointer.design > a:hover {' +
                                         'background-color: grey;' +
                                         'color: white;' +
                                     '}' +
-                                    'menu.refPointer.design section {' +
+                                    'menu.refPointer.design ul {' +
                                         'border: 1px #777 solid;' +
                                         'overflow: auto;' +
                                         'height: 200px;' +
                                         'margin: 5px;' +
+                                        'padding: 0;' +
+                                        'list-style: none' +
                                     '}' +
-                                    'menu.refPointer.design a.disabled {' +
+                                    'menu.refPointer.design ul li {' +
+                                        'margin: 5px;' +
+                                        'padding: 3px;' +
+                                        'background-color: #eee;' +
+                                        'border-radius: 2px;' +
+                                    '}' +
+                                    'menu.refPointer.design ul li > a {' +
+                                        'display: none;' +
+                                        'float: right;' +
+                                        'border-radius: 2px;' +
+                                        'color: grey;' +
+                                        'text-decoration: none;' +
+                                        'width: 16px;' +
+                                        'text-align: center;' +
+                                    '}' +
+                                    'menu.refPointer.design ul li:hover {' +
+                                        'background-color: white;' +
+                                    '}' +
+                                    'menu.refPointer.design ul li:hover > a {' +
+                                        'display: block;' +
+                                    '}' +
+                                    'menu.refPointer.design ul li > a:hover {' +
+                                        'background-color: #ddd;' +
+                                        'color: red;' +
+                                    '}' +
+                                    'menu.refPointer.design > a.disabled {' +
                                         'color: grey;' +
                                     '}' +
-                                    'menu.refPointer.design a.disabled:hover {' +
+                                    'menu.refPointer.design > a.disabled:hover {' +
                                         'background-color: inherit;' +
                                         'cursor: default;' +
                                     '}' +
                                 '</style>'
                             );
                             $('body').append($menu);
-                            $('menu.refPointer.design a:first-child').click(function (e) {
-                                e.preventDefault();
-                                $(this).parent().toggleClass('right');
-                            });
+                            var finishMenuDragging = function (e) {
+                                designMode.UI.menu.dragInfo.dragging = false;
+                                var pos = $menu.position();
+                                designMode.UI.menu.positionX = pos.left;
+                                designMode.UI.menu.positionY = pos.top;
+                            };
+                            $('menu.refPointer.design header').mousedown(function (e) {
+                                designMode.UI.menu.dragInfo.dragging = true;
+                                designMode.UI.menu.dragInfo.startX = e.pageX;
+                                designMode.UI.menu.dragInfo.startY = e.pageY;
+                                var pos = $menu.position();
+                                designMode.UI.menu.positionX = pos.left;
+                                designMode.UI.menu.positionY = pos.top;
+                            }).mousemove(function (e) {
+                                if (designMode.UI.menu.dragInfo.dragging) {
+                                    $menu.css({
+                                        'left': (e.pageX - designMode.UI.menu.dragInfo.startX + designMode.UI.menu.positionX) + 'px',
+                                        'top': (e.pageY - designMode.UI.menu.dragInfo.startY + designMode.UI.menu.positionY) + 'px'
+                                    });
+                                }
+                            }).mouseup(finishMenuDragging).mouseleave(finishMenuDragging);
                             $('menu.refPointer.design a.disabled').click(function (e) {
                                 e.preventDefault();
                             });
