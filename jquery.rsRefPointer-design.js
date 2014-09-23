@@ -75,7 +75,7 @@
                                             '<hr>' +
                                             '<a href="#">New Line</a>' +
                                             '<a href="#">New Bezier Curve</a>' +
-                                            '<ul><li>1<a href="#">&#x2715;</a></li><li>2</li></ul>' +
+                                            '<ul></ul>' +
                                             '<a href="#" class="disabled">Add Middle Point</a>' +
                                             '<aside>Double click on point to delete it</aside>' +
                                             '<hr>' +
@@ -183,9 +183,19 @@
                                     });
                                 }
                             }).mouseup(finishMenuDragging).mouseleave(finishMenuDragging);
+                            data.points.start
                             $('menu.refPointer.design a.disabled').click(function (e) {
                                 e.preventDefault();
                             });
+                            data.points.start.forEach(function () {
+                                designMode.UI.menu.addArrowLink();
+                            });
+                        },
+                        addArrowLink: function () {
+                            var $a = $('<a href="#">&#x2715;</a>');
+                            $('menu.refPointer.design ul').append($a);
+                            $a.wrap('<li>');
+                            // TODO click event
                         }
                     },
                     init: function () {
