@@ -4,7 +4,7 @@
     <title>Reference Pointer</title>
     <script src="jquery.2.0.0.min.js"></script>
     <script src="jquery.rsRefPointer.js"></script>
-    <script src="jquery.rsRefPointer-design.js"></script>
+    <!--script src="jquery.rsRefPointer-design.js"></script-->
     <script>
         $(document).ready(function () {
           $("a").eq(0).rsRefPointer();
@@ -31,9 +31,9 @@
   <body>
     <div id="p"></div>
     <p class="target">first target</p>
-    <button>test bbbbbbbbb click</button>
+    <button>test bbbbbcccccccccccccccbbbb click</button>
     This is a diagram with <a tabindex="0" href="#">2 references.</a><br>
-    This is the <span class="target">second target</span>
+    <span contenteditable>Type something here to change the target location...</span><span class="target">second target</span>
     <br><br><br><br><br>
     and the second instance <a tabindex="1" href="#">here</a>
   </body>

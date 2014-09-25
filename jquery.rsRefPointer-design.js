@@ -183,7 +183,6 @@
                                     });
                                 }
                             }).mouseup(finishMenuDragging).mouseleave(finishMenuDragging);
-                            data.points.start
                             $('menu.refPointer.design a.disabled').click(function (e) {
                                 e.preventDefault();
                             });
