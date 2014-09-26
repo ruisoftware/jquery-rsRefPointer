@@ -40,13 +40,13 @@
                         offset: []      // Array of offsets {dx, dy}. Each arrow ending point (data.points.end) equals to points.to.point[i] + points.to.offset[i]
                     },
                     refreshPositions: function () {
-                        var newPos = $elem.offset(),
-                            deltaFrom = {
-                                dx: newPos.left - this.from.point.x,
-                                dy: newPos.top - this.from.point.y
+                        var oldPos = {
+                                x: this.from.point.x,
+                                y: this.from.point.y
                             },
-                            deltaTo = [],
-                            fromPositionChanged = deltaFrom.dx != 0 || deltaFrom.dy != 0,
+                            newPos = $elem.offset(),
+                            boxes = [],
+                            fromPositionChanged = !util.samePoint(oldPos.x, newPos.left) || !util.samePoint(oldPos.y, newPos.top),
                             somePositionChanged = fromPositionChanged;
 
                         this.from.point.x = newPos.left;
@@ -57,12 +57,20 @@
                             data.points.start[index].y = newPos.top + data.points.from.offset[index].dy;
                             var $target = $(e),
                                 targetPos = $target.offset(),
-                                dx = targetPos.left - data.points.to.point[index].x,
-                                dy = targetPos.top - data.points.to.point[index].y,
-                                toPositionChanged = dx != 0 || dy != 0;
-                            deltaTo.push({
-                                dx: dx,
-                                dy: dy
+                                toPositionChanged = !util.samePoint(targetPos.left, data.points.to.point[index].x) || !util.samePoint(targetPos.top, data.points.to.point[index].y);
+                            boxes.push({
+                                oldRect: {
+                                    top: Math.min(oldPos.y, data.points.to.point[index].y),
+                                    left: Math.min(oldPos.x, data.points.to.point[index].x),
+                                    bottom: Math.max(oldPos.y, data.points.to.point[index].y),
+                                    right: Math.max(oldPos.x, data.points.to.point[index].x)
+                                },
+                                newRect: {
+                                    top: Math.min(newPos.top, targetPos.top),
+                                    left: Math.min(newPos.left, targetPos.left),
+                                    bottom: Math.max(newPos.top, targetPos.top),
+                                    right: Math.max(newPos.left, targetPos.left)
+                                }
                             });
                             if (toPositionChanged) {
                                 data.points.to.point[index].x = targetPos.left;
@@ -87,10 +95,7 @@
                                 width: (bounds.right - bounds.left) + 'px',
                                 height: (bounds.bottom - bounds.top) + 'px'
                             });
-                            return {
-                                from: deltaFrom,
-                                to: deltaTo
-                            };
+                            return boxes;
                         }
                         return null;
                     },
@@ -370,6 +375,14 @@
                         unbind('mouseenter.rsRefPointer focus.rsRefPointer', this.onShow).
                         unbind('mouseleave.rsRefPointer blur.rsRefPointer', this.onHide).
                         unbind('destroy.rsRefPointer', this.onDestroy);
+                }
+            },
+            util = {
+                areTheSame: function (a, b, precision) {
+                    return Math.abs(a - b) < (precision ? precision : 0.000005);
+                },
+                samePoint: function (a, b) {
+                    return this.areTheSame(a, b, .5);
                 }
             };
 
