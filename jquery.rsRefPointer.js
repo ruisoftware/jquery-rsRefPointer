@@ -19,77 +19,75 @@
                 $targets: null,
                 svgPos: {},
                 points: {
-                    start: null,   // Starting points for all arrows, e.g. points for 3 arrows, consisting of a bezier, a straight line and a polyline, is
-                                   // [ {x: 4, y: 6}, {x: 4, y: 6}, {x: 9, y: 8} ]. By default, all arrows start from the same point.
+                    start: null,   // Starting point for all arrows. Each row starts from a point that is points.start + points.layout.fromOffset.
+                                   //   {x, y}. The following is an example for 3 arrows: one bezier, a straight line and a polyline.
                     mid: null,     // Array of arrays of middle points, if any. The inner array represents the middle points for each arrow,
-                                   //   [ [{x:3, y:2}, {x:10, y:10}], [], [{x:50, y:40}] ]
-                    end: null,     // Array for all destinations points, e.g.
-                                   //   [ {x:15, y:15}, {x:18, y:-6}, {x:55, y:45} ]
-                    // The length of arrowTypes, start, mid, end and offsets is always the same.
+                                   //   [ [{x, y}, {x, y}], [], [{x, y}] ]
+                    end: null,     // Destinations point for all arrows. Each row ends in a point that is points.end[i] + points.layout.toOffset[i].
+                                   //   [{x, y}, {x, y}, {x, y}]
+                    // The length of arrowTypes, mid, end, layout.fromOffset, layout.toOffset, layout.topLeft, layout.bottomRight are always the same.
 
                     // The below data structure is used to compute layout changes, i.e. if the from/to location changes, the arrows should follow these elements.
                     layout: {
-                        fromOffset: [],   // Array of offsets {dx, dy}. Each arrow starting point (data.points.start) equals to $elem.position() + points.layout.fromOffset[i]
-                        toOffset: [],     // Array of offsets {dx, dy}. Each arrow ending point (data.points.end) equals to $target.offset() + points.layout.toOffset[i]
+                        fromOffset: [],   // Array of offsets {dx, dy}. Each arrow starting point is data.points.start + points.layout.fromOffset[i]
+                        toOffset: [],     // Array of offsets {dx, dy}. Each arrow ending point is data.points.end + points.layout.toOffset[i]
                         topLeft: [],      // Array of {x, y}
                         bottomRight: []   // Array of {x, y}
                     },
                     refreshPositions: function () {
-                        if (this.points.start.length > 0) {
-                            var oldPos = {
-                                    x: this.points.start[0].x - this.layout.fromOffset[0].dx,
-                                    y: this.points.start[0].y - this.layout.fromOffset[0].dy
+                        var oldStartPos = {
+                                x: this.points.start[0].x - this.layout.fromOffset[0].dx,
+                                y: this.points.start[0].y - this.layout.fromOffset[0].dy
+                            },
+                            newStartPos = $elem.offset(),
+                            matrix = [],
+                            fromPositionChanged = !util.samePoint(this.points.start.x, newPos.left) || !util.samePoint(this.points.start.y, newPos.top),
+                            somePositionChanged = fromPositionChanged;
+
+                        data.$targets.each(function (index, e) {
+                            data.points.start[index].x = newPos.left + data.points.layout.fromOffset[index].dx;
+                            data.points.start[index].y = newPos.top + data.points.layout.fromOffset[index].dy;
+                            var $target = $(e),
+                                targetPos = $target.offset(),
+                                toPositionChanged = !util.samePoint(targetPos.left, data.points.end[index].x - data.points.layout.toOffset[index].dx) ||
+                                                    !util.samePoint(targetPos.top, data.points.end[index].y - data.points.layout.toOffset[index].dy),
+                                before = {
+                                    top: Math.min(oldPos.y, this.points.end[index].y - this.layout.toOffset[index].dy),
+                                    left: Math.min(oldPos.x, this.points.end[index].x - this.layout.toOffset[index].dx)
                                 },
-                                newPos = $elem.offset(),
-                                matrix = [],
-                                fromPositionChanged = !util.samePoint(oldPos.x, newPos.left) || !util.samePoint(oldPos.y, newPos.top),
-                                somePositionChanged = fromPositionChanged;
+                                after = {
+                                    top: Math.min(newPos.top, targetPos.top),
+                                    left: Math.min(newPos.left, targetPos.left)
+                                };
+                                before.width = Math.max(oldPos.x, data.points.to.point[index].x) - before.left;
+                                before.height = Math.max(oldPos.y, data.points.to.point[index].y) - before.top;
+                                after.width = Math.max(newPos.left, targetPos.left) - after.left;
+                                after.height = Math.max(newPos.top, targetPos.top) - after.top;
+                                var widthFactor = util.areTheSame(before.width, 0) ? 1 : after.width / before.width,
+                                    heightFactor = util.areTheSame(before.height, 0) ? 1 : after.height / before.height;
 
-                            data.$targets.each(function (index, e) {
-                                data.points.start[index].x = newPos.left + data.points.layout.fromOffset[index].dx;
-                                data.points.start[index].y = newPos.top + data.points.layout.fromOffset[index].dy;
-                                var $target = $(e),
-                                    targetPos = $target.offset(),
-                                    toPositionChanged = !util.samePoint(targetPos.left, data.points.end[index].x - data.points.layout.toOffset[index].dx) ||
-                                                        !util.samePoint(targetPos.top, data.points.end[index].y - data.points.layout.toOffset[index].dy),
-                                    before = {
-                                        top: Math.min(oldPos.y, this.points.end[index].y - this.layout.toOffset[index].dy),
-                                        left: Math.min(oldPos.x, this.points.end[index].x - this.layout.toOffset[index].dx)
-                                    },
-                                    after = {
-                                        top: Math.min(newPos.top, targetPos.top),
-                                        left: Math.min(newPos.left, targetPos.left)
-                                    };
-                                    before.width = Math.max(oldPos.x, data.points.to.point[index].x) - before.left;
-                                    before.height = Math.max(oldPos.y, data.points.to.point[index].y) - before.top;
-                                    after.width = Math.max(newPos.left, targetPos.left) - after.left;
-                                    after.height = Math.max(newPos.top, targetPos.top) - after.top;
-                                    var widthFactor = util.areTheSame(before.width, 0) ? 1 : after.width / before.width,
-                                        heightFactor = util.areTheSame(before.height, 0) ? 1 : after.height / before.height;
-
-                                matrix.push({
-                                    factor: {
-                                        x: widthFactor,
-                                        y: heightFactor
-                                    },
-                                    center: {
-                                        x: util.areTheSame(widthFactor, 1) ? 0 : (after.left - before.left*widthFactor)/(1 - widthFactor),
-                                        y: util.areTheSame(heightFactor, 1) ? 0 : (after.top - before.top*heightFactor)/(1 - heightFactor)
-                                    },
-                                    translation: {
-                                        x: after.left - before.left,
-                                        y: after.top - before.top
-                                    }
-                                });
-                                if (toPositionChanged) {
-                                    data.points.to.point[index].x = targetPos.left;
-                                    data.points.to.point[index].y = targetPos.top;
-                                    data.points.end[index].x = targetPos.left + data.points.to.offset[index].dx;
-                                    data.points.end[index].y = targetPos.top + data.points.to.offset[index].dy;
+                            matrix.push({
+                                factor: {
+                                    x: widthFactor,
+                                    y: heightFactor
+                                },
+                                center: {
+                                    x: util.areTheSame(widthFactor, 1) ? 0 : (after.left - before.left*widthFactor)/(1 - widthFactor),
+                                    y: util.areTheSame(heightFactor, 1) ? 0 : (after.top - before.top*heightFactor)/(1 - heightFactor)
+                                },
+                                translation: {
+                                    x: after.left - before.left,
+                                    y: after.top - before.top
                                 }
-                                somePositionChanged = somePositionChanged || toPositionChanged;
                             });
-                        }
+                            if (toPositionChanged) {
+                                data.points.to.point[index].x = targetPos.left;
+                                data.points.to.point[index].y = targetPos.top;
+                                data.points.end[index].x = targetPos.left + data.points.to.offset[index].dx;
+                                data.points.end[index].y = targetPos.top + data.points.to.offset[index].dy;
+                            }
+                            somePositionChanged = somePositionChanged || toPositionChanged;
+                        });
                         return somePositionChanged ? matrix : null;
                     },
                     transformMidPoints: function (matrix) {
@@ -139,12 +137,11 @@
                             fromOffset = {
                                 dx: $elem.width()/2,
                                 dy: $elem.height()/2
-                            },
-                            startPoint = {
-                                x: pos.left + fromOffset.dx,
-                                y: pos.top + fromOffset.dy
                             };
-                        this.start = [];
+                        this.start = {
+                            x: pos.left,
+                            y: pos.top
+                        };
                         this.mid = [];
                         this.end = [];
                         data.$targets.each(function (index, e) {
@@ -154,10 +151,8 @@
                             } else {
                                 data.arrowTypes.push('line');
                             }
-
-                            data.points.start.push(startPoint);
                             data.points.layout.fromOffset.push(fromOffset);
-                            
+
                             // TODO
                             if (data.arrowTypes.length == 2) {
                                 data.points.mid.push([{x: 10, y: 10}, {x: 50, y: 0}]);
@@ -176,16 +171,16 @@
                             $targetSpan.contents().unwrap();
                             data.points.layout.toOffset.push(toOffset);
                             data.points.end.push({
-                                x: targetPos.left + toOffset.dx,
-                                y: targetPos.top + toOffset.dy
+                                x: targetPos.left,
+                                y: targetPos.top
                             });
 
                             var topLeft = {
-                                    x: data.points.start[index].x,
-                                    y: data.points.start[index].y
+                                    x: data.points.start.x + data.points.layout.fromOffset[index].x,
+                                    y: data.points.start.y + data.points.layout.fromOffset[index].y
                                 }, bottomRight = {
-                                    x: data.points.start[index].x,
-                                    y: data.points.start[index].y
+                                    x: topLeft.x,
+                                    y: topLeft.y
                                 };
                             data.points.mid[index].forEach(function (e) {
                                 topLeft.x = Math.min(topLeft.x, e.x);
@@ -205,18 +200,23 @@
                 getBoundsRect: opts.overrideGetBoundsRect || function () {
                     var bounds = {},
                         maxOffset = Math.max(opts.arrows.startMarker.size, Math.max(opts.arrows.midMarker.size, opts.arrows.endMarker.size)),
-                        setBounds = function (pnt) {
-                            bounds.top = Math.min(bounds.top === undefined ? pnt.y : bounds.top, pnt.y);
-                            bounds.right = Math.max(bounds.right === undefined ? pnt.x : bounds.right, pnt.x);
-                            bounds.bottom = Math.max(bounds.bottom === undefined ? pnt.y : bounds.bottom, pnt.y);
-                            bounds.left = Math.min(bounds.left === undefined ? pnt.x : bounds.left, pnt.x);
+                        setBounds = function (pnt, index, offsetArray) {
+                            var x = pnt.x + (offsetArray === undefined ? 0 : offsetArray[index].dx),
+                                y = pnt.y + (offsetArray === undefined ? 0 : offsetArray[index].dy);
+
+                            bounds.left = Math.min(bounds.left === undefined ? x : bounds.left, x);
+                            bounds.top = Math.min(bounds.top === undefined ? y : bounds.top, y);
+                            bounds.bottom = Math.max(bounds.bottom === undefined ? y : bounds.bottom, y);
+                            bounds.right = Math.max(bounds.right === undefined ? x : bounds.right, x);
                         };
-                    this.points.start.forEach(setBounds);
-                    this.points.end.forEach(setBounds);
-                    this.points.mid.forEach(function (pnts) {
+                    this.points.mid.forEach(function (pnts, index) {
                         for(var pnt in pnts) {
                             setBounds(pnts[pnt]);
                         }
+                    });
+                    this.points.end.forEach(function (pnt, index) {
+                        setBounds(data.points.start, index, data.points.layout.fromOffset);
+                        setBounds(pnt, index, data.points.layout.toOffset);
                     });
                     bounds.top -= maxOffset;
                     bounds.left -= maxOffset;
@@ -389,27 +389,32 @@
                     }
                 },
                 getShapeAttrs: function (index) {
-                    var pointToStr = function (pnt) {
-                        return (Math.round(pnt.x - data.svgPos.x) + .5) + ',' + 
-                               (Math.round(pnt.y - data.svgPos.y) + .5);
-                    };
+                    var getX = function (pnt, index) {
+                            return Math.round(pnt.x + data.points.layout.toOffset[index].dx - data.svgPos.x) + .5;
+                        },
+                        getY = function (pnt, index) {
+                            return Math.round(pnt.y + data.points.layout.toOffset[index].dy - data.svgPos.y) + .5;
+                        },
+                        pointToStr = function (pnt, index) {
+                            return getX(pnt, index) + ',' + getY(pnt, index);
+                        };
                     switch (data.arrowTypes[index]) {
                         case 'line':
                             return {
-                                x1: Math.round(data.points.start[index].x - data.svgPos.x) + .5,
-                                y1: Math.round(data.points.start[index].y - data.svgPos.y) + .5,
-                                x2: Math.round(data.points.end[index].x - data.svgPos.x) + .5,
-                                y2: Math.round(data.points.end[index].y - data.svgPos.y) + .5
+                                x1: getX(data.points.start, index),
+                                y1: getY(data.points.start, index),
+                                x2: getX(data.points.end[index], index),
+                                y2: getY(data.points.end[index], index)
                             };
                         case 'polyline':
                             return {
-                                points: pointToStr(data.points.start[index]) +
+                                points: pointToStr(data.points.start, index) +
                                         ',' + 
                                         data.points.mid[index].map(function(e) {
-                                            return pointToStr(e);
+                                            return pointToStr(e, index);
                                         }).join(",") +
                                         ',' +
-                                        pointToStr(data.points.end[index])
+                                        pointToStr(data.points.end[index], index)
                             };
                     }
                 },
