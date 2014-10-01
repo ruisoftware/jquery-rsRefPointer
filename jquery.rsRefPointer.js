@@ -32,7 +32,7 @@
                         fromOffset: [],   // Array of offsets {dx, dy}. Each arrow starting point is data.points.start + points.layout.fromOffset[i]
                         toOffset: [],     // Array of offsets {dx, dy}. Each arrow ending point is data.points.end + points.layout.toOffset[i]
                         topLeft: [],      // Array of {x, y}
-                        bottomRight: []   // Array of {x, y}
+                        size: []          // Array of {width, height}
                     },
                     refreshPositions: function () {
                         var oldStartPos = {
@@ -40,8 +40,7 @@
                                 y: data.points.start.y
                             },
                             newStartPos = $elem.offset(),
-                            fromPositionChanged = !util.samePoint(oldStartPos.x, newStartPos.left) || !util.samePoint(oldStartPos.y, newStartPos.top),
-                            somePositionChanged = fromPositionChanged;
+                            fromPositionChanged = !util.samePoint(oldStartPos.x, newStartPos.left) || !util.samePoint(oldStartPos.y, newStartPos.top);
 
                         data.points.start.x = newStartPos.left;
                         data.points.start.y = newStartPos.top;
@@ -49,41 +48,25 @@
                             var $target = $(e),
                                 targetPos = $target.offset(),
                                 toPositionChanged = !util.samePoint(targetPos.left, data.points.end[index].x) ||
-                                                    !util.samePoint(targetPos.top, data.points.end[index].y),
-                                before = {
-                                    top: Math.min(oldStartPos.y, data.points.end[index].y),
-                                    left: Math.min(oldStartPos.x, data.points.end[index].x)
-                                },
-                                after = {
-                                    top: Math.min(newStartPos.top, targetPos.top),
-                                    left: Math.min(newStartPos.left, targetPos.left)
-                                },
-                                pnt;
+                                                    !util.samePoint(targetPos.top, data.points.end[index].y);
 
-                            before.width = Math.max(oldStartPos.x, data.points.end[index].x) - before.left;
-                            before.height = Math.max(oldStartPos.y, data.points.end[index].y) - before.top;
-                            after.width = Math.max(newStartPos.left, targetPos.left) - after.left;
-                            after.height = Math.max(newStartPos.top, targetPos.top) - after.top;
-                            var widthFactor = util.areTheSame(before.width, 0) ? 1 : after.width / before.width,
-                                heightFactor = util.areTheSame(before.height, 0) ? 1 : after.height / before.height,
-                                center = {
-                                    x: util.areTheSame(widthFactor, 1) ? 0 : (after.left - before.left*widthFactor)/(1 - widthFactor),
-                                    y: util.areTheSame(heightFactor, 1) ? 0 : (after.top - before.top*heightFactor)/(1 - heightFactor)
-                                };
-
-                            if (!util.areTheSame(widthFactor, 1) || !util.areTheSame(heightFactor, 1)) {
-                                for (var pntIdx in data.points.mid[index]) {
-                                    pnt = data.points.mid[index][pntIdx];
-                                    pnt.x = center.x + (pnt.x - center.x)*widthFactor;
-                                    pnt.y = center.y + (pnt.y - center.y)*heightFactor;
-                                }
+                            if (fromPositionChanged || toPositionChanged) {
+                                var newTopLeft = data.points.layout.topLeft[index];
+                                newTopLeft.x = Math.min(newStartPos.left + data.points.layout.fromOffset[index].dx,
+                                                        targetPos.left + data.points.layout.toOffset[index].dx);
+                                newTopLeft.y = Math.min(newStartPos.top + data.points.layout.fromOffset[index].dy,
+                                                        targetPos.top + data.points.layout.toOffset[index].dy);
+                                var newSize = data.points.layout.size[index];
+                                newSize.width = Math.max(newStartPos.left + data.points.layout.fromOffset[index].dx,
+                                                         targetPos.left + data.points.layout.toOffset[index].dx) - newTopLeft.x;
+                                newSize.height = Math.max(newStartPos.top + data.points.layout.fromOffset[index].dy,
+                                                          targetPos.top + data.points.layout.toOffset[index].dy) - newTopLeft.y;
                             }
 
                             if (toPositionChanged) {
                                 data.points.end[index].x = targetPos.left;
                                 data.points.end[index].y = targetPos.top;
                             }
-                            somePositionChanged = somePositionChanged || toPositionChanged;
                         });
 
                         var bounds = data.getBoundsRect();
@@ -152,25 +135,31 @@
                             });
 
                             var topLeft = {
-                                    x: data.points.start.x + data.points.layout.fromOffset[index].dx,
-                                    y: data.points.start.y + data.points.layout.fromOffset[index].dy
-                                }, bottomRight = {
-                                    x: topLeft.x,
-                                    y: topLeft.y
+                                    x: Math.min(data.points.start.x + data.points.layout.fromOffset[index].dx,
+                                                data.points.end[index].x + data.points.layout.toOffset[index].dx),
+                                    y: Math.min(data.points.start.y + data.points.layout.fromOffset[index].dy,
+                                                data.points.end[index].y + data.points.layout.toOffset[index].dy)
+                                },
+                                size = {
+                                    width: Math.max(data.points.start.x + data.points.layout.fromOffset[index].dx,
+                                                    data.points.end[index].x + data.points.layout.toOffset[index].dx) - topLeft.x,
+                                    height: Math.max(data.points.start.y + data.points.layout.fromOffset[index].dy,
+                                                     data.points.end[index].y + data.points.layout.toOffset[index].dy) - topLeft.y
                                 };
+
                             data.points.mid[index].forEach(function (e) {
-                                topLeft.x = Math.min(topLeft.x, e.x);
-                                topLeft.y = Math.min(topLeft.y, e.y);
-                                bottomRight.x = Math.max(bottomRight.x, e.x);
-                                bottomRight.y = Math.max(bottomRight.y, e.y);
+                                e.x = util.areTheSame(size.width, 0) ? 0 : (e.x - topLeft.x)/size.width;
+                                e.y = util.areTheSame(size.height, 0) ? 0 : (e.y - topLeft.y)/size.height;
                             });
-                            topLeft.x = Math.min(topLeft.x, data.points.end[index].x + data.points.layout.toOffset[index].dx);
-                            topLeft.y = Math.min(topLeft.y, data.points.end[index].y + data.points.layout.toOffset[index].dy);
-                            bottomRight.x = Math.max(bottomRight.x, data.points.end[index].x + data.points.layout.toOffset[index].dx);
-                            bottomRight.y = Math.max(bottomRight.y, data.points.end[index].y + data.points.layout.toOffset[index].dy);
                             data.points.layout.topLeft.push(topLeft);
-                            data.points.layout.bottomRight.push(bottomRight);
+                            data.points.layout.size.push(size);
                         });
+                    },
+                    getMidPoint: function (relativePnt, index) {
+                        return {
+                            x: data.points.layout.topLeft[index].x + relativePnt.x*data.points.layout.size[index].width,
+                            y: data.points.layout.topLeft[index].y + relativePnt.y*data.points.layout.size[index].height
+                        };
                     }
                 },
                 getBoundsRect: opts.overrideGetBoundsRect || function () {
@@ -187,7 +176,7 @@
                         };
                     this.points.mid.forEach(function (pnts, index) {
                         for(var pnt in pnts) {
-                            setBounds(pnts[pnt]);
+                            setBounds(data.points.getMidPoint(pnts[pnt], index));
                         }
                     });
                     this.points.end.forEach(function (pnt, index) {
@@ -387,7 +376,7 @@
                                 points: pointToStr(data.points.start, data.points.layout.fromOffset[index]) +
                                         ',' + 
                                         data.points.mid[index].map(function(e) {
-                                            return pointToStr(e);
+                                            return pointToStr(data.points.getMidPoint(e, index));
                                         }).join(",") +
                                         ',' +
                                         pointToStr(data.points.end[index], data.points.layout.fromOffset[index])
