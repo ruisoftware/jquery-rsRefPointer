@@ -19,7 +19,7 @@
     }
 
     $.fn.rsRefPointer = function (options) {
-        // Seems that this goes against all plug-in good practices, but in design mode, we really cannot accept more than one element.
+        // Seems that this goes against all plug-in good practices, but in design mode, makes no sense at all to accept more than one element.
         // Design mode has a GUI. How could I display GUI for several instances simultaneously? I could implement some kind of tab control, but let's keep it simple.
         if (this.length > 1) {
             alert('Design-time mode cannot run for ' + this.length + ' plug-in instances!\n' +

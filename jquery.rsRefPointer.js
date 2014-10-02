@@ -105,7 +105,7 @@
                         this.end = [];
                         data.$targets.each(function (index, e) {
                             // TODO
-                            if (data.arrowTypes.length == 0) {
+                            if (data.arrowTypes.length == 1) {
                                 data.arrowTypes.push('polyline');
                             } else {
                                 data.arrowTypes.push('line');
@@ -113,7 +113,7 @@
                             data.points.layout.fromOffset.push(fromOffset);
 
                             // TODO
-                            if (data.arrowTypes.length == 1) {
+                            if (data.arrowTypes.length == 2) {
                                 data.points.mid.push([{x: 100, y: 10}, {x: 150, y: 0}]);
                             } else {
                                 data.points.mid.push([]);
@@ -147,6 +147,9 @@
                                                      data.points.end[index].y + data.points.layout.toOffset[index].dy) - topLeft.y
                                 };
 
+                            // middle points are relative to the width and height, e.g., a point(.2, .5) means that is located 20% (of size.width) to the right of topLeft.x,
+                            // and 50% (of size.height) below topLeft.y. Using relative middle points allows an efficient and simple way to repositionate these points,
+                            // when the start and end points change (when size and topLeft changes)
                             data.points.mid[index].forEach(function (e) {
                                 e.x = util.areTheSame(size.width, 0) ? 0 : (e.x - topLeft.x)/size.width;
                                 e.y = util.areTheSame(size.height, 0) ? 0 : (e.y - topLeft.y)/size.height;
@@ -379,7 +382,7 @@
                                             return pointToStr(data.points.getMidPoint(e, index));
                                         }).join(",") +
                                         ',' +
-                                        pointToStr(data.points.end[index], data.points.layout.fromOffset[index])
+                                        pointToStr(data.points.end[index], data.points.layout.toOffset[index])
                             };
                     }
                 },
