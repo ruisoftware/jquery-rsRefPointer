@@ -105,7 +105,7 @@
                         this.end = [];
                         data.$targets.each(function (index, e) {
                             // TODO
-                            if (data.arrowTypes.length == 0) {
+                            if (data.arrowTypes.length == 1) {
                                 data.arrowTypes.push('polyline');
                             } else {
                                 data.arrowTypes.push('line');
@@ -113,7 +113,7 @@
                             data.points.layout.fromOffset.push(fromOffset);
 
                             // TODO
-                            if (data.arrowTypes.length == 1) {
+                            if (data.arrowTypes.length == 2) {
                                 data.points.mid.push([{x: 100, y: 10}, {x: 150, y: 0}]);
                             } else {
                                 data.points.mid.push([]);
@@ -379,7 +379,7 @@
                                             return pointToStr(data.points.getMidPoint(e, index));
                                         }).join(",") +
                                         ',' +
-                                        pointToStr(data.points.end[index], data.points.layout.fromOffset[index])
+                                        pointToStr(data.points.end[index], data.points.layout.toOffset[index])
                             };
                     }
                 },

@@ -186,7 +186,8 @@
                             $('menu.refPointer.design a.disabled').click(function (e) {
                                 e.preventDefault();
                             });
-                            data.points.start.forEach(function () {
+
+                            data.arrowTypes.forEach(function () {
                                 designMode.UI.menu.addArrowLink();
                             });
                         },
@@ -206,26 +207,26 @@
                                     'cx': e.pageX,
                                     'cy': e.pageY
                                 });
-                                var $arrow = DOM.arrows[designMode.UI.dragInfo.arrowIdx];
-                                if (data.outline) { // also drag the previous arrow, the one that represents the outline
-                                    $arrow = $arrow.add($arrow.prev());
-                                }
                                 switch (designMode.UI.dragInfo.pointType) {
                                     case 'start':
-                                        $arrow.attr({
-                                            'x1': e.pageX,
-                                            'y1': e.pageY
-                                        });
+                                        var offset = data.points.layout.fromOffset[designMode.UI.dragInfo.arrowIdx];
+                                        offset.dx = e.pageX - data.points.start.x;
+                                        offset.dy = e.pageY - data.points.start.y; 
                                         break;
                                     case 'mid':
-                                        // TODO
+                                        var midPoints = data.points.mid[designMode.UI.dragInfo.arrowIdx],
+                                            idx = designMode.UI.points.$mid.index(designMode.UI.dragInfo.$point);
+                                        if (idx > -1) {
+                                            midPoints[idx].x = e.pageX;
+                                            midPoints[idx].y = e.pageY;
+                                        }
                                         break;
                                     case 'end':
-                                        $arrow.attr({
-                                            'x2': e.pageX,
-                                            'y2': e.pageY
-                                        });
+                                        var offset = data.points.layout.toOffset[designMode.UI.dragInfo.arrowIdx];
+                                        offset.dx = e.pageX - data.points.end[designMode.UI.dragInfo.arrowIdx].x;
+                                        offset.dy = e.pageY - data.points.end[designMode.UI.dragInfo.arrowIdx].y; 
                                 }
+                                DOM.updateArrow(designMode.UI.dragInfo.arrowIdx);
                             }
                         }).mouseup(function () {
                             designMode.UI.dragInfo.$point = designMode.UI.dragInfo.pointType = designMode.UI.dragInfo.arrowIdx = null;
@@ -236,16 +237,18 @@
                         this.points.$mid = $([]);
                         this.points.$end = $([]);
                         var points = designMode.UI.points;
-                        data.points.start.forEach(function (pnt, index) {
-                            points.$start = points.$start.add(DOM.markers.getDesignModePoint(pnt, index));
-                        });
                         data.points.mid.forEach(function (pnts, index) {
                             for(var pnt in pnts) {
-                                points.$mid = points.$mid.add(DOM.markers.getDesignModePoint(pnt, index));
+                                pnts[pnt] = data.points.getMidPoint(pnts[pnt], index);
+                                points.$mid = points.$mid.add(DOM.markers.getDesignModePoint(pnts[pnt], index));
                             }
                         });
+                        data.points.getMidPoint = function (relativePnt) {
+                            return relativePnt; // in design mode, the mid points are absolute, not relative
+                        };
                         data.points.end.forEach(function (pnt, index) {
-                            points.$end = points.$end.add(DOM.markers.getDesignModePoint(pnt, index));
+                            points.$start = points.$start.add(DOM.markers.getDesignModePoint(data.points.start, index, data.points.layout.fromOffset));
+                            points.$end = points.$end.add(DOM.markers.getDesignModePoint(pnt, index, data.points.layout.toOffset));
                         });
                         DOM.$svg.append(this.points.$start).append(this.points.$mid).append(this.points.$end);
                     }
@@ -271,11 +274,11 @@
                     this.UI.init();
                 }
             };
-        DOM.markers.getDesignModePoint = function (pnt, arrowIdx) {
+        DOM.markers.getDesignModePoint = function (pnt, arrowIdx, offsetArray) {
             var maxSize = Math.max(opts.arrows.startMarker.size, Math.max(opts.arrows.midMarker.size, opts.arrows.endMarker.size)),
                 $point = DOM.createSvgDom('circle', {
-                    cx: pnt.x,
-                    cy: pnt.y,
+                    cx: pnt.x + (offsetArray === undefined ? 0 : offsetArray[arrowIdx].dx),
+                    cy: pnt.y + (offsetArray === undefined ? 0 : offsetArray[arrowIdx].dy),
                     r: maxSize/1.5,
                     style: 'fill:transparent; stroke:rgba(255,0,0,.3); stroke-width:3'
                 });
