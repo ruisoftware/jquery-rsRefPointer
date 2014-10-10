@@ -51,17 +51,29 @@
             events = allData.events,
             designMode = {
                 UI: {
+                    activeArrow: {
+                        idx: null,
+                        strokeSelected: '3px',
+                        strokeUnselected: '1px',
+                        select: function (newIndex) {
+                            if (newIndex !== this.idx) {
+                                if (this.idx !== null) {
+                                    designMode.UI.points[this.idx].css('stroke-width', this.strokeUnselected);
+                                }
+                                DOM.arrows[newIndex].add(data.outline ? DOM.arrows[newIndex].prev() : null).detach().appendTo(DOM.$svg);
+                                designMode.UI.points[newIndex].css('stroke-width', this.strokeSelected).detach().appendTo(DOM.$svg);
+                                this.idx = newIndex;
+                                $('ul li', designMode.UI.menu.$menu).removeClass('selected').eq(this.idx).addClass('selected');
+                            }
+                        }
+                    },
                     dragInfo: {
                         $point: null,       // Represents the point currently being dragged.
-                        pointType: null,    // Either 'start', 'mid' or 'end'
-                        arrowIdx: null      // Dragging the DOM.arrows[arrowIdx] arrow. Type: integer
+                        pointType: null     // Either 'start', 'mid' or 'end'
                     },
-                    points: {
-                        $start: null,   // jQuery set containing 1 or more DOM starting drag-and-drop points
-                        $mid: null,     // jQuery set containing 0 or more DOM middle drag-and-drop points
-                        $end: null      // jQuery set containing 1 or more DOM ending drag-and-drop points
-                    },
+                    points: null, // Array of jQuery set. Each jQuery object contains the points (start, end, mid) that belong to each arrow and their length is >= 2
                     menu: {
+                        $menu: null,
                         positionX: 0,
                         positionY: 0,
                         dragInfo: { // dragging the menu
@@ -70,7 +82,7 @@
                             startY: 0
                         },
                         init: function () {
-                            var $menu = $('<menu class="refPointer design">' +
+                            this.$menu = $('<menu class="refPointer design">' +
                                             '<header>Draggable Menu</header>' +
                                             '<hr>' +
                                             '<a href="#">New Line</a>' +
@@ -132,6 +144,10 @@
                                         'padding: 3px;' +
                                         'background-color: #eee;' +
                                         'border-radius: 2px;' +
+                                        'border: 1px #eee solid;' +
+                                    '}' +
+                                    'menu.refPointer.design ul li.selected {' +
+                                        'border-color: red;' +
                                     '}' +
                                     'menu.refPointer.design ul li > a {' +
                                         'display: none;' +
@@ -161,10 +177,10 @@
                                     '}' +
                                 '</style>'
                             );
-                            $('body').append($menu);
+                            $('body').append(this.$menu);
                             var finishMenuDragging = function (e) {
                                 designMode.UI.menu.dragInfo.dragging = false;
-                                var pos = $menu.position();
+                                var pos = designMode.UI.menu.$menu.position();
                                 designMode.UI.menu.positionX = pos.left;
                                 designMode.UI.menu.positionY = pos.top;
                             };
@@ -172,12 +188,12 @@
                                 designMode.UI.menu.dragInfo.dragging = true;
                                 designMode.UI.menu.dragInfo.startX = e.pageX;
                                 designMode.UI.menu.dragInfo.startY = e.pageY;
-                                var pos = $menu.position();
+                                var pos = designMode.UI.menu.$menu.position();
                                 designMode.UI.menu.positionX = pos.left;
                                 designMode.UI.menu.positionY = pos.top;
                             }).mousemove(function (e) {
                                 if (designMode.UI.menu.dragInfo.dragging) {
-                                    $menu.css({
+                                    designMode.UI.menu.$menu.css({
                                         'left': (e.pageX - designMode.UI.menu.dragInfo.startX + designMode.UI.menu.positionX) + 'px',
                                         'top': (e.pageY - designMode.UI.menu.dragInfo.startY + designMode.UI.menu.positionY) + 'px'
                                     });
@@ -192,10 +208,12 @@
                             });
                         },
                         addArrowLink: function () {
-                            var $a = $('<a href="#">&#x2715;</a>');
-                            $('menu.refPointer.design ul').append($a);
-                            $a.wrap('<li>');
-                            // TODO click event
+                            var $a = $('<a href="#">&#x2715;</a>'),
+                                $li = $('<li>').text('arrow').append($a);
+                            $('ul', designMode.UI.menu.$menu).append($li);
+                            $li.click(function () {
+                                designMode.UI.activeArrow.select($(this).index());
+                            });
                         }
                     },
                     init: function () {
@@ -209,48 +227,50 @@
                                 });
                                 switch (designMode.UI.dragInfo.pointType) {
                                     case 'start':
-                                        var offset = data.points.layout.fromOffset[designMode.UI.dragInfo.arrowIdx];
+                                        var offset = data.points.layout.fromOffset[designMode.UI.activeArrow.idx];
                                         offset.dx = e.pageX - data.points.start.x;
                                         offset.dy = e.pageY - data.points.start.y; 
                                         break;
                                     case 'mid':
-                                        var midPoints = data.points.mid[designMode.UI.dragInfo.arrowIdx],
-                                            idx = designMode.UI.points.$mid.index(designMode.UI.dragInfo.$point);
+                                        var midPoints = data.points.mid[designMode.UI.activeArrow.idx],
+                                            // subtracting 2 because the first two are the start and end points
+                                            idx = designMode.UI.points[designMode.UI.activeArrow.idx].index(designMode.UI.dragInfo.$point) - 2;
                                         if (idx > -1) {
                                             midPoints[idx].x = e.pageX;
                                             midPoints[idx].y = e.pageY;
                                         }
                                         break;
                                     case 'end':
-                                        var offset = data.points.layout.toOffset[designMode.UI.dragInfo.arrowIdx];
-                                        offset.dx = e.pageX - data.points.end[designMode.UI.dragInfo.arrowIdx].x;
-                                        offset.dy = e.pageY - data.points.end[designMode.UI.dragInfo.arrowIdx].y; 
+                                        var offset = data.points.layout.toOffset[designMode.UI.activeArrow.idx];
+                                        offset.dx = e.pageX - data.points.end[designMode.UI.activeArrow.idx].x;
+                                        offset.dy = e.pageY - data.points.end[designMode.UI.activeArrow.idx].y; 
                                 }
-                                DOM.updateArrow(designMode.UI.dragInfo.arrowIdx);
+                                DOM.updateArrow(designMode.UI.activeArrow.idx);
                             }
                         }).mouseup(function () {
-                            designMode.UI.dragInfo.$point = designMode.UI.dragInfo.pointType = designMode.UI.dragInfo.arrowIdx = null;
+                            designMode.UI.dragInfo.$point = designMode.UI.dragInfo.pointType = null;
                         });
 
                         // insert point anchors to the DOM
-                        this.points.$start = $([]);
-                        this.points.$mid = $([]);
-                        this.points.$end = $([]);
-                        var points = designMode.UI.points;
+                        designMode.UI.points = [];
+                        data.points.end.forEach(function (pnt, index) {
+                            var $startEndPoints = DOM.markers.getDesignModePoint(data.points.start, index, data.points.layout.fromOffset).
+                                                    add(DOM.markers.getDesignModePoint(pnt, index, data.points.layout.toOffset));
+                            designMode.UI.points.push($startEndPoints);
+                            DOM.$svg.append($startEndPoints);
+                        });
                         data.points.mid.forEach(function (pnts, index) {
                             for(var pnt in pnts) {
                                 pnts[pnt] = data.points.getMidPoint(pnts[pnt], index);
-                                points.$mid = points.$mid.add(DOM.markers.getDesignModePoint(pnts[pnt], index));
+                                $pointMid = DOM.markers.getDesignModePoint(pnts[pnt], index);
+                                designMode.UI.points[index] = designMode.UI.points[index].add($pointMid);
                             }
+                            DOM.$svg.append(designMode.UI.points[index].filter(function(i) { return i > 1; })); // skip the first two. They are the start and end points
                         });
                         data.points.getMidPoint = function (relativePnt) {
                             return relativePnt; // in design mode, the mid points are absolute, not relative
                         };
-                        data.points.end.forEach(function (pnt, index) {
-                            points.$start = points.$start.add(DOM.markers.getDesignModePoint(data.points.start, index, data.points.layout.fromOffset));
-                            points.$end = points.$end.add(DOM.markers.getDesignModePoint(pnt, index, data.points.layout.toOffset));
-                        });
-                        DOM.$svg.append(this.points.$start).append(this.points.$mid).append(this.points.$end);
+                        $('ul li:first-child', designMode.UI.menu.$menu).click(); // initializes the active arrow
                     }
                 },
                 init: function () {
@@ -280,7 +300,7 @@
                     cx: pnt.x + (offsetArray === undefined ? 0 : offsetArray[arrowIdx].dx),
                     cy: pnt.y + (offsetArray === undefined ? 0 : offsetArray[arrowIdx].dy),
                     r: maxSize/1.5,
-                    style: 'fill:transparent; stroke:rgba(255,0,0,.3); stroke-width:3'
+                    style: 'fill:transparent; stroke:rgba(255,0,0,.3); stroke-width:' + (arrowIdx === 0 ? designMode.UI.activeArrow.strokeSelected : designMode.UI.activeArrow.strokeUnselected)
                 });
             return $point.mouseover(function () {
                 if (!designMode.UI.dragInfo.$point) {
@@ -291,10 +311,10 @@
                 }
             }).mousedown(function () {
                 var dragInfo = designMode.UI.dragInfo,
-                    dragPoints = designMode.UI.points;
+                    indexPoint = designMode.UI.points[arrowIdx].index($point);
                 dragInfo.$point = $point;
-                dragInfo.pointType = dragPoints.$start.is($point) ? 'start' : (dragPoints.$mid.is($point) ? 'mid' : 'end');
-                dragInfo.arrowIdx = arrowIdx;
+                dragInfo.pointType = indexPoint === 0 ? 'start' : (indexPoint === 1 ? 'end' : 'mid');
+                designMode.UI.activeArrow.select(arrowIdx);
                 $point.css('cursor', 'none');
             }).mouseup(function () {
                 $point.css('cursor', 'move');

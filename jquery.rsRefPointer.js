@@ -110,7 +110,10 @@
                             } else {
                                 data.arrowTypes.push('line');
                             }
-                            data.points.layout.fromOffset.push(fromOffset);
+                            data.points.layout.fromOffset.push({
+                                dx: fromOffset.dx,
+                                dy: fromOffset.dy
+                            });
 
                             // TODO
                             if (data.arrowTypes.length == 2) {
