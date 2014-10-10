@@ -184,7 +184,7 @@
                                 designMode.UI.menu.positionX = pos.left;
                                 designMode.UI.menu.positionY = pos.top;
                             };
-                            $('menu.refPointer.design header').mousedown(function (e) {
+                            $('header', designMode.UI.menu.$menu).mousedown(function (e) {
                                 designMode.UI.menu.dragInfo.dragging = true;
                                 designMode.UI.menu.dragInfo.startX = e.pageX;
                                 designMode.UI.menu.dragInfo.startY = e.pageY;
@@ -199,7 +199,7 @@
                                     });
                                 }
                             }).mouseup(finishMenuDragging).mouseleave(finishMenuDragging);
-                            $('menu.refPointer.design a.disabled').click(function (e) {
+                            $('a.disabled', designMode.UI.menu.$menu).click(function (e) {
                                 e.preventDefault();
                             });
 
@@ -219,7 +219,7 @@
                     init: function () {
                         this.menu.init();
 
-                        DOM.$svg.add($("menu.refPointer.design")).mousemove(function (e) {
+                        DOM.$svg.add(designMode.UI.menu.$menu).mousemove(function (e) {
                             if (designMode.UI.dragInfo.$point) {
                                 designMode.UI.dragInfo.$point.attr({
                                     'cx': e.pageX,
