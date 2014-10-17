@@ -30,7 +30,7 @@
                     // The below data structure is used to compute layout changes, i.e. if the from/to location changes, the arrows should follow these elements.
                     layout: {
                         fromOffset: [],   // Array of offsets {dx, dy}. Each arrow starting point is data.points.start + points.layout.fromOffset[i]
-                        toOffset: [],     // Array of offsets {dx, dy}. Each arrow ending point is data.points.end + points.layout.toOffset[i]
+                        toOffset: [],     // Array of offsets {dx, dy}. Each arrow ending point is data.points.end[i] + points.layout.toOffset[i]
                         topLeft: [],      // Array of {x, y}
                         size: []          // Array of {width, height}
                     },
@@ -315,31 +315,30 @@
                         return null;
                     },
                     getMarkerShape: function (type, optsMarker) {
-                        var style = 'fill:' + opts.arrows.strokeColor +
-                            (data.outline ? '; stroke:' + opts.arrows.borderColor + '; stroke-width:' + opts.arrows.borderWidth/2 : '');
+                        var style = {
+                            fill: opts.arrows.strokeColor
+                        };
+                        if (data.outline) {
+                            style.stroke = opts.arrows.borderColor;
+                            style['stroke-width'] = opts.arrows.borderWidth/2;
+                        }
                         switch (type) {
                             case 'circle':
-                                return DOM.createSvgDom('circle', {
-                                    cx: optsMarker.size/2,
-                                    cy: optsMarker.size/2,
-                                    r: optsMarker.size/2 - 1,
-                                    style: style
-                                });
+                                style.cx = optsMarker.size/2;
+                                style.cy = optsMarker.size/2;
+                                style.r = optsMarker.size/2 - 1;
+                                return DOM.createSvgDom('circle', style);
 
                             case 'square':
-                                return DOM.createSvgDom('rect', {
-                                    x: 0,
-                                    y: 0,
-                                    width: optsMarker.size,
-                                    height: optsMarker.size,
-                                    style: style
-                                });
+                                style.x = 0;
+                                style.y = 0;
+                                style.width = optsMarker.size;
+                                style.height = optsMarker.size;
+                                return DOM.createSvgDom('rect', style);
 
                             case 'triangle':
-                                return DOM.createSvgDom('path', {
-                                    d: 'M0,0 L0,' + (optsMarker.size/1.25) + ' L' + optsMarker.size + ',' + (optsMarker.size/2.5) + ' z',
-                                    style: style
-                                });
+                                style.d = 'M0,0 L0,' + (optsMarker.size/1.25) + ' L' + optsMarker.size + ',' + (optsMarker.size/2.5) + ' z';
+                                return DOM.createSvgDom('path', style);
                         }
                         return null;
                     },
@@ -389,8 +388,14 @@
                             };
                     }
                 },
+                getArrow: function (index) {
+                    if (data.outline) {
+                        return this.arrows[index].add(this.arrows[index].prev());
+                    }
+                    return this.arrows[index];
+                },
                 updateArrow: function (index) {
-                    this.arrows[index].add(data.outline ? this.arrows[index].prev() : null).attr(this.getShapeAttrs(index));
+                    this.getArrow(index).attr(this.getShapeAttrs(index));
                 }
             },
             events = {

@@ -9,7 +9,7 @@
         $(document).ready(function () {
           $("a").eq(0).rsRefPointer();
 
-          $("button").click(function () {
+          $("#clean").click(function () {
             $("a").rsRefPointer('destroy');
           });
         });
@@ -31,7 +31,7 @@
   <body>
     <div id="p"></div>
     <span contenteditable>Type something here to change the target location...</span><span class="target">first target</span>
-    <button>test bbbbbcccccccccccccccbbbb click</button>
+    <button id="clean">test bbbbbcccccccccccccccbbbb click</button>
     This is a diagram with <a tabindex="0" href="#">2 references.</a><br>
     <span contenteditable>Type something here to change the target location...</span><span class="target">second target</span>
     <br><br><br><br><br>

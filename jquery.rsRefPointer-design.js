@@ -19,6 +19,10 @@
     }
 
     $.fn.rsRefPointer = function (options) {
+        if (typeof options === "string") {
+            alert('Not allowed in design-time mode.');
+            return;
+        }
         // Seems that this goes against all plug-in good practices, but in design mode, makes no sense at all to accept more than one element.
         // Design mode has a GUI. How could I display GUI for several instances simultaneously? I could implement some kind of tab control, but let's keep it simple.
         if (this.length > 1) {
@@ -29,7 +33,7 @@
                   '   $("a").eq(0).rsRefPointer();\n' +
                   'then edit previous line and re-run for the second instance:\n' +
                   '   $("a").eq(1).rsRefPointer();\n\n' +
-                  'This restriction only applies in design-time mode.\nAt run-time mode, you can run multiple instances at once. ');
+                  'This restriction only applies in design-time mode.\nAt run-time mode, you can run multiple instances at once.');
             return;
         }
 
@@ -58,10 +62,10 @@
                         select: function (newIndex) {
                             if (newIndex !== this.idx) {
                                 if (this.idx !== null) {
-                                    designMode.UI.points[this.idx].css('stroke-width', this.strokeUnselected);
+                                    designMode.UI.$points[this.idx].css('stroke-width', this.strokeUnselected);
                                 }
-                                DOM.arrows[newIndex].add(data.outline ? DOM.arrows[newIndex].prev() : null).detach().appendTo(DOM.$svg);
-                                designMode.UI.points[newIndex].css('stroke-width', this.strokeSelected).detach().appendTo(DOM.$svg);
+                                DOM.getArrow(newIndex).detach().appendTo(DOM.$svg);
+                                designMode.UI.$points[newIndex].css('stroke-width', this.strokeSelected).detach().appendTo(DOM.$svg);
                                 this.idx = newIndex;
                                 $('ul li', designMode.UI.menu.$menu).removeClass('selected').eq(this.idx).addClass('selected');
                             }
@@ -71,7 +75,7 @@
                         $point: null,       // Represents the point currently being dragged.
                         pointType: null     // Either 'start', 'mid' or 'end'
                     },
-                    points: null, // Array of jQuery set. Each jQuery object contains the points (start, end, mid) that belong to each arrow and their length is >= 2
+                    $points: null, // Array of jQuery set. Each jQuery object contains the points (start, end, mid) that belong to each arrow and their length is >= 2
                     menu: {
                         $menu: null,
                         positionX: 0,
@@ -82,27 +86,93 @@
                             startY: 0
                         },
                         init: function () {
-                            this.$menu = $('<menu class="refPointer design">' +
+                            this.$menu = $(
+                                        '<menu class="refPointer design">' +
                                             '<header>Draggable Menu</header>' +
                                             '<hr>' +
                                             '<a href="#">New Line</a>' +
                                             '<a href="#">New Bezier Curve</a>' +
-                                            '<ul></ul>' +
                                             '<a href="#" class="disabled">Add Middle Point</a>' +
                                             '<aside>Double click on point to delete it</aside>' +
+                                            '<ul></ul>' +
+                                            '<a href="#">Arrow Properties</a>' +
                                             '<hr>' +
                                             '<a href="#">Generate Code to Console</a>' +
-                                          '</menu>');
+                                        '</menu>'+
+                                        '<div>' +
+                                            '<div>Arrow Properties<a href="#" title="Discard changes and close popup">&#x2715;</a>' +
+                                                '<hr><label>Preview</label><label>Markers</label><label>Stroke</label><label>Outline</label>' +
+                                                '<input type="color" value="#000000"><input type="color" value="#000000"><input type="color" value="#ffff00"><input type="range" min="0" max="4" value="0" step="1" name="power" list="powers">' +
+                                                '<svg width="150px" height="100px" xmlns="http://www.w3.org/2000/svg" version="1.1">' +
+                                                    '<defs>' +
+                                                        '<marker id="rsRefPMarkerPointer" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
+                                                            '<path d="M0,0 L0,6 L8,3 z" fill="white" stroke="black"></path>' +
+                                                        '</marker>' +
+
+                                                        '<marker id="rsRefPMarkerPointer2" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
+                                                            '<path d="M2,3 L0,6 L8,3 L0,0 z" fill="black"></path>' +
+                                                        '</marker>' +
+
+                                                        '<marker id="rsRefPMarkerCircle" markerWidth="5" markerHeight="5" refX="3" refY="3" orient="auto">' +
+                                                            '<circle cx="3" cy="3" r="2" fill="black"></circle>' +
+                                                        '</marker>' +
+                                                        '<marker id="rsRefPMarkerCircle2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">' +
+                                                            '<circle cx="3.5" cy="3.5" r="3" fill="black"></circle>' +
+                                                        '</marker>' +
+                                                        '<marker id="rsRefPMarkerCircle3" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">' +
+                                                            '<circle cx="4.5" cy="4.5" r="4" fill="black"></circle>' +
+                                                        '</marker>' +
+
+                                                        '<marker id="rsRefPMarkerRect" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">' +
+                                                            '<rect x="0" y="0" width="4" height="4" rx="1" ry="1" fill="black"></rect>' +
+                                                        '</marker>' +
+                                                    '</defs>' +
+                                                    '<path d="M18,16.5 L74,16.5 L128,16.5" stroke="black" stroke-width="1" marker-start="url(#rsRefPMarkerPointer)" marker-mid="url(#rsRefPMarkerCircle2)" marker-end="url(#rsRefPMarkerCircle2)"></path>' +
+                                                    '<text x="7" y="36">none</text>' +
+                                                    '<text x="68" y="36">none</text>' +
+                                                    '<text x="130" y="36">none</text>' +
+                                                    // pointer
+                                                    '<path d="M7,45 L7,57 L23,51 z"></path>' +
+                                                    '<path d="M68,45 L68,57 L84,51 z"></path>' +
+                                                    '<path d="M130,45 L130,57 L146,51 z"></path>' +
+                                                    // pointer2
+                                                    '<path d="M11,69 L7,75 L23,69 L7,63 z"></path>' +
+                                                    '<path d="M72,69 L68,75 L84,69 L68,63 z"></path>' +
+                                                    '<path d="M134,69 L130,75 L146,69 L130,63 z"></path>' +
+                                                    // сircle
+                                                    '<circle cx="13" cy="87" r="6"></circle>' +
+                                                    '<circle cx="74" cy="87" r="6"></circle>' +
+                                                    '<circle cx="136" cy="87" r="6"></circle>' +
+                                                    // rect
+                                                    '<rect x="6" y="110" width="12" height="12" rx="1" ry="1"></rect>' +
+                                                    '<rect x="68" y="110" width="12" height="12" rx="1" ry="1"></rect>' +
+                                                    '<rect x="130" y="110" width="12" height="12" rx="1" ry="1"></rect>' +
+
+                                                    '<g>' +
+                                                        '<text x="7" y="136">Size:</text>' +
+                                                        '<text x="7" y="146">Fill:</text>' +
+                                                        '<text x="7" y="156">Size:</text>' +
+                                                        '<text x="7" y="166">Color:</text>' +
+                                                        '<text x="7" y="176">Size:</text>' +
+                                                        '<text x="7" y="186">Color:</text>' +
+                                                    '</g>' +
+                                                '</svg>' +
+                                                '<button>Apply Changes</button>' +
+                                            '</div>' +
+                                        '</div>');
                             $('head').append(
                                 '<style> ' + 
+                                    'menu.refPointer.design,' +
+                                    'menu.refPointer.design + div > div {' +
+                                        'box-shadow: 0 0 10px black;' +
+                                        'border-radius: 20px/15px;' +
+                                        'position: absolute;' +
+                                    '}' +
                                     'menu.refPointer.design {' +
                                         'background-color: #ddd;' +
-                                        'box-shadow: 0 0 10px black;' +
-                                        'border-radius: 3%/10%;' +
                                         'font-size: 12px;' +
                                         'font-family: arial;' +
                                         'display: inline-block;' +
-                                        'position: absolute;' +
                                         'left: 5px;' +
                                         'top: 50px;' +
                                         'padding: 5px;' +
@@ -113,12 +183,14 @@
                                     '}' +
                                     'menu.refPointer.design header {' +
                                         'cursor: move;' +
-                                        'padding: 3px 5px 0;' +
+                                        'padding: 3px 5px 6px;' +
+                                        'text-align: center;' +
                                     '}' +
                                     'menu.refPointer.design aside {' +
                                         'font-size: 9px;' +
                                         'color: grey;' +
                                         'padding-left: 5px;' +
+                                        'margin-bottom: 10px;' +
                                     '}' +
                                     'menu.refPointer.design > a {' +
                                         'display: block;' +
@@ -126,6 +198,9 @@
                                         'text-decoration: none;' +
                                         'line-height: 12px;' +
                                         'border-radius: 2px;' +
+                                    '}' +
+                                    'menu.refPointer.design > a:first-of-type {' +
+                                        'margin-top: 13px;' +
                                     '}' +
                                     'menu.refPointer.design > a:hover {' +
                                         'background-color: grey;' +
@@ -144,22 +219,25 @@
                                         'padding: 3px;' +
                                         'background-color: #eee;' +
                                         'border-radius: 2px;' +
-                                        'border: 1px #eee solid;' +
+                                        'cursor: pointer;' +
                                     '}' +
                                     'menu.refPointer.design ul li.selected {' +
-                                        'border-color: red;' +
+                                        'background-color: #f7abab;' +
                                     '}' +
                                     'menu.refPointer.design ul li > a {' +
                                         'display: none;' +
                                         'float: right;' +
                                         'border-radius: 2px;' +
-                                        'color: grey;' +
+                                        'color: black;' +
                                         'text-decoration: none;' +
                                         'width: 16px;' +
                                         'text-align: center;' +
                                     '}' +
                                     'menu.refPointer.design ul li:hover {' +
                                         'background-color: white;' +
+                                    '}' +
+                                    'menu.refPointer.design ul li.selected:hover {' +
+                                        'background-color: #ed9494;' +
                                     '}' +
                                     'menu.refPointer.design ul li:hover > a {' +
                                         'display: block;' +
@@ -174,6 +252,58 @@
                                     'menu.refPointer.design > a.disabled:hover {' +
                                         'background-color: inherit;' +
                                         'cursor: default;' +
+                                    '}' +
+                                    'menu.refPointer.design + div {' +
+                                        'position: absolute;' +
+                                        'top: 0;' +
+                                        'right: 0;' +
+                                        'bottom: 0;' +
+                                        'left: 0;' +
+                                        'background-color: rgba(0, 0, 0, .5);' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div {' +
+                                        'position: absolute;' +
+                                        'left: 50%;' +
+                                        'top: 50%;' +
+                                        'margin-left: -90px;' +
+                                        'margin-top: -110px;' +
+                                        'font-family: arial;' +
+                                        'font-size: 12px;' +
+                                        'padding: 10px;' +
+                                        'background-color: #eee;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div a:first-of-type {' +
+                                        'position: absolute;' +
+                                        'right: 10px;' +
+                                        'font-size: 15px;' +
+                                        'text-decoration: none;' +
+                                        'color: grey;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div a:first-of-type:hover {' +
+                                        'color: red;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div label {' +
+                                        'font-size: 8px;' +
+                                        'text-shadow: 1px 1px white;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > svg {' +
+                                        'display: block;' +
+                                        'fill: grey;' +
+                                        'font-size: 9px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div svg > text:hover,' +
+                                    'menu.refPointer.design + div svg > path:hover,' +
+                                    'menu.refPointer.design + div svg > circle:hover,' +
+                                    'menu.refPointer.design + div svg > rect:hover {' +
+                                        'cursor: pointer;' +
+                                        'fill: black;' +
+                                    '}' +
+                                    'menu.refPointer.design + div svg > g > text {' +
+                                        'font-size: 11px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div label,' +
+                                    'menu.refPointer.design + div input {' +
+                                        'position: absolute;' +
                                     '}' +
                                 '</style>'
                             );
@@ -208,13 +338,47 @@
                             });
                         },
                         addArrowLink: function () {
-                            var $a = $('<a href="#">&#x2715;</a>'),
+                            var $a = $('<a href="#" title="Delete arrow">&#x2715;</a>'),
                                 $li = $('<li>').text('arrow').append($a);
                             $('ul', designMode.UI.menu.$menu).append($li);
-                            $li.click(function () {
+                            $li.click(function (e) {
+                                e.preventDefault();
                                 designMode.UI.activeArrow.select($(this).index());
                             });
+                            $a.click(function (e) {
+                                e.preventDefault();
+                                designMode.UI.deleteArrow($(this).parent().index());
+                            });
                         }
+                    },
+                    deleteArrow: function (index) {
+                        if (designMode.UI.activeArrow.idx === index) {
+                            if (index === 0) {
+                                if (data.arrowTypes.length > 1) {
+                                    designMode.UI.activeArrow.select(1); // will run the if statement below
+                                } else {
+                                    designMode.UI.activeArrow.idx = null;
+                                }
+                            } else {
+                                designMode.UI.activeArrow.select(index - 1)
+                            }
+                        }
+                        if (designMode.UI.activeArrow.idx > index) {
+                            designMode.UI.activeArrow.idx--;
+                        }
+                        designMode.UI.$points[index].remove();
+                        designMode.UI.$points.splice(index, 1);
+
+                        data.arrowTypes.splice(index, 1);
+                        data.points.mid.splice(index, 1);
+                        data.points.end.splice(index, 1);
+                        data.points.layout.fromOffset.splice(index, 1);
+                        data.points.layout.toOffset.splice(index, 1);
+                        data.points.layout.topLeft.splice(index, 1);
+                        data.points.layout.size.splice(index, 1);
+                        DOM.getArrow(index).remove();
+                        DOM.arrows.splice(index, 1);
+                        $('ul li', designMode.UI.menu.$menu).eq(index).remove();
                     },
                     init: function () {
                         this.menu.init();
@@ -234,7 +398,7 @@
                                     case 'mid':
                                         var midPoints = data.points.mid[designMode.UI.activeArrow.idx],
                                             // subtracting 2 because the first two are the start and end points
-                                            idx = designMode.UI.points[designMode.UI.activeArrow.idx].index(designMode.UI.dragInfo.$point) - 2;
+                                            idx = designMode.UI.$points[designMode.UI.activeArrow.idx].index(designMode.UI.dragInfo.$point) - 2;
                                         if (idx > -1) {
                                             midPoints[idx].x = e.pageX;
                                             midPoints[idx].y = e.pageY;
@@ -252,20 +416,20 @@
                         });
 
                         // insert point anchors to the DOM
-                        designMode.UI.points = [];
+                        designMode.UI.$points = [];
                         data.points.end.forEach(function (pnt, index) {
                             var $startEndPoints = DOM.markers.getDesignModePoint(data.points.start, index, data.points.layout.fromOffset).
                                                     add(DOM.markers.getDesignModePoint(pnt, index, data.points.layout.toOffset));
-                            designMode.UI.points.push($startEndPoints);
+                            designMode.UI.$points.push($startEndPoints);
                             DOM.$svg.append($startEndPoints);
                         });
                         data.points.mid.forEach(function (pnts, index) {
                             for(var pnt in pnts) {
                                 pnts[pnt] = data.points.getMidPoint(pnts[pnt], index);
                                 $pointMid = DOM.markers.getDesignModePoint(pnts[pnt], index);
-                                designMode.UI.points[index] = designMode.UI.points[index].add($pointMid);
+                                designMode.UI.$points[index] = designMode.UI.$points[index].add($pointMid);
                             }
-                            DOM.$svg.append(designMode.UI.points[index].filter(function(i) { return i > 1; })); // skip the first two. They are the start and end points
+                            DOM.$svg.append(designMode.UI.$points[index].filter(function(i) { return i > 1; })); // skip the first two. They are the start and end points
                         });
                         data.points.getMidPoint = function (relativePnt) {
                             return relativePnt; // in design mode, the mid points are absolute, not relative
@@ -311,7 +475,7 @@
                 }
             }).mousedown(function () {
                 var dragInfo = designMode.UI.dragInfo,
-                    indexPoint = designMode.UI.points[arrowIdx].index($point);
+                    indexPoint = designMode.UI.$points[arrowIdx].index($point);
                 dragInfo.$point = $point;
                 dragInfo.pointType = indexPoint === 0 ? 'start' : (indexPoint === 1 ? 'end' : 'mid');
                 designMode.UI.activeArrow.select(arrowIdx);
