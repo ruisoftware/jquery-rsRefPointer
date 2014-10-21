@@ -87,79 +87,84 @@
                         },
                         init: function () {
                             this.$menu = $(
-                                        '<menu class="refPointer design">' +
-                                            '<header>Draggable Menu</header>' +
-                                            '<hr>' +
-                                            '<a href="#">New Line</a>' +
-                                            '<a href="#">New Bezier Curve</a>' +
-                                            '<a href="#" class="disabled">Add Middle Point</a>' +
-                                            '<aside>Double click on point to delete it</aside>' +
-                                            '<ul></ul>' +
-                                            '<a href="#">Arrow Properties</a>' +
-                                            '<hr>' +
-                                            '<a href="#">Generate Code to Console</a>' +
-                                        '</menu>'+
-                                        '<div>' +
-                                            '<div>Arrow Properties<a href="#" title="Discard changes and close popup">&#x2715;</a>' +
-                                                '<hr><label>Preview</label><label>Markers</label><label>Stroke</label><label>Outline</label>' +
-                                                '<input type="color" value="#000000"><input type="color" value="#000000"><input type="color" value="#ffff00"><input type="range" min="0" max="4" value="0" step="1" name="power" list="powers">' +
-                                                '<svg width="150px" height="100px" xmlns="http://www.w3.org/2000/svg" version="1.1">' +
-                                                    '<defs>' +
-                                                        '<marker id="rsRefPMarkerPointer" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
-                                                            '<path d="M0,0 L0,6 L8,3 z" fill="white" stroke="black"></path>' +
-                                                        '</marker>' +
+                                '<menu class="refPointer design">' +
+                                    '<header>Draggable Menu</header>' +
+                                    '<hr>' +
+                                    '<a href="#">New Line</a>' +
+                                    '<a href="#">New Bezier Curve</a>' +
+                                    '<a href="#" class="disabled">Add Middle Point</a>' +
+                                    '<aside>Double click on point to delete it</aside>' +
+                                    '<ul></ul>' +
+                                    '<a href="#">Arrow Properties</a>' +
+                                    '<hr>' +
+                                    '<a href="#">Generate Code to Console</a>' +
+                                '</menu>'
+/*
+                                +
 
-                                                        '<marker id="rsRefPMarkerPointer2" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
-                                                            '<path d="M2,3 L0,6 L8,3 L0,0 z" fill="black"></path>' +
-                                                        '</marker>' +
+                                '<div>' +
+                                    '<div>Arrow Properties<a href="#" title="Discard changes and close popup">&#x2715;</a>' +
+                                        '<hr><label>Preview</label><label>Markers</label><label>Stroke</label><label>Outline</label>' +
+                                        '<input type="color" value="#000000"><input type="color" value="#000000"><input type="color" value="#ffff00"><input type="range" min="0" max="4" value="0" step="1" name="power" list="powers">' +
+                                        '<svg width="150px" height="100px" xmlns="http://www.w3.org/2000/svg" version="1.1">' +
+                                            '<defs>' +
+                                                '<marker id="rsRefPMarkerPointer" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
+                                                    '<path d="M0,0 L0,6 L8,3 z" fill="white" stroke="black"></path>' +
+                                                '</marker>' +
 
-                                                        '<marker id="rsRefPMarkerCircle" markerWidth="5" markerHeight="5" refX="3" refY="3" orient="auto">' +
-                                                            '<circle cx="3" cy="3" r="2" fill="black"></circle>' +
-                                                        '</marker>' +
-                                                        '<marker id="rsRefPMarkerCircle2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">' +
-                                                            '<circle cx="3.5" cy="3.5" r="3" fill="black"></circle>' +
-                                                        '</marker>' +
-                                                        '<marker id="rsRefPMarkerCircle3" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">' +
-                                                            '<circle cx="4.5" cy="4.5" r="4" fill="black"></circle>' +
-                                                        '</marker>' +
+                                                '<marker id="rsRefPMarkerPointer2" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
+                                                    '<path d="M2,3 L0,6 L8,3 L0,0 z" fill="black"></path>' +
+                                                '</marker>' +
 
-                                                        '<marker id="rsRefPMarkerRect" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">' +
-                                                            '<rect x="0" y="0" width="4" height="4" rx="1" ry="1" fill="black"></rect>' +
-                                                        '</marker>' +
-                                                    '</defs>' +
-                                                    '<path d="M18,16.5 L74,16.5 L128,16.5" stroke="black" stroke-width="1" marker-start="url(#rsRefPMarkerPointer)" marker-mid="url(#rsRefPMarkerCircle2)" marker-end="url(#rsRefPMarkerCircle2)"></path>' +
-                                                    '<text x="7" y="36">none</text>' +
-                                                    '<text x="68" y="36">none</text>' +
-                                                    '<text x="130" y="36">none</text>' +
-                                                    // pointer
-                                                    '<path d="M7,45 L7,57 L23,51 z"></path>' +
-                                                    '<path d="M68,45 L68,57 L84,51 z"></path>' +
-                                                    '<path d="M130,45 L130,57 L146,51 z"></path>' +
-                                                    // pointer2
-                                                    '<path d="M11,69 L7,75 L23,69 L7,63 z"></path>' +
-                                                    '<path d="M72,69 L68,75 L84,69 L68,63 z"></path>' +
-                                                    '<path d="M134,69 L130,75 L146,69 L130,63 z"></path>' +
-                                                    // сircle
-                                                    '<circle cx="13" cy="87" r="6"></circle>' +
-                                                    '<circle cx="74" cy="87" r="6"></circle>' +
-                                                    '<circle cx="136" cy="87" r="6"></circle>' +
-                                                    // rect
-                                                    '<rect x="6" y="110" width="12" height="12" rx="1" ry="1"></rect>' +
-                                                    '<rect x="68" y="110" width="12" height="12" rx="1" ry="1"></rect>' +
-                                                    '<rect x="130" y="110" width="12" height="12" rx="1" ry="1"></rect>' +
+                                                '<marker id="rsRefPMarkerCircle" markerWidth="5" markerHeight="5" refX="3" refY="3" orient="auto">' +
+                                                    '<circle cx="3" cy="3" r="2" fill="black"></circle>' +
+                                                '</marker>' +
+                                                '<marker id="rsRefPMarkerCircle2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">' +
+                                                    '<circle cx="3.5" cy="3.5" r="3" fill="black"></circle>' +
+                                                '</marker>' +
+                                                '<marker id="rsRefPMarkerCircle3" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">' +
+                                                    '<circle cx="4.5" cy="4.5" r="4" fill="black"></circle>' +
+                                                '</marker>' +
 
-                                                    '<g>' +
-                                                        '<text x="7" y="136">Size:</text>' +
-                                                        '<text x="7" y="146">Fill:</text>' +
-                                                        '<text x="7" y="156">Size:</text>' +
-                                                        '<text x="7" y="166">Color:</text>' +
-                                                        '<text x="7" y="176">Size:</text>' +
-                                                        '<text x="7" y="186">Color:</text>' +
-                                                    '</g>' +
-                                                '</svg>' +
-                                                '<button>Apply Changes</button>' +
-                                            '</div>' +
-                                        '</div>');
+                                                '<marker id="rsRefPMarkerRect" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">' +
+                                                    '<rect x="0" y="0" width="4" height="4" rx="1" ry="1" fill="black"></rect>' +
+                                                '</marker>' +
+                                            '</defs>' +
+                                            '<path d="M18,16.5 L74,16.5 L128,16.5" stroke="black" stroke-width="1" marker-start="url(#rsRefPMarkerPointer)" marker-mid="url(#rsRefPMarkerCircle2)" marker-end="url(#rsRefPMarkerCircle2)"></path>' +
+                                            '<text x="7" y="36">none</text>' +
+                                            '<text x="68" y="36">none</text>' +
+                                            '<text x="130" y="36">none</text>' +
+                                            // pointer
+                                            '<path d="M7,45 L7,57 L23,51 z"></path>' +
+                                            '<path d="M68,45 L68,57 L84,51 z"></path>' +
+                                            '<path d="M130,45 L130,57 L146,51 z"></path>' +
+                                            // pointer2
+                                            '<path d="M11,69 L7,75 L23,69 L7,63 z"></path>' +
+                                            '<path d="M72,69 L68,75 L84,69 L68,63 z"></path>' +
+                                            '<path d="M134,69 L130,75 L146,69 L130,63 z"></path>' +
+                                            // сircle
+                                            '<circle cx="13" cy="87" r="6"></circle>' +
+                                            '<circle cx="74" cy="87" r="6"></circle>' +
+                                            '<circle cx="136" cy="87" r="6"></circle>' +
+                                            // rect
+                                            '<rect x="6" y="110" width="12" height="12" rx="1" ry="1"></rect>' +
+                                            '<rect x="68" y="110" width="12" height="12" rx="1" ry="1"></rect>' +
+                                            '<rect x="130" y="110" width="12" height="12" rx="1" ry="1"></rect>' +
+
+                                            '<g>' +
+                                                '<text x="7" y="136">Size:</text>' +
+                                                '<text x="7" y="146">Fill:</text>' +
+                                                '<text x="7" y="156">Size:</text>' +
+                                                '<text x="7" y="166">Color:</text>' +
+                                                '<text x="7" y="176">Size:</text>' +
+                                                '<text x="7" y="186">Color:</text>' +
+                                            '</g>' +
+                                        '</svg>' +
+                                        '<button>Apply Changes</button>' +
+                                    '</div>' +
+                                '</div>'
+*/
+                            );
                             $('head').append(
                                 '<style> ' + 
                                     'menu.refPointer.design,' +
@@ -378,6 +383,10 @@
                         data.points.layout.size.splice(index, 1);
                         DOM.getArrow(index).remove();
                         DOM.arrows.splice(index, 1);
+                        if (opts.shadow.visible) {
+                            DOM.arrowsShadow[index].remove();
+                            DOM.arrowsShadow.splice(index, 1);
+                        }
                         $('ul li', designMode.UI.menu.$menu).eq(index).remove();
                     },
                     init: function () {
@@ -459,11 +468,11 @@
                 }
             };
         DOM.markers.getDesignModePoint = function (pnt, arrowIdx, offsetArray) {
-            var maxSize = Math.max(opts.arrows.startMarker.size, Math.max(opts.arrows.midMarker.size, opts.arrows.endMarker.size)),
+            var maxSize = Math.max(data.shapeRelSize.circle, Math.max(data.shapeRelSize.square, data.shapeRelSize.pointer)),
                 $point = DOM.createSvgDom('circle', {
                     cx: pnt.x + (offsetArray === undefined ? 0 : offsetArray[arrowIdx].dx),
                     cy: pnt.y + (offsetArray === undefined ? 0 : offsetArray[arrowIdx].dy),
-                    r: maxSize/1.5,
+                    r: ((opts.marker.size - 1)*0.25 + 1)*maxSize/1.5,
                     style: 'fill:transparent; stroke:rgba(255,0,0,.3); stroke-width:' + (arrowIdx === 0 ? designMode.UI.activeArrow.strokeSelected : designMode.UI.activeArrow.strokeUnselected)
                 });
             return $point.mouseover(function () {

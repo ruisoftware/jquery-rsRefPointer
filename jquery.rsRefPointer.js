@@ -17,6 +17,11 @@
                 arrowTypes: [],    // Specifies the type of each arrow: 'line', 'polyline' and 'path' (for bezier arrows)
                 outline: false,    // Whether each row has an outline border
                 $targets: null,
+                shapeRelSize: {
+                    circle: 6.5,
+                    square: 6.5,
+                    pointer: 8
+                },
                 svgPos: {},
                 points: {
                     start: null,   // Starting point for all arrows. Each row starts from a point that is points.start + points.layout.fromOffset.
@@ -170,7 +175,6 @@
                 },
                 getBoundsRect: opts.overrideGetBoundsRect || function () {
                     var bounds = {},
-                        maxOffset = Math.max(opts.arrows.startMarker.size, Math.max(opts.arrows.midMarker.size, opts.arrows.endMarker.size)),
                         setBounds = function (pnt, index, offsetArray) {
                             var x = pnt.x + (offsetArray === undefined ? 0 : offsetArray[index].dx),
                                 y = pnt.y + (offsetArray === undefined ? 0 : offsetArray[index].dy);
@@ -179,7 +183,8 @@
                             bounds.top = Math.min(bounds.top === undefined ? y : bounds.top, y);
                             bounds.bottom = Math.max(bounds.bottom === undefined ? y : bounds.bottom, y);
                             bounds.right = Math.max(bounds.right === undefined ? x : bounds.right, x);
-                        };
+                        },
+                        maxSize = Math.max(data.shapeRelSize.circle, Math.max(data.shapeRelSize.square, data.shapeRelSize.pointer));
                     this.points.mid.forEach(function (pnts, index) {
                         for(var pnt in pnts) {
                             setBounds(data.points.getMidPoint(pnts[pnt], index));
@@ -189,26 +194,27 @@
                         setBounds(data.points.start, index, data.points.layout.fromOffset);
                         setBounds(pnt, index, data.points.layout.toOffset);
                     });
-                    bounds.top -= maxOffset;
-                    bounds.left -= maxOffset;
-                    bounds.right += maxOffset;
-                    bounds.bottom += maxOffset;
+                    bounds.top -= opts.marker.size*maxSize;
+                    bounds.left -= opts.marker.size*maxSize;
+                    bounds.right += opts.marker.size*maxSize;
+                    bounds.bottom += opts.marker.size*maxSize;
                     return bounds;
                 },
                 init: function () {
                     this.points.init();
-                    this.outline = opts.arrows.borderWidth && opts.arrows.borderColor !== 'transparent';
+                    this.outline = opts.outline.width && opts.outline.color !== 'transparent';
                     var bounds = this.getBoundsRect(),
                         css = {
                             position: 'absolute',
                             left: bounds.left + 'px',
                             top: bounds.top + 'px',
-                            'pointer-events': 'none',
+                            'pointer-events': 'none'
 
 
                             // for debuging purposes only
-                            'background-color': 'rgba(100,0,0,.1)'
-                        };
+                            ,'background-color': 'rgba(100,0,0,.1)'
+                        },
+                        $lastShadow = null;
                     data.svgPos.x = bounds.left;
                     data.svgPos.y = bounds.top;
                     DOM.$svg = DOM.createSvgDom('svg', {
@@ -222,23 +228,51 @@
                     DOM.$svg.append(DOM.markers.init());
 
                     this.points.end.forEach(function (e, index) {
-                        var attrs = DOM.getShapeAttrs(index), $arrow;
+                        var attrs = DOM.getShapeAttrs(index),
+                            attrsShade = DOM.getShapeAttrs(index, {
+                                dx: opts.shadow.offsetX,
+                                dy: opts.shadow.offsetY
+                            }),
+                            $arrow;
+
                         switch (data.arrowTypes[index]) {
                             case 'polyline':
                                 attrs.fill = 'none';
                                 attrs['stroke-linejoin'] = 'round';
+                                attrsShade.fill = 'none';
+                                attrsShade['stroke-linejoin'] = 'round';
                                 // yes, no break here
                             case 'line':
                                 attrs['stroke-linecap'] = 'round';
+                                attrsShade['stroke-linecap'] = 'round';
                                 break;
                         }
+
+                        if (opts.shadow.visible) {
+                            attrsShade.stroke = opts.shadow.color;
+                            attrsShade.filter = 'url(#' + DOM.markers.ids.filter.shadow + ')';
+                            attrsShade['stroke-width'] = opts.stroke.width;
+                            ['Start', 'Mid', 'End'].forEach(function (e) { 
+                                if (DOM.markers.ids.filter[e]) {
+                                    attrsShade['marker-' + e.toLowerCase()] = 'url(#' + DOM.markers.ids.filter[e] + ')';
+                                }
+                            });
+                            if ($lastShadow === null) {
+                                $lastShadow = DOM.createSvgDom(data.arrowTypes[index], attrsShade).appendTo(DOM.$svg);
+                            } else {
+                                $lastShadow = DOM.createSvgDom(data.arrowTypes[index], attrsShade).insertAfter($lastShadow);
+                            }
+                            DOM.arrowsShadow.push($lastShadow);
+                        }
+
                         if (data.outline) {
-                            attrs.stroke = opts.arrows.borderColor;
-                            attrs['stroke-width'] = opts.arrows.borderWidth*2 + opts.arrows.strokeWidth;
+                            attrs.stroke = opts.outline.color;
+                            attrs['stroke-width'] = opts.outline.width*2 + opts.stroke.width;
                             DOM.$svg.append(DOM.createSvgDom(data.arrowTypes[index], attrs));
                         }
-                        attrs.stroke = opts.arrows.strokeColor;
-                        attrs['stroke-width'] = opts.arrows.strokeWidth;
+
+                        attrs.stroke = opts.stroke.color;
+                        attrs['stroke-width'] = opts.stroke.width;
                         ['start', 'mid', 'end'].forEach(function (e) { 
                             if (DOM.markers.ids[e]) {
                                 attrs['marker-' + e] = 'url(#' + DOM.markers.ids[e] + ')';
@@ -256,6 +290,7 @@
             DOM = {
                 $svg: null,
                 arrows: [],
+                arrowsShadow: [],
                 createSvgDom: function (tag, attrs) {
                     var el = document.createElementNS(data.ns, tag);
                     for (var k in attrs)
@@ -267,83 +302,90 @@
                     ids: {
                         start: null,
                         mid: null,
-                        end: null
+                        end: null,
+                        filter: {
+                            shadow: null,
+                            Start: null,
+                            Mid: null,
+                            End: null
+                        }
                     },
-                    getMarker: function (type, id) {
+                    getMarker: function (type, id, getIdsCallback, shade) {
                         var $marker = null,
+                            ids = getIdsCallback(),
                             getNewId = function () {
-                                return DOM.markers.ids[id] = 'refP' + $('svg.' + data.svgClass).length + id.charAt(0) + (+ new Date());
+                                return ids[id] = 'refP' + $('svg.' + data.svgClass).length + id.charAt(0) + (+ new Date());
                             },
-                            optsMarker = opts.arrows[id + 'Marker'];
-                        if (optsMarker) {
-                            switch (type) {
-                                case 'circle':
-                                    this.ids[id] = getNewId();
-                                    $marker = DOM.createSvgDom('marker', {
-                                        id: this.ids[id],
-                                        markerWidth: optsMarker.size,
-                                        markerHeight: optsMarker.size,
-                                        refX: Math.round(optsMarker.size/2),
-                                        refY: Math.round(optsMarker.size/2)
-                                    });
-                                    break;
-                                case 'square':
-                                    this.ids[id] = getNewId();
-                                    $marker = DOM.createSvgDom('marker', {
-                                        id: this.ids[id],
-                                        markerWidth: optsMarker.size,
-                                        markerHeight: optsMarker.size,
-                                        refX: Math.round(optsMarker.size/2),
-                                        refY: Math.round(optsMarker.size/2)
-                                    });
-                                    break;
-                                case 'triangle':
-                                    this.ids[id] = getNewId();
-                                    $marker = DOM.createSvgDom('marker', {
-                                        id: this.ids[id],
-                                        markerWidth: optsMarker.size,
-                                        markerHeight: optsMarker.size/1.25,
-                                        refX: Math.round(optsMarker.size - opts.arrows.borderWidth),
-                                        refY: Math.round(optsMarker.size/2.5),
-                                        orient: 'auto'
-                                    });
-                            }
-                            if ($marker) {
-                                return $marker.append(this.getMarkerShape(type, optsMarker));
-                            }
+                            size = ((opts.marker.size - 1)*0.25 + 1)*data.shapeRelSize[opts.marker[id.toLowerCase()]];
+                        switch (opts.marker[id.toLowerCase()]) {
+                            case 'circle':
+                                ids[id] = getNewId();
+                                $marker = DOM.createSvgDom('marker', {
+                                    id: ids[id],
+                                    markerWidth: size,
+                                    markerHeight: size,
+                                    refX: Math.round(size/2),
+                                    refY: Math.round(size/2)
+                                });
+                                break;
+                            case 'square':
+                                ids[id] = getNewId();
+                                $marker = DOM.createSvgDom('marker', {
+                                    id: ids[id],
+                                    markerWidth: size,
+                                    markerHeight: size,
+                                    refX: Math.round(size/2),
+                                    refY: Math.round(size/2)
+                                });
+                                break;
+                            case 'pointer':
+                                ids[id] = getNewId();
+                                $marker = DOM.createSvgDom('marker', {
+                                    id: ids[id],
+                                    markerWidth: size,
+                                    markerHeight: size/1.25,
+                                    refX: Math.round(size - opts.outline.width),
+                                    refY: Math.round(size/2.5),
+                                    orient: 'auto'
+                                });
+                        }
+                        if ($marker) {
+                            return $marker.append(this.getMarkerShape(type, shade, size));
                         }
                         return null;
                     },
-                    getMarkerShape: function (type, optsMarker) {
+                    getMarkerShape: function (type, shade, size) {
                         var style = {
-                            fill: opts.arrows.strokeColor
+                            fill: (shade ? opts.shadow.color : opts.stroke.color)
                         };
                         if (data.outline) {
-                            style.stroke = opts.arrows.borderColor;
-                            style['stroke-width'] = opts.arrows.borderWidth/2;
+                            style.stroke = shade ? opts.shadow.color : opts.outline.color;
+                            style['stroke-width'] = opts.outline.width/2;
                         }
                         switch (type) {
                             case 'circle':
-                                style.cx = optsMarker.size/2;
-                                style.cy = optsMarker.size/2;
-                                style.r = optsMarker.size/2 - 1;
+                                style.cx = size/2;
+                                style.cy = size/2;
+                                style.r = size/2 - 1;
                                 return DOM.createSvgDom('circle', style);
 
                             case 'square':
                                 style.x = 0;
                                 style.y = 0;
-                                style.width = optsMarker.size;
-                                style.height = optsMarker.size;
+                                style.width = size - 1;
+                                style.height = size - 1;
+                                style.rx = 2;
+                                style.ry = 2;
                                 return DOM.createSvgDom('rect', style);
 
-                            case 'triangle':
-                                style.d = 'M0,0 L0,' + (optsMarker.size/1.25) + ' L' + optsMarker.size + ',' + (optsMarker.size/2.5) + ' z';
+                            case 'pointer':
+                                style.d = 'M0,0 L0,' + (size/1.25) + ' L' + size + ',' + (size/2.5) + ' z';
                                 return DOM.createSvgDom('path', style);
                         }
                         return null;
                     },
-                    initMarker: function (type, id) {
-                        var $marker = this.getMarker(type, id);
+                    initMarker: function (type, id, getMarkerId, shade) {
+                        var $marker = this.getMarker(type, id, getMarkerId, shade);
                         if ($marker) {
                             if (!this.$defs) {
                                 this.$defs = DOM.createSvgDom('defs');
@@ -351,14 +393,40 @@
                             this.$defs.append($marker);
                         }
                     },
+                    getFilter: function () {
+                        this.ids.filter.shadow = 'refP' + $('svg.' + data.svgClass).length + 'f' + (+ new Date());
+                        return DOM.createSvgDom('filter', {
+                            id: this.ids.filter.shadow
+                        }).append(DOM.createSvgDom('feGaussianBlur', {
+                            in: 'SourceGraphic',
+                            stdDeviation: opts.shadow.blur
+                        }));
+                    },
+                    initFilter: function () {
+                        var $filter = this.getFilter();
+                        if ($filter) {
+                            if (!this.$defs) {
+                                this.$defs = DOM.createSvgDom('defs');
+                            }
+                            this.$defs.append($filter);
+                        }
+                    },
                     init: function () {
-                        this.initMarker(opts.arrows.startMarker.type, 'start');
-                        this.initMarker(opts.arrows.midMarker.type, 'mid');
-                        this.initMarker(opts.arrows.endMarker.type, 'end');
+                        var getMarkerId = function () { return DOM.markers.ids; };
+                        this.initMarker(opts.marker.start, 'start', getMarkerId);
+                        this.initMarker(opts.marker.mid, 'mid', getMarkerId);
+                        this.initMarker(opts.marker.end, 'end', getMarkerId);
+                        if (opts.shadow.visible) {
+                            this.initFilter();
+                            getMarkerId = function () { return DOM.markers.ids.filter; };
+                            this.initMarker(opts.marker.start, 'Start', getMarkerId, true);
+                            this.initMarker(opts.marker.mid, 'Mid', getMarkerId, true);
+                            this.initMarker(opts.marker.end, 'End', getMarkerId, true);
+                        }
                         return this.$defs;
                     }
                 },
-                getShapeAttrs: function (index) {
+                getShapeAttrs: function (index, shadeOffset) {
                     var getX = function (pnt, offset) {
                             return Math.round(pnt.x + (offset ? offset.dx : 0) - data.svgPos.x) + .5;
                         },
@@ -381,7 +449,8 @@
                                 points: pointToStr(data.points.start, data.points.layout.fromOffset[index]) +
                                         ',' + 
                                         data.points.mid[index].map(function(e) {
-                                            return pointToStr(data.points.getMidPoint(e, index));
+                                            var point = data.points.getMidPoint(e, index);
+                                            return shadeOffset ? pointToStr(point, shadeOffset) : pointToStr(point);
                                         }).join(",") +
                                         ',' +
                                         pointToStr(data.points.end[index], data.points.layout.toOffset[index])
@@ -396,6 +465,12 @@
                 },
                 updateArrow: function (index) {
                     this.getArrow(index).attr(this.getShapeAttrs(index));
+                    if (opts.shadow.visible) {
+                        DOM.arrowsShadow[index].attr(this.getShapeAttrs(index, {
+                            dx: opts.shadow.offsetX,
+                            dy: opts.shadow.offsetY
+                        }));
+                    }
                 }
             },
             events = {
@@ -408,7 +483,12 @@
                 },
                 onDestroy: function () {
                     this.unbindAll();
-                    DOM.$svg.remove(); 
+                    DOM.$svg.remove();
+
+
+                    // TODO: clean all data structures
+
+
                 },
                 bindAll: function () {
                     $elem.
@@ -463,9 +543,10 @@
             }
         }
         var opts = $.extend({}, $.fn.rsRefPointer.defaults, options);
-        opts.arrows = $.extend({}, $.fn.rsRefPointer.defaults.arrows, options ? options.arrows : options);
-        opts.arrows.markers = $.extend({}, $.fn.rsRefPointer.defaults.arrows.markers, options ? (options.arrows ? options.arrows.markers : options.arrows) : options);
-        
+        opts.marker = $.extend({}, $.fn.rsRefPointer.defaults.marker, options ? options.marker : options);
+        opts.stroke = $.extend({}, $.fn.rsRefPointer.defaults.stroke, options ? options.stroke : options);
+        opts.outline = $.extend({}, $.fn.rsRefPointer.defaults.outline, options ? options.outline : options);
+        opts.shadow = $.extend({}, $.fn.rsRefPointer.defaults.shadow, options ? options.shadow : options);
         var $allRefPointers = this.each(function () {
             // designData is used by the design time version of this plugin, to grab this specific instance of the runtime
             $.fn.rsRefPointer.designData = new RefPointerClass($(this), opts);
@@ -478,24 +559,27 @@
 
     // public access to the default input parameters
     $.fn.rsRefPointer.defaults = {
-        targetSelector: ".target",
-        arrows: {
-            strokeWidth: 2,
-            strokeColor: 'black',
-            borderWidth: 1,
-            borderColor: 'yellow',
-            startMarker: {
-                type: 'circle',
-                size: 6
-            },
-            midMarker: {
-                type: null,
-                size: 6
-            },
-            endMarker: {
-                type: 'triangle',
-                size: 8
-            }
+        targetSelector: '.target',
+        marker: {
+            start: 'circle',
+            mid: 'square',
+            end: 'pointer',
+            size: 1
+        },
+        stroke: {
+            color: 'black',
+            width: 2
+        },
+        outline: {
+            color: '#ddd',
+            width: 1.5
+        },
+        shadow: {
+            visible: true,
+            color: 'rgba(85,85,85,.75)',
+            offsetX: 8,
+            offsetY: 8,
+            blur: 1
         }
     };
 })(jQuery);
