@@ -14,7 +14,7 @@
         var data = {
                 ns: 'http://www.w3.org/2000/svg',
                 svgClass: 'refPointer',
-                arrowTypes: [],    // Specifies the type of each arrow: 'line', 'polyline' and 'path' (for bezier arrows)
+                arrowTypes: [],    // Specifies the type of each arrow: 'line', 'polyline', 'bezierQ' and 'bezierC'
                 outline: false,    // Whether each row has an outline border
                 $targets: null,
                 shapeRelSize: {
@@ -110,21 +110,22 @@
                         this.end = [];
                         data.$targets.each(function (index, e) {
                             // TODO
-                            if (data.arrowTypes.length == 1) {
-                                data.arrowTypes.push('polyline');
-                            } else {
-                                data.arrowTypes.push('line');
+                            switch (data.arrowTypes.length) {
+                                case 1: data.arrowTypes.push('polyline'); break;
+                                case 2: data.arrowTypes.push('bezierQ'); break;
+                                default: data.arrowTypes.push('line');
                             }
+
                             data.points.layout.fromOffset.push({
                                 dx: fromOffset.dx,
                                 dy: fromOffset.dy
                             });
 
                             // TODO
-                            if (data.arrowTypes.length == 2) {
-                                data.points.mid.push([{x: 100, y: 10}, {x: 150, y: 0}]);
-                            } else {
-                                data.points.mid.push([]);
+                            switch (data.arrowTypes.length) {
+                                case 2: data.points.mid.push([{x: 100, y: 30}, {x: 150, y: 10}]); break;
+                                case 3: data.points.mid.push([{x: 400, y: 230}]); break;
+                                default: data.points.mid.push([]);
                             }
 
                             var $target = $(e),
@@ -198,6 +199,12 @@
                     bounds.left -= opts.marker.size*maxSize;
                     bounds.right += opts.marker.size*maxSize;
                     bounds.bottom += opts.marker.size*maxSize;
+                    if (opts.shadow.visible) {
+                        bounds.top -= opts.shadow.offsetY > 0 ? 0 : - opts.shadow.offsetY - opts.shadow.blur;
+                        bounds.left -= opts.shadow.offsetX > 0 ? 0: - opts.shadow.offsetX - opts.shadow.blur;
+                        bounds.right += opts.shadow.offsetX > 0 ? opts.shadow.offsetX + opts.shadow.blur : 0;
+                        bounds.bottom += opts.shadow.offsetY > 0 ? opts.shadow.offsetY + opts.shadow.blur: 0;
+                    }
                     return bounds;
                 },
                 init: function () {
@@ -237,15 +244,17 @@
 
                         switch (data.arrowTypes[index]) {
                             case 'polyline':
-                                attrs.fill = 'none';
                                 attrs['stroke-linejoin'] = 'round';
-                                attrsShade.fill = 'none';
                                 attrsShade['stroke-linejoin'] = 'round';
+                                // yes, no break here
+                            case 'bezierQ':
+                            case 'bezierC':
+                                attrs.fill = 'none';
+                                attrsShade.fill = 'none';
                                 // yes, no break here
                             case 'line':
                                 attrs['stroke-linecap'] = 'round';
                                 attrsShade['stroke-linecap'] = 'round';
-                                break;
                         }
 
                         if (opts.shadow.visible) {
@@ -258,9 +267,9 @@
                                 }
                             });
                             if ($lastShadow === null) {
-                                $lastShadow = DOM.createSvgDom(data.arrowTypes[index], attrsShade).appendTo(DOM.$svg);
+                                $lastShadow = DOM.createSvgDom(DOM.getSVGtag(data.arrowTypes[index]), attrsShade).appendTo(DOM.$svg);
                             } else {
-                                $lastShadow = DOM.createSvgDom(data.arrowTypes[index], attrsShade).insertAfter($lastShadow);
+                                $lastShadow = DOM.createSvgDom(DOM.getSVGtag(data.arrowTypes[index]), attrsShade).insertAfter($lastShadow);
                             }
                             DOM.arrowsShadow.push($lastShadow);
                         }
@@ -268,7 +277,7 @@
                         if (data.outline) {
                             attrs.stroke = opts.outline.color;
                             attrs['stroke-width'] = opts.outline.width*2 + opts.stroke.width;
-                            DOM.$svg.append(DOM.createSvgDom(data.arrowTypes[index], attrs));
+                            DOM.$svg.append(DOM.createSvgDom(DOM.getSVGtag(data.arrowTypes[index]), attrs));
                         }
 
                         attrs.stroke = opts.stroke.color;
@@ -278,7 +287,7 @@
                                 attrs['marker-' + e] = 'url(#' + DOM.markers.ids[e] + ')';
                             }
                         });
-                        $arrow = DOM.createSvgDom(data.arrowTypes[index], attrs);
+                        $arrow = DOM.createSvgDom(DOM.getSVGtag(data.arrowTypes[index]), attrs);
                         DOM.$svg.append($arrow);
                         DOM.arrows.push($arrow);
                     });
@@ -444,11 +453,25 @@
                                 x2: getX(data.points.end[index], data.points.layout.toOffset[index]),
                                 y2: getY(data.points.end[index], data.points.layout.toOffset[index])
                             };
+                        case 'bezierQ':
+                            return {
+                                d:  'M' + pointToStr(data.points.start, data.points.layout.fromOffset[index]) +
+                                    data.points.mid[index].map(function (e, i) {
+                                        var point = data.points.getMidPoint(e, index),
+                                            pointStr = shadeOffset ? pointToStr(point, shadeOffset) : pointToStr(point);
+                                        switch (i) {
+                                            case 0: return ' Q' + pointStr;
+                                            case 1: return pointStr;
+                                            default: return 'T' + pointStr;
+                                        } 
+                                    }).join(' ') +
+                                    ' ' + pointToStr(data.points.end[index], data.points.layout.toOffset[index])
+                            };
                         case 'polyline':
                             return {
                                 points: pointToStr(data.points.start, data.points.layout.fromOffset[index]) +
                                         ',' + 
-                                        data.points.mid[index].map(function(e) {
+                                        data.points.mid[index].map(function (e) {
                                             var point = data.points.getMidPoint(e, index);
                                             return shadeOffset ? pointToStr(point, shadeOffset) : pointToStr(point);
                                         }).join(",") +
@@ -471,6 +494,9 @@
                             dy: opts.shadow.offsetY
                         }));
                     }
+                },
+                getSVGtag: function (arrowType) {
+                    return arrowType === 'bezierQ' || arrowType === 'bezierC' ? 'path' : arrowType;
                 }
             },
             events = {
@@ -568,15 +594,15 @@
         },
         stroke: {
             color: 'black',
-            width: 2
+            width: 1.5
         },
         outline: {
-            color: '#ddd',
-            width: 1.5
+            color: '#fff',
+            width: 1
         },
         shadow: {
             visible: true,
-            color: 'rgba(85,85,85,.75)',
+            color: 'rgba(95,95,95,.7)',
             offsetX: 8,
             offsetY: 8,
             blur: 1
