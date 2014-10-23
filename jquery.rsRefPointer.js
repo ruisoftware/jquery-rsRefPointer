@@ -302,8 +302,9 @@
                 arrowsShadow: [],
                 createSvgDom: function (tag, attrs) {
                     var el = document.createElementNS(data.ns, tag);
-                    for (var k in attrs)
+                    for (var k in attrs) {
                         el.setAttribute(k, attrs[k]);
+                    }
                     return $(el);
                 },
                 markers: {
@@ -465,7 +466,7 @@
                                             default: return 'T' + pointStr;
                                         } 
                                     }).join(' ') +
-                                    ' ' + pointToStr(data.points.end[index], data.points.layout.toOffset[index])
+                                    (data.points.mid[index].length === 1 ? ' ' : ' T') + pointToStr(data.points.end[index], data.points.layout.toOffset[index])
                             };
                         case 'polyline':
                             return {
