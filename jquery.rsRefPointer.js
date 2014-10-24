@@ -443,8 +443,8 @@
                         getY = function (pnt, offset) {
                             return Math.round(pnt.y + (offset ? offset.dy : 0) - data.svgPos.y) + .5;
                         },
-                        pointToStr = function (pnt, offset) {
-                            return getX(pnt, offset) + ',' + getY(pnt, offset);
+                        pointToStr = function (pnt, offset, noTrailingSpace) {
+                            return getX(pnt, offset) + ',' + getY(pnt, offset) + (noTrailingSpace ? '' : ' ');
                         };
                     switch (data.arrowTypes[index]) {
                         case 'line':
@@ -461,12 +461,12 @@
                                         var point = data.points.getMidPoint(e, index),
                                             pointStr = shadeOffset ? pointToStr(point, shadeOffset) : pointToStr(point);
                                         switch (i) {
-                                            case 0: return ' Q' + pointStr;
+                                            case 0: return 'Q' + pointStr;
                                             case 1: return pointStr;
-                                            default: return 'T' + pointStr;
+                                            default: return i % 2 === 1 ? 'T' + pointStr : '';
                                         } 
-                                    }).join(' ') +
-                                    (data.points.mid[index].length === 1 ? ' ' : ' T') + pointToStr(data.points.end[index], data.points.layout.toOffset[index])
+                                    }).join('') +
+                                    (data.points.mid[index].length === 1 ? '' : 'T') + pointToStr(data.points.end[index], data.points.layout.toOffset[index], true)
                             };
                         case 'polyline':
                             return {

@@ -74,8 +74,12 @@
                         }
                     },
                     dragInfo: {
-                        $point: null,       // Represents the point currently being dragged.
-                        pointType: null     // Either 'start', 'mid' or 'end'
+                        $point: null,       // Represents the point currently being dragged
+                        $twinPoint: null,   // In bezier curves, when $point is a control point, there is another point (twin point) that mirrors the $point position
+                        pointType: null,    // Either 'start', 'mid' or 'end'
+                        midRef: null,
+                        twinMidRef: null,
+                        twinAnchorPos: null
                     },
                     $points: null, // Array of jQuery set. Each jQuery object contains the points (start, end, mid) that belong to each arrow and their length is >= 2
                     menu: {
@@ -365,33 +369,47 @@
                     },
                     addPoint: function () {
                         var arrowIdx = designMode.UI.activeArrow.idx,
-                            $newControlPoint;
-                        if (data.arrowTypes[arrowIdx] === 'bezierQ') {
-                            var lastPntIdx = data.points.mid[arrowIdx].length - 1,
-                                newPnt = { // new bezier point is the average of the last mid point with the last point
-                                    x: (data.points.mid[arrowIdx][lastPntIdx].x + data.points.end[arrowIdx].x + data.points.layout.toOffset[arrowIdx].dx) / 2.0,
-                                    y: (data.points.mid[arrowIdx][lastPntIdx].y + data.points.end[arrowIdx].y + data.points.layout.toOffset[arrowIdx].dy) / 2.0
-                                },
-                                $controlLine = DOM.bezier.createLine({
-                                    x1: newPnt.x,
-                                    y1: newPnt.y,
-                                    x2: data.points.end[arrowIdx].x + data.points.layout.toOffset[arrowIdx].dx,
-                                    y2: data.points.end[arrowIdx].y + data.points.layout.toOffset[arrowIdx].dy
-                                });
-                            data.points.mid[arrowIdx].push(newPnt);
-                            
-                            $newControlPoint = DOM.markers.getDesignModePoint(newPnt, arrowIdx);
-                            designMode.UI.$points[arrowIdx] = designMode.UI.$points[arrowIdx].add($newControlPoint);
-                            DOM.$svg.append($newControlPoint);
-                            // the previous last control line should point to the new control point, not to the target point
-                            DOM.bezier.bezierControlLines[arrowIdx][DOM.bezier.bezierControlLines[arrowIdx].length - 1].attr({
-                                x2: newPnt.x,
-                                y2: newPnt.y
-                            });
-                            DOM.bezier.bezierControlLines[arrowIdx].push($controlLine);
-                            DOM.markers.$defs.next('g').append($controlLine);
-                            DOM.updateArrow(arrowIdx);
+                            sets = {
+                                controlPoints: $([]),
+                                controlLines: $([])
+                            };
+                        switch(data.arrowTypes[arrowIdx]) {
+                            case 'bezierQ':
+                                var lastPntIdx = data.points.mid[arrowIdx].length - 1,
+                                    newBezierPoint = { // new bezier point is the average of the last mid point with the last point
+                                        x: (data.points.mid[arrowIdx][lastPntIdx].x + data.points.end[arrowIdx].x + data.points.layout.toOffset[arrowIdx].dx) / 2.0,
+                                        y: (data.points.mid[arrowIdx][lastPntIdx].y + data.points.end[arrowIdx].y + data.points.layout.toOffset[arrowIdx].dy) / 2.0
+                                    },
+                                    newControlPoint = {
+                                        x: 2*newBezierPoint.x - data.points.mid[arrowIdx][lastPntIdx].x,
+                                        y: 2*newBezierPoint.y - data.points.mid[arrowIdx][lastPntIdx].y
+                                    };
+                                this.addPointAndControlLines(newBezierPoint, arrowIdx, sets);
+                                this.addPointAndControlLines(newControlPoint, arrowIdx, sets);
                         }
+                        DOM.$svg.append(sets.controlPoints);
+                        DOM.markers.$defs.next('g').append(sets.controlLines);
+                        DOM.updateArrow(arrowIdx);
+                    },
+                    addPointAndControlLines: function (newPnt, arrowIdx, sets) {
+                        var $controlPoint = DOM.markers.getDesignModePoint(newPnt, arrowIdx),
+                            $controlLine = DOM.bezier.createControlLine({
+                                x1: newPnt.x,
+                                y1: newPnt.y,
+                                x2: data.points.end[arrowIdx].x + data.points.layout.toOffset[arrowIdx].dx,
+                                y2: data.points.end[arrowIdx].y + data.points.layout.toOffset[arrowIdx].dy
+                            });
+                        data.points.mid[arrowIdx].push(newPnt);
+                        designMode.UI.$points[arrowIdx] = designMode.UI.$points[arrowIdx].add($controlPoint);
+                        sets.controlPoints = sets.controlPoints.add($controlPoint);
+
+                        // the previous last control line should point to the new control point, not to the target point
+                        DOM.bezier.bezierControlLines[arrowIdx][DOM.bezier.bezierControlLines[arrowIdx].length - 1].attr({
+                            x2: newPnt.x,
+                            y2: newPnt.y
+                        });
+                        DOM.bezier.bezierControlLines[arrowIdx].push($controlLine);
+                        sets.controlLines = sets.controlLines.add($controlLine);
                     },
                     deleteArrow: function (index) {
                         if (designMode.UI.activeArrow.idx === index) {
@@ -437,24 +455,28 @@
                         this.menu.init();
 
                         DOM.$svg.add(designMode.UI.menu.$menu).mousemove(function (e) {
-                            if (designMode.UI.dragInfo.$point) {
-                                designMode.UI.dragInfo.$point.attr({
+                            var dragInfo = designMode.UI.dragInfo;
+                            if (dragInfo.$point) {
+                                dragInfo.$point.attr({
                                     'cx': e.pageX,
                                     'cy': e.pageY
                                 });
-                                switch (designMode.UI.dragInfo.pointType) {
+                                switch (dragInfo.pointType) {
                                     case 'start':
                                         var offset = data.points.layout.fromOffset[designMode.UI.activeArrow.idx];
                                         offset.dx = e.pageX - data.points.start.x;
                                         offset.dy = e.pageY - data.points.start.y; 
                                         break;
                                     case 'mid':
-                                        var midPoints = data.points.mid[designMode.UI.activeArrow.idx],
-                                            // subtracting 2 because the first two are the start and end points
-                                            idx = designMode.UI.$points[designMode.UI.activeArrow.idx].index(designMode.UI.dragInfo.$point) - 2;
-                                        if (idx > -1) {
-                                            midPoints[idx].x = e.pageX;
-                                            midPoints[idx].y = e.pageY;
+                                        dragInfo.midRef.x = e.pageX;
+                                        dragInfo.midRef.y = e.pageY;
+                                        if (dragInfo.twinMidRef) {
+                                            dragInfo.twinMidRef.x = 2*dragInfo.twinAnchorPos.x - e.pageX;
+                                            dragInfo.twinMidRef.y = 2*dragInfo.twinAnchorPos.y - e.pageY;
+                                            dragInfo.$twinPoint.attr({
+                                                'cx': dragInfo.twinMidRef.x,
+                                                'cy': dragInfo.twinMidRef.y
+                                            });
                                         }
                                         break;
                                     case 'end':
@@ -475,7 +497,7 @@
                                 }
                             }
                         }).mouseup(function () {
-                            designMode.UI.dragInfo.$point = designMode.UI.dragInfo.pointType = null;
+                            designMode.UI.dragInfo.$point = designMode.UI.dragInfo.pointType = designMode.UI.dragInfo.$twinPoint = designMode.UI.dragInfo.midRef = designMode.UI.dragInfo.twinMidRef = null;
                         });
 
                         // insert point anchors to the DOM
@@ -502,7 +524,7 @@
                                 designMode.UI.$points[index] = designMode.UI.$points[index].add(DOM.markers.getDesignModePoint(pnts[pnt], index));
 
                                 if (data.arrowTypes[index] === 'bezierQ' || data.arrowTypes[index] === 'bezierC') {
-                                    $controlLine = DOM.bezier.createLine({
+                                    $controlLine = DOM.bezier.createControlLine({
                                         x1: (pnt == 0 ? data.points.start.x + data.points.layout.fromOffset[index].dx : data.points.mid[index][i - 1].x),
                                         y1: (pnt == 0 ? data.points.start.y + data.points.layout.fromOffset[index].dy : data.points.mid[index][i - 1].y),
                                         x2: pnts[pnt].x,
@@ -513,7 +535,7 @@
                                 }
                             }
                             if (data.arrowTypes[index] === 'bezierQ' || data.arrowTypes[index] === 'bezierC') {
-                                $controlLine = DOM.bezier.createLine({
+                                $controlLine = DOM.bezier.createControlLine({
                                     x1: data.points.mid[index][pnts.length - 1].x,
                                     y1: data.points.mid[index][pnts.length - 1].y,
                                     x2: data.points.end[index].x + data.points.layout.toOffset[index].dx,
@@ -573,6 +595,19 @@
                 dragInfo.pointType = indexPoint === 0 ? 'start' : (indexPoint === 1 ? 'end' : 'mid');
                 designMode.UI.activeArrow.select(arrowIdx);
                 $point.css('cursor', 'none');
+
+                if (dragInfo.pointType === 'mid') {
+                    dragInfo.midRef = data.points.mid[arrowIdx][indexPoint - 2];
+                    var twinRef = DOM.bezier.getTwinControlPoint(indexPoint - 2);
+                    if (twinRef > -1 && twinRef < data.points.mid[arrowIdx].length) {
+                        dragInfo.twinMidRef = data.points.mid[arrowIdx][twinRef];
+                        dragInfo.$twinPoint = designMode.UI.$points[arrowIdx].eq(twinRef + 2);
+                        dragInfo.twinAnchorPos = data.points.mid[arrowIdx][twinRef - 1];
+                    } else {
+                        dragInfo.twinMidRef = null;
+                    }
+                }
+
             }).mouseup(function () {
                 $point.css('cursor', 'move');
             }).mouseleave(function () {
@@ -586,7 +621,7 @@
         };
         DOM.bezier = {
             bezierControlLines: [],
-            createLine: function (pnts) {
+            createControlLine: function (pnts) {
                 return DOM.createSvgDom('line', {
                     x1: pnts.x1,
                     y1: pnts.y1,
@@ -595,6 +630,12 @@
                     stroke: '#f7abab',
                     'stroke-dasharray': '5'
                 });
+            },
+            getTwinControlPoint: function (pntIdx) {
+                if (pntIdx % 2 === 0) {
+                    return pntIdx + 2;
+                }
+                return -1;
             },
             updateBezierControlLines: function (arrowIdx, pointType, midPointerIdx) {
                 switch (pointType) {
