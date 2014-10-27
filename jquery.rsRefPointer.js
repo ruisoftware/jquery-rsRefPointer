@@ -113,6 +113,7 @@
                             switch (data.arrowTypes.length) {
                                 case 1: data.arrowTypes.push('polyline'); break;
                                 case 2: data.arrowTypes.push('bezierQ'); break;
+                                case 3: data.arrowTypes.push('bezierC'); break;
                                 default: data.arrowTypes.push('line');
                             }
 
@@ -125,6 +126,7 @@
                             switch (data.arrowTypes.length) {
                                 case 2: data.points.mid.push([{x: 100, y: 30}, {x: 150, y: 10}]); break;
                                 case 3: data.points.mid.push([{x: 400, y: 230}]); break;
+                                case 4: data.points.mid.push([{x: 300, y: 330}, {x: 500, y: 320}]); break;
                                 default: data.points.mid.push([]);
                             }
 
@@ -467,6 +469,20 @@
                                         } 
                                     }).join('') +
                                     (data.points.mid[index].length === 1 ? '' : 'T') + pointToStr(data.points.end[index], data.points.layout.toOffset[index], true)
+                            };
+                        case 'bezierC':
+                            return {
+                                d:  'M' + pointToStr(data.points.start, data.points.layout.fromOffset[index]) +
+                                    data.points.mid[index].map(function (e, i) {
+                                        var point = data.points.getMidPoint(e, index),
+                                            pointStr = shadeOffset ? pointToStr(point, shadeOffset) : pointToStr(point);
+                                        switch (i) {
+                                            case 0: return 'C' + pointStr;
+                                            case 1:
+                                            case 2: return pointStr;
+                                            default: return i % 3 === 0 ? '': (((i - 1) % 3 === 0 ? 'S' : '') + pointStr);
+                                        } 
+                                    }).join('') + pointToStr(data.points.end[index], data.points.layout.toOffset[index], true)
                             };
                         case 'polyline':
                             return {
