@@ -21,7 +21,7 @@
     }
 
     $.fn.rsRefPointer = function (options) {
-        if (typeof options === "string") {
+        if (typeof options === 'string') {
             alert('Not allowed in design-time mode.');
             return;
         }
@@ -381,6 +381,12 @@
                             },
                             midPoints = data.points.mid[arrowIdx];
                         switch(data.arrowTypes[arrowIdx]) {
+                            case 'line':
+                                DOM.line.addPoint(arrowIdx, midPoints, sets);
+                                break;
+                            case 'polyline':
+                                DOM.polyline.addPoint(arrowIdx, midPoints, sets);
+                                break;
                             case 'bezierQ':
                                 DOM.bezier.Q.addPoint(arrowIdx, midPoints, sets);
                                 DOM.markers.$defs.next('g').append(sets.controlLines);
@@ -392,42 +398,88 @@
                         DOM.$svg.append(sets.controlPoints);
                         DOM.updateArrow(arrowIdx);
                     },
-                    deleteArrow: function (index) {
-                        if (designMode.UI.activeArrow.idx === index) {
-                            if (index === 0) {
+                    deletePoint: function ($point) {
+                        var arrowInfo = DOM.markers.getArrowInfo($point);
+                        if (arrowInfo) {
+                            designMode.UI.activeArrow.select(arrowInfo.arrow);
+                            switch (arrowInfo.point) {
+                                case 0: this.deleteStartPoint(arrowInfo.arrow); break;
+                                case 1: this.deleteEndPoint(arrowInfo.arrow); break;
+                                default: this.deleteMidPoint(arrowInfo.arrow, arrowInfo.point - 2);
+                            }
+                        }
+                    },
+                    deleteStartPoint: function (arrowIdx) {
+                        var qtMiddle = data.points.mid[arrowIdx].length;
+                        if (qtMiddle === 0) {
+                            this.deleteArrow(arrowIdx);
+                        } else {
+                            data.points.layout.fromOffset[arrowIdx].dx = data.points.mid[arrowIdx][0].x - data.points.start.x;
+                            data.points.layout.fromOffset[arrowIdx].dy = data.points.mid[arrowIdx][0].y - data.points.start.y;
+                            data.points.mid[arrowIdx].splice(0, 1);
+                            designMode.UI.$points[arrowIdx].eq(0).remove();
+                            var $newStartPoint = designMode.UI.$points[arrowIdx].eq(2),
+                                $otherPoints = designMode.UI.$points[arrowIdx].filter(function (i) {
+                                return i === 1 || i > 2;
+                            });
+                            designMode.UI.$points[arrowIdx] = $newStartPoint.add($otherPoints);
+                            if (data.arrowTypes[arrowIdx] === 'polyline' && qtMiddle === 1) {
+                                data.arrowTypes[arrowIdx] = 'line';
+                                // Removed the last mid point of a polyline. So now, change it to a line.
+                                DOM.replaceArrow(arrowIdx);
+                            }
+                            DOM.updateArrow(arrowIdx);
+                        }
+                    },
+                    deleteEndPoint: function (arrowIdx) {
+                    },
+                    deleteMidPoint: function (arrowIdx, midIndex) {
+                        data.points.mid[arrowIdx].splice(midIndex, 1);
+                        designMode.UI.$points[arrowIdx].eq(midIndex + 2).remove();
+                        designMode.UI.$points[arrowIdx].splice(midIndex + 2, 1);
+                        if (data.arrowTypes[arrowIdx] === 'polyline' && data.points.mid[arrowIdx].length === 0) {
+                            data.arrowTypes[arrowIdx] = 'line';
+                            // Removed the last mid point of a polyline. So now, change it to a line.
+                            DOM.replaceArrow(arrowIdx);
+                        }
+                        DOM.updateArrow(arrowIdx);
+                    },
+                    deleteArrow: function (arrowIdx) {
+                        if (designMode.UI.activeArrow.idx === arrowIdx) {
+                            if (arrowIdx === 0) {
                                 if (data.arrowTypes.length > 1) {
                                     designMode.UI.activeArrow.select(1); // will run the if statement below
                                 } else {
                                     designMode.UI.activeArrow.idx = null;
                                 }
                             } else {
-                                designMode.UI.activeArrow.select(index - 1)
+                                designMode.UI.activeArrow.select(arrowIdx - 1)
                             }
                         }
-                        if (designMode.UI.activeArrow.idx > index) {
+                        if (designMode.UI.activeArrow.idx > arrowIdx) {
                             designMode.UI.activeArrow.idx--;
                         }
-                        designMode.UI.$points[index].remove();
-                        designMode.UI.$points.splice(index, 1);
+                        designMode.UI.$points[arrowIdx].remove();
+                        designMode.UI.$points.splice(arrowIdx, 1);
 
-                        data.arrowTypes.splice(index, 1);
-                        data.points.mid.splice(index, 1);
-                        data.points.end.splice(index, 1);
-                        data.points.layout.fromOffset.splice(index, 1);
-                        data.points.layout.toOffset.splice(index, 1);
-                        data.points.layout.topLeft.splice(index, 1);
-                        data.points.layout.size.splice(index, 1);
-                        DOM.getArrow(index).remove();
-                        DOM.arrows.splice(index, 1);
-                        DOM.bezier.controlLines[index].forEach(function ($e) {
+                        data.arrowTypes.splice(arrowIdx, 1);
+                        data.points.mid.splice(arrowIdx, 1);
+                        data.points.end.splice(arrowIdx, 1);
+                        data.points.layout.fromOffset.splice(arrowIdx, 1);
+                        data.points.layout.toOffset.splice(arrowIdx, 1);
+                        data.points.layout.topLeft.splice(arrowIdx, 1);
+                        data.points.layout.size.splice(arrowIdx, 1);
+                        DOM.getArrow(arrowIdx).remove();
+                        DOM.arrows.splice(arrowIdx, 1);
+                        DOM.bezier.controlLines[arrowIdx].forEach(function ($e) {
                             $e.remove();
                         });
-                        DOM.bezier.controlLines.splice(index, 1);
+                        DOM.bezier.controlLines.splice(arrowIdx, 1);
                         if (opts.shadow.visible) {
-                            DOM.arrowsShadow[index].remove();
-                            DOM.arrowsShadow.splice(index, 1);
+                            DOM.arrowsShadow[arrowIdx].remove();
+                            DOM.arrowsShadow.splice(arrowIdx, 1);
                         }
-                        $('ul li', designMode.UI.menu.$menu).eq(index).remove();
+                        $('ul li', designMode.UI.menu.$menu).eq(arrowIdx).remove();
                         if ($('ul li', designMode.UI.menu.$menu).length === 0) {
                             $('> a:first-of-type + a + a + a', designMode.UI.menu.$menu).addClass('disabled');
                         }
@@ -456,7 +508,7 @@
                         pts.mid.forEach(function (midPnts, index) {
                             if (data.arrowTypes[index] === 'bezierQ' || data.arrowTypes[index] === 'bezierC') {
                                 if ($controlLinesSvgGroup === null) {
-                                    $controlLinesSvgGroup = DOM.createSvgDom('g');
+                                    $controlLinesSvgGroup = DOM.createSvgDom('g', { stroke: '#f7abab' });
                                     DOM.markers.$defs.after($controlLinesSvgGroup);
                                 }
                             }
@@ -635,6 +687,19 @@
                     this.UI.init();
                 }
             };
+        DOM.markers.getArrowInfo = function ($point) {
+            var indexPoint;
+            for (var idx = 0, qtArrows = data.arrowTypes.length; idx < qtArrows; ++idx) {
+                indexPoint = designMode.UI.$points[idx].index($point);
+                if (indexPoint > -1) {
+                    return {
+                        arrow: idx,
+                        point: indexPoint
+                    }
+                }
+            }
+            return null;
+        };
         DOM.markers.getDesignModePoint = function (pnt, arrowIdx, selected, offsetArray) {
             var maxSize = Math.max(data.shapeRelSize.circle, Math.max(data.shapeRelSize.square, data.shapeRelSize.pointer)),
                 $point = DOM.createSvgDom('circle', {
@@ -650,22 +715,10 @@
                         'cursor': 'move'
                     });
                 }
-            }).mousedown(function () {
+            }).mousedown(function (e) {
+                e.preventDefault();
                 var dragInfo = designMode.UI.dragInfo,
-                    getArrowInfo = function () {
-                        var indexPoint;
-                        for (var idx = 0, qtArrows = data.arrowTypes.length; idx < qtArrows; ++idx) {
-                            indexPoint = designMode.UI.$points[idx].index($point);
-                            if (indexPoint > -1) {
-                                return {
-                                    arrow: idx,
-                                    point: indexPoint
-                                }
-                            }
-                        }
-                        return null;
-                    },
-                    arrowInfo = getArrowInfo();
+                    arrowInfo = DOM.markers.getArrowInfo($point);
                 if (arrowInfo) {
                     dragInfo.$point = $point;
                     dragInfo.pointType = arrowInfo.point === 0 ? 'start' : (arrowInfo.point === 1 ? 'end' : 'mid');
@@ -685,21 +738,49 @@
                         'cursor': ''
                     });
                 }
-            });
+            }).dblclick(function () {
+                designMode.UI.deletePoint($point);
+            })
         };
+        DOM.line = {
+            addPoint: function (arrowIdx, midPoints, sets) {
+                var newPnt = { // new point is the average of the first and last points
+                        x: (data.points.start.x + data.points.layout.fromOffset[arrowIdx].dx +
+                            data.points.end[arrowIdx].x + data.points.layout.toOffset[arrowIdx].dx)/2,
+                        y: (data.points.start.y + data.points.layout.fromOffset[arrowIdx].dy +
+                            data.points.end[arrowIdx].y + data.points.layout.toOffset[arrowIdx].dy)/2
+                    },
+                    $controlPoint = DOM.markers.getDesignModePoint(newPnt, arrowIdx, true);
+                data.points.mid[arrowIdx].push(newPnt);
+                designMode.UI.$points[arrowIdx] = designMode.UI.$points[arrowIdx].add($controlPoint);
+                sets.controlPoints = sets.controlPoints.add($controlPoint);
+                data.arrowTypes[arrowIdx] = 'polyline';
+                // This is no more a line, since a mid point was added. So, change the arrow from line to polyline
+                DOM.replaceArrow(arrowIdx);
+            }
+        },
+        DOM.polyline = {
+            addPoint: function (arrowIdx, midPoints, sets) {
+                var lastPntIdx = midPoints.length - 1,
+                    newPnt = { // new point is the average of the last mid point with the last point
+                        x: (midPoints[lastPntIdx].x + data.points.end[arrowIdx].x + data.points.layout.toOffset[arrowIdx].dx)/2,
+                        y: (midPoints[lastPntIdx].y + data.points.end[arrowIdx].y + data.points.layout.toOffset[arrowIdx].dy)/2
+                    },
+                    $controlPoint = DOM.markers.getDesignModePoint(newPnt, arrowIdx, true);
+                data.points.mid[arrowIdx].push(newPnt);
+                designMode.UI.$points[arrowIdx] = designMode.UI.$points[arrowIdx].add($controlPoint);
+                sets.controlPoints = sets.controlPoints.add($controlPoint);
+            }
+        },
         DOM.bezier = {
             controlLines: [],
-            createControlLine: function (pnts) {
-                return DOM.createSvgDom('line', {
-                    x1: pnts.x1,
-                    y1: pnts.y1,
-                    x2: pnts.x2,
-                    y2: pnts.y2,
-                    stroke: '#f7abab',
-                    'stroke-dasharray': designMode.UI.activeArrow.dasharray
-                });
+            createControlLine: function (attrs, active) {
+                if (!active) {
+                    attrs['stroke-dasharray'] = designMode.UI.activeArrow.dasharray;
+                }
+                return DOM.createSvgDom('line', attrs);
             },
-            Q: { // Quadratic beziers
+           Q: { // Quadratic beziers
                 addPoint: function (arrowIdx, midPoints, sets) {
                     var lastPntIdx = midPoints.length - 1,
                         newBezierPoint = { // new bezier point is the average of the last mid point with the last point
@@ -720,7 +801,7 @@
                             y1: newPnt.y,
                             x2: data.points.end[arrowIdx].x + data.points.layout.toOffset[arrowIdx].dx,
                             y2: data.points.end[arrowIdx].y + data.points.layout.toOffset[arrowIdx].dy
-                        });
+                        }, true);
                     data.points.mid[arrowIdx].push(newPnt);
                     designMode.UI.$points[arrowIdx] = designMode.UI.$points[arrowIdx].add($controlPoint);
                     sets.controlPoints = sets.controlPoints.add($controlPoint);
@@ -862,7 +943,7 @@
                             y1: newPnt.y,
                             x2: lastMidPntIdx === null ? data.points.end[arrowIdx].x + data.points.layout.toOffset[arrowIdx].dx : data.points.mid[arrowIdx][lastMidPntIdx].x,
                             y2: lastMidPntIdx === null ? data.points.end[arrowIdx].y + data.points.layout.toOffset[arrowIdx].dy : data.points.mid[arrowIdx][lastMidPntIdx].y
-                        }) : null;
+                        }, true) : null;
                     data.points.mid[arrowIdx].push(newPnt);
                     designMode.UI.$points[arrowIdx] = designMode.UI.$points[arrowIdx].add($controlPoint);
                     sets.controlPoints = sets.controlPoints.add($controlPoint);
