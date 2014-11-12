@@ -97,11 +97,15 @@
                             }
                         });
 
+
                         var pos = $elem.offset(),
+                            // this is way to retrieve the content dimensions for blocked elements
+                            $elemSpan = $elem.wrapInner('<span style="display: inline;">').children('span'),
                             fromOffset = {
-                                dx: $elem.width()/2,
-                                dy: $elem.height()/2
+                                dx: $elemSpan.width()/2,
+                                dy: $elemSpan.height()/2
                             };
+                        $elemSpan.contents().unwrap();
                         this.start = {
                             x: pos.left,
                             y: pos.top
@@ -133,7 +137,7 @@
                             var $target = $(e),
                                 targetPos = $target.offset(),
                                 // this is way to retrieve the content dimensions for blocked elements
-                                $targetSpan = $target.wrapInner("<span style='display: inline;'>").children("span"),
+                                $targetSpan = $target.wrapInner('<span style="display: inline;">').children('span'),
                                 toOffset = {
                                     dx: $targetSpan.width()/2,
                                     dy: $targetSpan.height()/2
@@ -222,8 +226,7 @@
 
                             // for debuging purposes only
                             ,'background-color': 'rgba(100,0,0,.1)'
-                        },
-                        $lastShadow = null;
+                        };
                     data.svgPos.x = bounds.left;
                     data.svgPos.y = bounds.top;
                     DOM.$svg = DOM.createSvgDom('svg', {
@@ -237,64 +240,10 @@
                     DOM.$svg.append(DOM.markers.init());
 
                     this.points.end.forEach(function (e, index) {
-                        var attrs = DOM.getShapeAttrs(index),
-                            attrsShade = DOM.getShapeAttrs(index, {
-                                dx: opts.shadow.offsetX,
-                                dy: opts.shadow.offsetY
-                            }),
-                            $arrow;
-
-                        switch (data.arrowTypes[index]) {
-                            case 'polyline':
-                                attrs['stroke-linejoin'] = 'round';
-                                attrsShade['stroke-linejoin'] = 'round';
-                                // yes, no break here
-                            case 'bezierQ':
-                            case 'bezierC':
-                                attrs.fill = 'none';
-                                attrsShade.fill = 'none';
-                                // yes, no break here
-                            case 'line':
-                                attrs['stroke-linecap'] = 'round';
-                                attrsShade['stroke-linecap'] = 'round';
-                        }
-
-                        if (opts.shadow.visible) {
-                            attrsShade.stroke = opts.shadow.color;
-                            attrsShade.filter = 'url(#' + DOM.markers.ids.filter.shadow + ')';
-                            attrsShade['stroke-width'] = opts.stroke.width;
-                            ['Start', 'Mid', 'End'].forEach(function (e) { 
-                                if (DOM.markers.ids.filter[e]) {
-                                    attrsShade['marker-' + e.toLowerCase()] = 'url(#' + DOM.markers.ids.filter[e] + ')';
-                                }
-                            });
-                            if ($lastShadow === null) {
-                                $lastShadow = DOM.createSvgDom(DOM.getSVGtag(data.arrowTypes[index]), attrsShade).appendTo(DOM.$svg);
-                            } else {
-                                $lastShadow = DOM.createSvgDom(DOM.getSVGtag(data.arrowTypes[index]), attrsShade).insertAfter($lastShadow);
-                            }
-                            DOM.arrowsShadow.push($lastShadow);
-                        }
-
-                        if (data.outline) {
-                            attrs.stroke = opts.outline.color;
-                            attrs['stroke-width'] = opts.outline.width*2 + opts.stroke.width;
-                            DOM.$svg.append(DOM.createSvgDom(DOM.getSVGtag(data.arrowTypes[index]), attrs));
-                        }
-
-                        attrs.stroke = opts.stroke.color;
-                        attrs['stroke-width'] = opts.stroke.width;
-                        ['start', 'mid', 'end'].forEach(function (e) { 
-                            if (DOM.markers.ids[e]) {
-                                attrs['marker-' + e] = 'url(#' + DOM.markers.ids[e] + ')';
-                            }
-                        });
-                        $arrow = DOM.createSvgDom(DOM.getSVGtag(data.arrowTypes[index]), attrs);
-                        DOM.$svg.append($arrow);
-                        DOM.arrows.push($arrow);
+                        DOM.createArrow(index);
                     });
                     DOM.$svg.hide();
-                    $("body").append(DOM.$svg);
+                    $('body').append(DOM.$svg);
                     events.bindAll();
                 }
             },
@@ -302,6 +251,7 @@
                 $svg: null,
                 arrows: [],
                 arrowsShadow: [],
+                $shadowGroup: null,
                 createSvgDom: function (tag, attrs) {
                     var el = document.createElementNS(data.ns, tag);
                     for (var k in attrs) {
@@ -445,8 +395,8 @@
                         getY = function (pnt, offset) {
                             return Math.round(pnt.y + (offset ? offset.dy : 0) - data.svgPos.y) + .5;
                         },
-                        pointToStr = function (pnt, offset, noTrailingSpace) {
-                            return getX(pnt, offset) + ',' + getY(pnt, offset) + (noTrailingSpace ? '' : ' ');
+                        pointToStr = function (pnt, offset) {
+                            return getX(pnt, offset) + ',' + getY(pnt, offset);
                         };
                     switch (data.arrowTypes[index]) {
                         case 'line':
@@ -458,41 +408,39 @@
                             };
                         case 'bezierQ':
                             return {
-                                d:  'M' + pointToStr(data.points.start, data.points.layout.fromOffset[index]) +
+                                d:  'M' + pointToStr(data.points.start, data.points.layout.fromOffset[index]) + ' ' +
                                     data.points.mid[index].map(function (e, i) {
                                         var point = data.points.getMidPoint(e, index),
-                                            pointStr = shadeOffset ? pointToStr(point, shadeOffset) : pointToStr(point);
+                                            pointStr = pointToStr(point, shadeOffset);
                                         switch (i) {
-                                            case 0: return 'Q' + pointStr;
-                                            case 1: return pointStr;
-                                            default: return i % 2 === 1 ? 'T' + pointStr : '';
+                                            case 0: return 'Q' + pointStr + ' ';
+                                            case 1: return pointStr + ' ';
+                                            default: return i % 2 === 1 ? 'T' + pointStr + ' ': '';
                                         } 
                                     }).join('') +
-                                    (data.points.mid[index].length === 1 ? '' : 'T') + pointToStr(data.points.end[index], data.points.layout.toOffset[index], true)
+                                    (data.points.mid[index].length === 1 ? '' : 'T') + pointToStr(data.points.end[index], data.points.layout.toOffset[index])
                             };
                         case 'bezierC':
                             return {
-                                d:  'M' + pointToStr(data.points.start, data.points.layout.fromOffset[index]) +
+                                d:  'M' + pointToStr(data.points.start, data.points.layout.fromOffset[index]) + ' ' +
                                     data.points.mid[index].map(function (e, i) {
                                         var point = data.points.getMidPoint(e, index),
-                                            pointStr = shadeOffset ? pointToStr(point, shadeOffset) : pointToStr(point);
+                                            pointStr = pointToStr(point, shadeOffset);
                                         switch (i) {
-                                            case 0: return 'C' + pointStr;
+                                            case 0: return 'C' + pointStr + ' ';
                                             case 1:
-                                            case 2: return pointStr;
-                                            default: return i % 3 === 0 ? '': (((i - 1) % 3 === 0 ? 'S' : '') + pointStr);
+                                            case 2: return pointStr + ' ';
+                                            default: return i % 3 === 0 ? '': (((i - 1) % 3 === 0 ? 'S' : '') + pointStr + ' ');
                                         } 
-                                    }).join('') + pointToStr(data.points.end[index], data.points.layout.toOffset[index], true)
+                                    }).join('') + pointToStr(data.points.end[index], data.points.layout.toOffset[index])
                             };
                         case 'polyline':
                             return {
-                                points: pointToStr(data.points.start, data.points.layout.fromOffset[index]) +
-                                        ',' + 
+                                points: pointToStr(data.points.start, data.points.layout.fromOffset[index]) + ', ' + 
                                         data.points.mid[index].map(function (e) {
-                                            var point = data.points.getMidPoint(e, index);
-                                            return shadeOffset ? pointToStr(point, shadeOffset) : pointToStr(point);
-                                        }).join(",") +
-                                        ',' +
+                                            return pointToStr(data.points.getMidPoint(e, index), shadeOffset);
+                                        }).join(',') +
+                                        ', ' +
                                         pointToStr(data.points.end[index], data.points.layout.toOffset[index])
                             };
                     }
@@ -514,6 +462,85 @@
                 },
                 getSVGtag: function (arrowType) {
                     return arrowType === 'bezierQ' || arrowType === 'bezierC' ? 'path' : arrowType;
+                },
+                createOrReplaceArrow: function (index, replace) {
+                    var attrs = this.getShapeAttrs(index),
+                        attrsShade = this.getShapeAttrs(index, {
+                            dx: opts.shadow.offsetX,
+                            dy: opts.shadow.offsetY
+                        }),
+                        $arrowElement;
+
+                    switch (data.arrowTypes[index]) {
+                        case 'polyline':
+                            attrs['stroke-linejoin'] = 'round';
+                            attrsShade['stroke-linejoin'] = 'round';
+                            // yes, no break here
+                        case 'bezierQ':
+                        case 'bezierC':
+                            attrs.fill = 'none';
+                            attrsShade.fill = 'none';
+                            // yes, no break here
+                        case 'line':
+                            attrs['stroke-linecap'] = 'round';
+                            attrsShade['stroke-linecap'] = 'round';
+                    }
+
+                    if (opts.shadow.visible) {
+                        attrsShade.stroke = opts.shadow.color;
+                        attrsShade.filter = 'url(#' + this.markers.ids.filter.shadow + ')';
+                        attrsShade['stroke-width'] = opts.stroke.width;
+                        ['Start', 'Mid', 'End'].forEach(function (e) { 
+                            if (DOM.markers.ids.filter[e]) {
+                                attrsShade['marker-' + e.toLowerCase()] = 'url(#' + DOM.markers.ids.filter[e] + ')';
+                            }
+                        });
+                        if (this.$shadowGroup === null && replace !== true) {
+                            this.$shadowGroup = this.createSvgDom('g');
+                            this.markers.$defs.after(this.$shadowGroup);
+                        }
+                        $arrowElement = this.createSvgDom(this.getSVGtag(data.arrowTypes[index]), attrsShade);
+                        if (replace === true) {
+                            this.arrowsShadow[index].replaceWith($arrowElement);
+                            this.arrowsShadow[index] = $arrowElement;
+                        } else {
+                            this.arrowsShadow.push($arrowElement.appendTo(this.$shadowGroup));
+                        }
+                        
+                    }
+
+                    if (data.outline) {
+                        attrs.stroke = opts.outline.color;
+                        attrs['stroke-width'] = opts.outline.width*2 + opts.stroke.width;
+                        $arrowElement = this.createSvgDom(this.getSVGtag(data.arrowTypes[index]), attrs);
+                        if (replace === true) {
+                            this.arrows[index].prev().replaceWith($arrowElement);
+                        } else {
+                            this.$svg.append($arrowElement);
+                        }
+                    }
+
+                    attrs.stroke = opts.stroke.color;
+                    attrs['stroke-width'] = opts.stroke.width;
+                    ['start', 'mid', 'end'].forEach(function (e) { 
+                        if (DOM.markers.ids[e]) {
+                            attrs['marker-' + e] = 'url(#' + DOM.markers.ids[e] + ')';
+                        }
+                    });
+                    $arrowElement = this.createSvgDom(this.getSVGtag(data.arrowTypes[index]), attrs);
+                    if (replace === true) {
+                        this.arrows[index].replaceWith($arrowElement);
+                        this.arrows[index] = $arrowElement;
+                    } else {
+                        this.$svg.append($arrowElement);
+                        this.arrows.push($arrowElement);
+                    }
+                },
+                createArrow: function (index) {
+                    this.createOrReplaceArrow(index);
+                },
+                replaceArrow: function (index) {
+                    this.createOrReplaceArrow(index, true);
                 }
             },
             events = {
@@ -575,7 +602,6 @@
             destroy = function () {
                 this.trigger('destroy.rsRefPointer');
             };
-
 
         if (typeof options === 'string') {
             var otherArgs = Array.prototype.slice.call(arguments, 1);
