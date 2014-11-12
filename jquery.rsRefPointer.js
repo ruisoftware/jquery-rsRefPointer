@@ -97,11 +97,15 @@
                             }
                         });
 
+
                         var pos = $elem.offset(),
+                            // this is way to retrieve the content dimensions for blocked elements
+                            $elemSpan = $elem.wrapInner('<span style="display: inline;">').children('span'),
                             fromOffset = {
-                                dx: $elem.width()/2,
-                                dy: $elem.height()/2
+                                dx: $elemSpan.width()/2,
+                                dy: $elemSpan.height()/2
                             };
+                        $elemSpan.contents().unwrap();
                         this.start = {
                             x: pos.left,
                             y: pos.top
