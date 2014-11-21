@@ -102,6 +102,7 @@
                                 '<menu class="refPointer design">' +
                                     '<header>Draggable Menu</header>' +
                                     '<hr>' +
+                                    '<menu>Pointing to?</menu>' +
                                     '<a href="#">New Line</a>' +
                                     '<a href="#">New Quadratic Bezier</a>' +
                                     '<a href="#">New Cubic Bezier</a>' +
@@ -181,23 +182,46 @@
                             $('head').append(
                                 '<style> ' + 
                                     'menu.refPointer.design,' +
+                                    'menu.refPointer.design menu,' +
                                     'menu.refPointer.design + div > div {' +
                                         'box-shadow: 0 0 10px black;' +
                                         'border-radius: 20px/15px;' +
                                         'position: absolute;' +
                                     '}' +
-                                    'menu.refPointer.design {' +
+                                    'menu.refPointer.design,' +
+                                    'menu.refPointer.design menu {' +
                                         'background-color: #ddd;' +
                                         'font-size: 12px;' +
                                         'font-family: arial;' +
                                         'display: inline-block;' +
                                         'left: 5px;' +
                                         'top: 50px;' +
-                                        'padding: 5px;' +
+                                        'padding: 8px;' +
                                         '-moz-user-select: none;' +
                                         '-ms-user-select: none;' +
                                         '-webkit-user-select: none;' +
                                         'user-select: none;' +
+                                    '}' +
+                                    'menu.refPointer.design menu {' +
+                                        'width: 85px;' +
+                                        'top: 54px;' +
+                                        'left: 172px;' +
+                                        'border-radius: 0;' +
+                                        'border-top-right-radius: 20px 15px;' +
+                                        'border-bottom-right-radius: 20px 15px;' +
+                                        'padding: 10px;' +
+                                    '}' +
+                                    'menu.refPointer.design:after {' +
+                                        'content: "";' +
+                                        'position: absolute;' +
+                                        'right: 0;' +
+                                        'top: 40px;' +
+                                        'width: 8px;' +
+                                        'height: 350px;' +
+                                        'background-color: #ddd;' +
+                                    '}' +
+                                    'menu.refPointer.design menu a {' +
+                                        'display: block;' +
                                     '}' +
                                     'menu.refPointer.design header {' +
                                         'cursor: move;' +
@@ -210,7 +234,8 @@
                                         'padding-left: 5px;' +
                                         'margin-bottom: 10px;' +
                                     '}' +
-                                    'menu.refPointer.design > a {' +
+                                    'menu.refPointer.design > a,' +
+                                    'menu.refPointer.design menu a {' +
                                         'display: block;' +
                                         'padding: 5px;' +
                                         'text-decoration: none;' +
@@ -220,7 +245,11 @@
                                     'menu.refPointer.design > a:first-of-type {' +
                                         'margin-top: 13px;' +
                                     '}' +
-                                    'menu.refPointer.design > a:hover {' +
+                                    'menu.refPointer.design menu a:first-of-type {' +
+                                        'margin-top: 8px;' +
+                                    '}' +
+                                    'menu.refPointer.design > a:hover,' +
+                                    'menu.refPointer.design menu a:hover {' +
                                         'background-color: grey;' +
                                         'color: white;' +
                                     '}' +
@@ -556,6 +585,13 @@
                             return relativePnt; // in design mode, the mid points are absolute, not relative
                         };
                         $('ul li:first-child', designMode.UI.menu.$menu).click(); // initializes the active arrow
+
+                        data.targets = [];
+                        var $submenuAddArrow = $('menu', designMode.UI.menu.$menu);
+                        pts.end.forEach(function (pnt, index) {
+                            data.targets.push(pnt);
+                            $submenuAddArrow.append('<a href="#">Target #' + ++index + '</a>');
+                        });
                     },
                     movePoint: function (e) {
                         if (designMode.UI.dragInfo.$point) {
