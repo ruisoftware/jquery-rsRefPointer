@@ -90,6 +90,18 @@
                     $points: null, // Array of jQuery set. Each jQuery object contains the points (start, end, mid) that belong to each arrow and their length is >= 2
                     menu: {
                         $menu: null,
+                        multipleTargets: {
+                            $subMenu: null,
+                            firstMouseover: true,
+                            type: null,
+                            showMenu: function (top) {
+                                this.firstMouseover = true;
+                                this.$subMenu.css('top', top + 'px').show();
+                            },
+                            hideMenu: function () {
+                                this.$subMenu.hide();
+                            }
+                        },
                         positionX: 0,
                         positionY: 0,
                         dragInfo: { // dragging the menu
@@ -102,6 +114,7 @@
                                 '<menu class="refPointer design">' +
                                     '<header>Draggable Menu</header>' +
                                     '<hr>' +
+                                    '<menu>Pointing to?<div></div></menu>' +
                                     '<a href="#">New Line</a>' +
                                     '<a href="#">New Quadratic Bezier</a>' +
                                     '<a href="#">New Cubic Bezier</a>' +
@@ -181,23 +194,46 @@
                             $('head').append(
                                 '<style> ' + 
                                     'menu.refPointer.design,' +
+                                    'menu.refPointer.design menu,' +
                                     'menu.refPointer.design + div > div {' +
                                         'box-shadow: 0 0 10px black;' +
                                         'border-radius: 20px/15px;' +
                                         'position: absolute;' +
                                     '}' +
-                                    'menu.refPointer.design {' +
+                                    'menu.refPointer.design,' +
+                                    'menu.refPointer.design menu {' +
                                         'background-color: #ddd;' +
                                         'font-size: 12px;' +
                                         'font-family: arial;' +
-                                        'display: inline-block;' +
+                                        'display: block;' +
                                         'left: 5px;' +
                                         'top: 50px;' +
-                                        'padding: 5px;' +
+                                        'padding: 8px;' +
                                         '-moz-user-select: none;' +
                                         '-ms-user-select: none;' +
                                         '-webkit-user-select: none;' +
                                         'user-select: none;' +
+                                    '}' +
+                                    'menu.refPointer.design menu {' +
+                                        'display: none;' +
+                                        'width: 85px;' +
+                                        'left: 172px;' +
+                                        'border-radius: 0;' +
+                                        'border-top-right-radius: 20px 15px;' +
+                                        'border-bottom-right-radius: 20px 15px;' +
+                                        'padding: 10px;' +
+                                    '}' +
+                                    'menu.refPointer.design:after {' +
+                                        'content: "";' +
+                                        'position: absolute;' +
+                                        'right: 0;' +
+                                        'top: 40px;' +
+                                        'width: 13px;' +
+                                        'height: 350px;' +
+                                        'background-color: #ddd;' +
+                                    '}' +
+                                    'menu.refPointer.design menu a {' +
+                                        'display: block;' +
                                     '}' +
                                     'menu.refPointer.design header {' +
                                         'cursor: move;' +
@@ -210,7 +246,8 @@
                                         'padding-left: 5px;' +
                                         'margin-bottom: 10px;' +
                                     '}' +
-                                    'menu.refPointer.design > a {' +
+                                    'menu.refPointer.design > a,' +
+                                    'menu.refPointer.design menu a {' +
                                         'display: block;' +
                                         'padding: 5px;' +
                                         'text-decoration: none;' +
@@ -220,7 +257,13 @@
                                     'menu.refPointer.design > a:first-of-type {' +
                                         'margin-top: 13px;' +
                                     '}' +
-                                    'menu.refPointer.design > a:hover {' +
+                                    'menu.refPointer.design menu div {' +
+                                        'margin-top: 8px;' +
+                                        'overflow: auto;' +
+                                        'max-height: 250px;' +
+                                    '}' +
+                                    'menu.refPointer.design > a:hover,' +
+                                    'menu.refPointer.design menu a:hover {' +
                                         'background-color: grey;' +
                                         'color: white;' +
                                     '}' +
@@ -252,6 +295,8 @@
                                         'text-decoration: none;' +
                                         'width: 16px;' +
                                         'text-align: center;' +
+                                        'line-height: 16px;' +
+                                        'height: 14px;' +
                                     '}' +
                                     'menu.refPointer.design ul li:hover {' +
                                         'background-color: white;' +
@@ -329,11 +374,21 @@
                             );
                             $('body').append(this.$menu);
                             var finishMenuDragging = function (e) {
-                                designMode.UI.menu.dragInfo.dragging = false;
-                                var pos = designMode.UI.menu.$menu.position();
-                                designMode.UI.menu.positionX = pos.left;
-                                designMode.UI.menu.positionY = pos.top;
-                            };
+                                    designMode.UI.menu.dragInfo.dragging = false;
+                                    var pos = designMode.UI.menu.$menu.position();
+                                    designMode.UI.menu.positionX = pos.left;
+                                    designMode.UI.menu.positionY = pos.top;
+                                },
+                                addArrowMenuClick = function (e, type, $menuOption) {
+                                    e.preventDefault();
+                                    if (data.$targets.length > 1) {
+                                        designMode.UI.menu.multipleTargets.type = type;
+                                        designMode.UI.menu.multipleTargets.showMenu($menuOption.position().top);
+                                    } else {
+                                        designMode.UI.addArrow(type, 0);
+                                    }
+                                },
+                                $newLineLink = $('> a:first-of-type', designMode.UI.menu.$menu);
                             $('header', designMode.UI.menu.$menu).mousedown(function (e) {
                                 designMode.UI.menu.dragInfo.dragging = true;
                                 designMode.UI.menu.dragInfo.startX = e.pageX;
@@ -353,16 +408,43 @@
                                 e.preventDefault();
                             });
 
-                            data.arrowTypes.forEach(function (e, index) {
+                            data.points.end.forEach(function (pnt, index) {
                                 designMode.UI.menu.addArrowLink();
                             });
-                            $('> a:first-of-type', designMode.UI.menu.$menu).click(function (e) {
-                                e.preventDefault();
-                                designMode.UI.addArrow('line');
+                            $newLineLink.click(function (e) {
+                                addArrowMenuClick(e, 'line', $(this));
                             });
-                            $('> a:first-of-type + a + a + a', designMode.UI.menu.$menu).removeClass(data.arrowTypes.length > 0 ? 'disabled' : null).click(function (e) {
+                            $newLineLink.next().click(function (e) {
+                                addArrowMenuClick(e, 'bezierQ', $(this));
+                            });
+                            $newLineLink.next().next().click(function (e) {
+                                addArrowMenuClick(e, 'bezierC', $(this));
+                            });
+                            $newLineLink.next().next().next().removeClass(data.arrowTypes.length > 0 ? 'disabled' : null).click(function (e) {
                                 e.preventDefault();
                                 designMode.UI.addPoint();
+                            });
+                            this.multipleTargets.$subMenu = $('menu', this.$menu).mouseleave(function () {
+                                if (!designMode.UI.menu.multipleTargets.firstMouseover) {
+                                    designMode.UI.cancelVirtualArrow();
+                                }
+                                designMode.UI.menu.multipleTargets.hideMenu();
+                            });
+                            data.$targets.each(function (index) {
+                                var $a = $('<a href="#">Target #' + (index + 1) + '</a>').mouseover(function () {
+                                    if (designMode.UI.menu.multipleTargets.firstMouseover) {
+                                        designMode.UI.menu.multipleTargets.firstMouseover = false;
+                                        designMode.UI.addVirtualArrow(designMode.UI.menu.multipleTargets.type, index);
+                                    } else {
+                                        designMode.UI.changeVirtualArrow(index);
+                                    }
+                                }).click(function (e) {
+                                    e.preventDefault();
+                                    designMode.UI.menu.multipleTargets.firstMouseover = true;
+                                    designMode.UI.saveVirtualArrow();
+                                    designMode.UI.menu.multipleTargets.hideMenu();
+                                })
+                                $('div', designMode.UI.menu.multipleTargets.$subMenu).append($a);
                             });
                         },
                         addArrowLink: function () {
@@ -423,23 +505,80 @@
                             }
                         }
                     },
-                    deleteArrow: function (arrowIdx) {
-                        if (designMode.UI.activeArrow.idx === arrowIdx) {
-                            if (arrowIdx === 0) {
-                                if (data.arrowTypes.length > 1) {
-                                    designMode.UI.activeArrow.select(1); // will run the if statement below
+                    /* Virtual arrows are those whose end point is still unknown when this function is called.
+                       The end point is known only when the user selects one of the multiple targets available.
+                       On the GUI, this happens when a submenu appears after clicking on any of the "new arrow" buttons.
+                       If only one target is available, then there is no need to handle virtual arrows, and a
+                       plain arrow is immediatelly created (with a known end point).
+                    */
+                    doAddArrow: function (type, targetIdx, virtual) {
+                        var $window = $(window),
+                            windowWidth = $window.width(),
+                            windowHeight = $window.height(),
+                            getRandomPoint = function () {
+                                return {
+                                    x: windowWidth/2 + Math.random()*windowWidth/2.5 - windowWidth/5,
+                                    y: windowHeight/2 + Math.random()*windowHeight/2.5 - windowHeight/5
+                                };
+                            };
+
+                        data.arrowTypes.push(type);
+                        switch (type) {
+                            case 'bezierQ':
+                                data.points.mid.push([getRandomPoint()]);
+                                break;
+                            case 'bezierC':
+                                data.points.mid.push([getRandomPoint(), getRandomPoint()]);
+                                break;
+                            default:
+                                data.points.mid.push([]);
+                        }
+                        data.points.end.push({
+                            x: data.points.end[targetIdx].x,
+                            y: data.points.end[targetIdx].y
+                        });
+                        data.points.layout.fromOffset.push({ dx: 0, dy: 0 });
+                        data.points.layout.toOffset.push({ dx: 0, dy: 0 });
+                        data.points.layout.topLeft.push({ x: 0, y: 0 });
+                        data.points.layout.size.push({ width: 0, height: 0 });
+                        var lastArrowIdx = data.arrowTypes.length - 1;
+                        DOM.createArrow(lastArrowIdx);
+                        if (!virtual) {
+                            this.addControlPointsAndLines(lastArrowIdx);
+                        }
+                    },
+                    addControlPointsAndLines: function (idx) {
+                        this.menu.addArrowLink();
+                        this.addStartEndControlPoints(data.points, data.points.end[idx], idx);
+                        this.addMidControlPointsAndLines(data.points, data.points.mid[idx], idx);
+                    },
+                    deleteArrow: function (arrowIdx, virtual) {
+                        if (!virtual) {
+                            if (designMode.UI.activeArrow.idx === arrowIdx) {
+                                if (arrowIdx === 0) {
+                                    if (data.arrowTypes.length > 1) {
+                                        designMode.UI.activeArrow.select(1); // will run the if statement below
+                                    } else {
+                                        designMode.UI.activeArrow.idx = null;
+                                    }
                                 } else {
-                                    designMode.UI.activeArrow.idx = null;
+                                    designMode.UI.activeArrow.select(arrowIdx - 1)
                                 }
-                            } else {
-                                designMode.UI.activeArrow.select(arrowIdx - 1)
+                            }
+                            if (designMode.UI.activeArrow.idx > arrowIdx) {
+                                designMode.UI.activeArrow.idx--;
+                            }
+                            designMode.UI.$points[arrowIdx].remove();
+                            designMode.UI.$points.splice(arrowIdx, 1);
+                            DOM.bezier.controlLines[arrowIdx].forEach(function ($e) {
+                                $e.remove();
+                            });
+                            DOM.bezier.controlLines.splice(arrowIdx, 1);
+                            $('ul li', designMode.UI.menu.$menu).eq(arrowIdx).remove();
+                            if ($('ul li', designMode.UI.menu.$menu).length === 0) {
+                                $('> a:first-of-type + a + a + a', designMode.UI.menu.$menu).addClass('disabled');
                             }
                         }
-                        if (designMode.UI.activeArrow.idx > arrowIdx) {
-                            designMode.UI.activeArrow.idx--;
-                        }
-                        designMode.UI.$points[arrowIdx].remove();
-                        designMode.UI.$points.splice(arrowIdx, 1);
 
                         data.arrowTypes.splice(arrowIdx, 1);
                         data.points.mid.splice(arrowIdx, 1);
@@ -450,34 +589,28 @@
                         data.points.layout.size.splice(arrowIdx, 1);
                         DOM.getArrow(arrowIdx).remove();
                         DOM.arrows.splice(arrowIdx, 1);
-                        DOM.bezier.controlLines[arrowIdx].forEach(function ($e) {
-                            $e.remove();
-                        });
-                        DOM.bezier.controlLines.splice(arrowIdx, 1);
                         if (opts.shadow.visible) {
                             DOM.arrowsShadow[arrowIdx].remove();
                             DOM.arrowsShadow.splice(arrowIdx, 1);
                         }
-                        $('ul li', designMode.UI.menu.$menu).eq(arrowIdx).remove();
-                        if ($('ul li', designMode.UI.menu.$menu).length === 0) {
-                            $('> a:first-of-type + a + a + a', designMode.UI.menu.$menu).addClass('disabled');
-                        }
                     },
-                    addArrow: function (type) {
-                        this.menu.addArrowLink();
-                        data.arrowTypes.push(type);
-                        data.points.mid.push([]);
-                        data.points.end.push({
-                            x: data.points.end[0].x,
-                            y: data.points.end[0].y
-                        });
-                        data.points.layout.fromOffset.push({ dx: 0, dy: 0 });
-                        data.points.layout.toOffset.push({ dx: 0, dy: 0 });
-                        data.points.layout.topLeft.push({ x: 0, y: 0 });
-                        data.points.layout.size.push({ width: 0, height: 0 });
+                    addArrow: function (type, targetIdx) {
+                        this.doAddArrow(type, targetIdx);
+                    },
+                    addVirtualArrow:  function (type, targetIdx) {
+                        this.doAddArrow(type, targetIdx, true);
+                    },
+                    changeVirtualArrow: function (targetIdx) {
                         var lastArrowIdx = data.arrowTypes.length - 1;
-                        DOM.createArrow(lastArrowIdx);
-                        this.addStartEndControlPoints(data.points, data.points.end[lastArrowIdx], lastArrowIdx);
+                        data.points.end[lastArrowIdx].x = data.points.end[targetIdx].x;
+                        data.points.end[lastArrowIdx].y = data.points.end[targetIdx].y;
+                        DOM.updateArrow(lastArrowIdx);
+                    },
+                    saveVirtualArrow: function () {
+                        this.addControlPointsAndLines(data.arrowTypes.length - 1);
+                    },
+                    cancelVirtualArrow: function () {
+                        this.deleteArrow(data.arrowTypes.length - 1, true);
                     },
                     addStartEndControlPoints: function (pts, pnt, index) {
                         var $startEndPoints = DOM.markers.getDesignModePoint(pts.start, index, index === 0, pts.layout.fromOffset).
@@ -540,7 +673,7 @@
                         this.menu.init();
 
                         var pts = data.points;
-                        DOM.$svg.add(designMode.UI.menu.$menu).
+                        DOM.$svg.add(this.menu.$menu).
                             mousemove(this.movePoint).
                             mouseup(function () {
                                 designMode.UI.dragInfo.$point = designMode.UI.dragInfo.pointType = designMode.UI.dragInfo.midRef = designMode.UI.dragInfo.bezierAnchorPointDelta = null;
@@ -827,7 +960,7 @@
                 }
                 return DOM.createSvgDom('line', attrs);
             },
-           Q: { // Quadratic beziers
+            Q: { // Quadratic beziers
                 addPoint: function (arrowIdx, midPoints, sets) {
                     var lastPntIdx = midPoints.length - 1,
                         newBezierPoint = { // new bezier point is the average of the last mid point with the last point
