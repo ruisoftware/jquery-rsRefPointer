@@ -55,6 +55,7 @@
             data = allData.data,
             DOM = allData.DOM,
             events = allData.events,
+            util = allData.util,
             designMode = {
                 UI: {
                     activeArrow: {
@@ -90,6 +91,18 @@
                     $points: null, // Array of jQuery set. Each jQuery object contains the points (start, end, mid) that belong to each arrow and their length is >= 2
                     menu: {
                         $menu: null,
+                        multipleTargets: {
+                            $subMenu: null,
+                            firstMouseover: true,
+                            type: null,
+                            showMenu: function (top) {
+                                this.firstMouseover = true;
+                                this.$subMenu.css('top', top + 'px').show();
+                            },
+                            hideMenu: function () {
+                                this.$subMenu.hide();
+                            }
+                        },
                         positionX: 0,
                         positionY: 0,
                         dragInfo: { // dragging the menu
@@ -98,11 +111,44 @@
                             startY: 0
                         },
                         init: function () {
+                            var $colorPicker = $('<span>').hide(),
+                                getHexColor = function (color) {
+                                    $colorPicker[0].style.color = color;
+                                    var rgb = window.getComputedStyle($colorPicker[0]).color.replace(/rgb\(|rgba\(| |\)/g, '').split(',');
+                                    return '#' + util.byteToHex(parseInt(rgb[0])) + util.byteToHex(parseInt(rgb[1])) + util.byteToHex(parseInt(rgb[2]));
+                                },
+                                getColorOpacity = function (color) {
+                                    var tokens = /(rgba|hsla)\((.*),(.*),(.*),(.*)\)/.exec(color);
+                                    if (tokens && tokens.length === 6) {
+                                        return parseFloat(tokens[5]);
+                                    }
+                                    return 1;
+                                },
+                                isMarkerPointer = function (marker) {
+                                    return marker === 'pointer';
+                                },
+                                isMarkerPointer2 = function (marker) {
+                                    return marker === 'pointer2';
+                                },
+                                isMarkerCircle = function (marker) {
+                                    return marker === 'circle';
+                                },
+                                isMarkerSquare = function (marker) {
+                                    return marker === 'square';
+                                },
+                                isMarkerNone = function (marker) {
+                                    return !isMarkerPointer(marker) &&
+                                           !isMarkerPointer2(marker) &&
+                                           !isMarkerCircle(marker) &&
+                                           !isMarkerSquare(marker);
+                                };
+
+                            $('body').append($colorPicker);
                             this.$menu = $(
                                 '<menu class="refPointer design">' +
                                     '<header>Draggable Menu</header>' +
                                     '<hr>' +
-                                    '<menu>Pointing to?</menu>' +
+                                    '<menu>Pointing to?<div></div></menu>' +
                                     '<a href="#">New Line</a>' +
                                     '<a href="#">New Quadratic Bezier</a>' +
                                     '<a href="#">New Cubic Bezier</a>' +
@@ -112,15 +158,14 @@
                                     '<a href="#">Arrow Properties</a>' +
                                     '<hr>' +
                                     '<a href="#">Generate Code to Console</a>' +
-                                '</menu>'
-/*
-                                +
-
+                                '</menu>' +
                                 '<div>' +
                                     '<div>Arrow Properties<a href="#" title="Discard changes and close popup">&#x2715;</a>' +
-                                        '<hr><label>Preview</label><label>Markers</label><label>Stroke</label><label>Outline</label>' +
-                                        '<input type="color" value="#000000"><input type="color" value="#000000"><input type="color" value="#ffff00"><input type="range" min="0" max="4" value="0" step="1" name="power" list="powers">' +
-                                        '<svg width="150px" height="100px" xmlns="http://www.w3.org/2000/svg" version="1.1">' +
+                                        '<hr><span>Markers</span><span>Preview</span>' +
+                                        '<label>Size</label>' +
+                                        '<input type="range" min="0.1" max="4" value="' + opts.marker.size + '" step="0.25">' +
+                                        '<label>Start, Mid and End Shapes</label>' +
+                                        '<svg width="340px" height="170px" xmlns="http://www.w3.org/2000/svg" version="1.1">' +
                                             '<defs>' +
                                                 '<marker id="rsRefPMarkerPointer" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
                                                     '<path d="M0,0 L0,6 L8,3 z" fill="white" stroke="black"></path>' +
@@ -144,40 +189,48 @@
                                                     '<rect x="0" y="0" width="4" height="4" rx="1" ry="1" fill="black"></rect>' +
                                                 '</marker>' +
                                             '</defs>' +
-                                            '<path d="M18,16.5 L74,16.5 L128,16.5" stroke="black" stroke-width="1" marker-start="url(#rsRefPMarkerPointer)" marker-mid="url(#rsRefPMarkerCircle2)" marker-end="url(#rsRefPMarkerCircle2)"></path>' +
-                                            '<text x="7" y="36">none</text>' +
-                                            '<text x="68" y="36">none</text>' +
-                                            '<text x="130" y="36">none</text>' +
+                                            '<polyline points="180,20, 200,70, 220,30, 300,90" stroke="black" stroke-width="1" fill="none" marker-start="url(#rsRefPMarkerPointer)" marker-mid="url(#rsRefPMarkerCircle2)" marker-end="url(#rsRefPMarkerCircle2)"></polyline>' +
+                                            '<path d="M170,90 Q130,170 220,120 T260,140" fill="none" stroke-linecap="round" stroke="black" stroke-width="1"></path>' +
+                                            '<text x="0" y="78" ' + (isMarkerNone(opts.marker.start) ? 'class="selected"' : '') + '>none</text>' +
+                                            '<text x="45" y="78" ' + (isMarkerNone(opts.marker.mid) ? 'class="selected"' : '') + '>none</text>' +
+                                            '<text x="90" y="78" ' + (isMarkerNone(opts.marker.end) ? 'class="selected"' : '') + '>none</text>' +
                                             // pointer
-                                            '<path d="M7,45 L7,57 L23,51 z"></path>' +
-                                            '<path d="M68,45 L68,57 L84,51 z"></path>' +
-                                            '<path d="M130,45 L130,57 L146,51 z"></path>' +
+                                            '<path d="M3,86 L3,98 L19,92 z" ' + (isMarkerPointer(opts.marker.start) ? 'class="selected"' : '') + '></path>' +
+                                            '<path d="M48,86 L48,98 L64,92 z" ' + (isMarkerPointer(opts.marker.mid) ? 'class="selected"' : '') + '></path>' +
+                                            '<path d="M93,86 L93,98 L109,92 z" ' + (isMarkerPointer(opts.marker.end) ? 'class="selected"' : '') + '></path>' +
                                             // pointer2
-                                            '<path d="M11,69 L7,75 L23,69 L7,63 z"></path>' +
-                                            '<path d="M72,69 L68,75 L84,69 L68,63 z"></path>' +
-                                            '<path d="M134,69 L130,75 L146,69 L130,63 z"></path>' +
+                                            '<path d="M7,112 L3,118 L19,112 L3,106 z" ' + (isMarkerPointer2(opts.marker.start) ? 'class="selected"' : '') + '></path>' +
+                                            '<path d="M52,112 L48,118 L64,112 L48,106 z" ' + (isMarkerPointer2(opts.marker.mid) ? 'class="selected"' : '') + '></path>' +
+                                            '<path d="M97,112 L93,118 L109,112 L93,106 z" ' + (isMarkerPointer2(opts.marker.end) ? 'class="selected"' : '') + '></path>' +
                                             // сircle
-                                            '<circle cx="13" cy="87" r="6"></circle>' +
-                                            '<circle cx="74" cy="87" r="6"></circle>' +
-                                            '<circle cx="136" cy="87" r="6"></circle>' +
+                                            '<circle cx="10" cy="132" r="6" ' + (isMarkerCircle(opts.marker.start) ? 'class="selected"' : '') + '></circle>' +
+                                            '<circle cx="55" cy="132" r="6" ' + (isMarkerCircle(opts.marker.mid) ? 'class="selected"' : '') + '></circle>' +
+                                            '<circle cx="100" cy="132" r="6" ' + (isMarkerCircle(opts.marker.end) ? 'class="selected"' : '') + '></circle>' +
                                             // rect
-                                            '<rect x="6" y="110" width="12" height="12" rx="1" ry="1"></rect>' +
-                                            '<rect x="68" y="110" width="12" height="12" rx="1" ry="1"></rect>' +
-                                            '<rect x="130" y="110" width="12" height="12" rx="1" ry="1"></rect>' +
-
-                                            '<g>' +
-                                                '<text x="7" y="136">Size:</text>' +
-                                                '<text x="7" y="146">Fill:</text>' +
-                                                '<text x="7" y="156">Size:</text>' +
-                                                '<text x="7" y="166">Color:</text>' +
-                                                '<text x="7" y="176">Size:</text>' +
-                                                '<text x="7" y="186">Color:</text>' +
-                                            '</g>' +
+                                            '<rect x="4" y="146" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.start) ? 'class="selected"' : '') + '></rect>' +
+                                            '<rect x="49" y="146" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.mid) ? 'class="selected"' : '') + '></rect>' +
+                                            '<rect x="94" y="146" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.end) ? 'class="selected"' : '') + '></rect>' +
                                         '</svg>' +
+                                        '<span>Stroke</span>' +
+                                        '<span>Outline</span>' +
+                                        '<label>Size</label><input type="range" min="1" max="4" value="' + opts.stroke.width + '" step="0.25">' +
+                                        '<label>Color</label><input type="color" value="' + getHexColor(opts.stroke.color) + '">' +
+                                        '<label>Opacity</label><input type="range" min="0" max="1" value="' + getColorOpacity(opts.stroke.color) + '" step="0.025">' +
+                                        // outline
+                                        '<label>Size</label><input type="range" min="0" max="4" value="' + opts.outline.width + '" step="0.25">' +
+                                        '<label>Color</label><input type="color" value="' + getHexColor(opts.outline.color) + '">' +
+                                        '<label>Opacity</label><input type="range" min="0" max="1" value="' + getColorOpacity(opts.outline.color) + '" step="0.025">' +
+                                        
+                                        '<span>Shadow</span>' +
+                                        '<input type="checkbox" ' + (opts.shadow.visible ? 'checked ' : '') + 'id="rsRefPointerChk3020-201f0"><label for="rsRefPointerChk3020-201f0">Enabled</label>' +
+                                        '<label>X Offset</label><input type="range" min="-50" max="50" value="' + opts.shadow.offsetX + '">' +
+                                        '<label>Y Offset</label><input type="range" min="-50" max="50" value="' + opts.shadow.offsetY + '">' +
+                                        '<label>Color</label><input type="color" value="' + getHexColor(opts.shadow.color) + '">' +
+                                        '<label>Opacity</label><input type="range" min="0" max="1" value="' + getColorOpacity(opts.shadow.color) + '" step="0.025">' +
+                                        '<label>Blur</label><input type="range" min="0" max="1" value="' + opts.shadow.blur + '" step="0.025">' +
                                         '<button>Apply Changes</button>' +
                                     '</div>' +
                                 '</div>'
-*/
                             );
                             $('head').append(
                                 '<style> ' + 
@@ -193,7 +246,7 @@
                                         'background-color: #ddd;' +
                                         'font-size: 12px;' +
                                         'font-family: arial;' +
-                                        'display: inline-block;' +
+                                        'display: block;' +
                                         'left: 5px;' +
                                         'top: 50px;' +
                                         'padding: 8px;' +
@@ -203,8 +256,8 @@
                                         'user-select: none;' +
                                     '}' +
                                     'menu.refPointer.design menu {' +
+                                        'display: none;' +
                                         'width: 85px;' +
-                                        'top: 54px;' +
                                         'left: 172px;' +
                                         'border-radius: 0;' +
                                         'border-top-right-radius: 20px 15px;' +
@@ -216,7 +269,7 @@
                                         'position: absolute;' +
                                         'right: 0;' +
                                         'top: 40px;' +
-                                        'width: 8px;' +
+                                        'width: 13px;' +
                                         'height: 350px;' +
                                         'background-color: #ddd;' +
                                     '}' +
@@ -245,8 +298,10 @@
                                     'menu.refPointer.design > a:first-of-type {' +
                                         'margin-top: 13px;' +
                                     '}' +
-                                    'menu.refPointer.design menu a:first-of-type {' +
+                                    'menu.refPointer.design menu div {' +
                                         'margin-top: 8px;' +
+                                        'overflow: auto;' +
+                                        'max-height: 250px;' +
                                     '}' +
                                     'menu.refPointer.design > a:hover,' +
                                     'menu.refPointer.design menu a:hover {' +
@@ -281,6 +336,8 @@
                                         'text-decoration: none;' +
                                         'width: 16px;' +
                                         'text-align: center;' +
+                                        'line-height: 16px;' +
+                                        'height: 14px;' +
                                     '}' +
                                     'menu.refPointer.design ul li:hover {' +
                                         'background-color: white;' +
@@ -303,6 +360,7 @@
                                         'cursor: default;' +
                                     '}' +
                                     'menu.refPointer.design + div {' +
+                                        'display: none;' +
                                         'position: absolute;' +
                                         'top: 0;' +
                                         'right: 0;' +
@@ -310,12 +368,15 @@
                                         'left: 0;' +
                                         'background-color: rgba(0, 0, 0, .5);' +
                                     '}' +
+
                                     'menu.refPointer.design + div > div {' +
                                         'position: absolute;' +
                                         'left: 50%;' +
                                         'top: 50%;' +
-                                        'margin-left: -90px;' +
-                                        'margin-top: -110px;' +
+                                        'width: 400px;' +
+                                        'height: 570px;' +
+                                        'margin-left: -200px;' +
+                                        'margin-top: -285px;' +
                                         'font-family: arial;' +
                                         'font-size: 12px;' +
                                         'padding: 10px;' +
@@ -327,18 +388,47 @@
                                         'font-size: 15px;' +
                                         'text-decoration: none;' +
                                         'color: grey;' +
+                                        'top: 7px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div a:first-of-type:hover {' +
                                         'color: red;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div label {' +
-                                        'font-size: 8px;' +
+                                    'menu.refPointer.design + div > div a:first-of-type + hr {' +
+                                        'margin-bottom: 25px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div span {' +
+                                        'font-size: 11px;' +
                                         'text-shadow: 1px 1px white;' +
+                                        'width: 175px;' +
+                                        'left: 10px;' +
+                                        'border-bottom: 1px solid #ccc;' +
+                                        'font-weight: bold;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div span + span {' +
+                                        'left: 35px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div label {' +
+                                        'left: 25px;' +
+                                        'font-size: 9px;' +
+                                        'top: 23px;' +
+                                        'display: block;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div span + span + label + input {' +
+                                        'left: 66px;' +
+                                        'top: 8px;' +
+                                        'width: 60px;' +
+                                        'z-index: 1;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div span + span + label + input + label {' +
+                                        'top: 20px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div > svg {' +
                                         'display: block;' +
-                                        'fill: grey;' +
+                                        'fill: #ccc;' +
                                         'font-size: 9px;' +
+                                        'position: relative;' +
+                                        'left: 63px;' +
+                                        'top: -40px;' +
                                     '}' +
                                     'menu.refPointer.design + div svg > text:hover,' +
                                     'menu.refPointer.design + div svg > path:hover,' +
@@ -347,22 +437,128 @@
                                         'cursor: pointer;' +
                                         'fill: black;' +
                                     '}' +
+                                    'menu.refPointer.design + div svg > text.selected,' +
+                                    'menu.refPointer.design + div svg > path.selected,' +
+                                    'menu.refPointer.design + div svg > circle.selected,' +
+                                    'menu.refPointer.design + div svg > rect.selected {' +
+                                        'fill: black;' +
+                                    '}' +
                                     'menu.refPointer.design + div svg > g > text {' +
                                         'font-size: 11px;' +
                                     '}' +
+                                    'menu.refPointer.design + div > div > svg ~ span {' +
+                                        'top: -25px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > svg ~ span ~ label {' +
+                                        'top: -2px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > svg ~ span ~ label + input + label {' +
+                                        'top: -5px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > svg ~ span + label ~ input {' +
+                                        'left: 66px;' +
+                                        'top: -17px;' +
+                                        'width: 60px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > input[type=color] {' +
+                                        'height: 17px;' +
+                                        'width: 54px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > svg ~ span + label ~ input + label + input {' +
+                                        'top: -20px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > svg ~ span + label + input + label + input + label + input {' +
+                                        'display: block;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > svg ~ span + label + input + label + input + label + input ~ label {' +
+                                        'top: -98px;' +
+                                        'left: 225px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > svg ~ span + label + input + label + input + label + input ~ label + input + label {' +
+                                        'top: -101px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > svg ~ span + label + input + label + input + label + input ~ input {' +
+                                        'top: -113px;' +
+                                        'left: 266px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > svg ~ span + label + input + label + input + label + input + label + input ~ input {' +
+                                        'top: -116px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > svg ~ span:last-of-type {' +
+                                        'top: -100px;' +
+                                        'width: 375px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 {' +
+                                        'width: auto;' +
+                                        'top: -63px;' +
+                                        'left: -350px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label {' +
+                                        'top: -77px;' +
+                                        'left: 37px;' +
+                                        'padding-left: 6px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label {' +
+                                        'top: -56px;' +
+                                        'left: 26px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label ~ input {' +
+                                        'top: -71px;' +
+                                        'left: 66px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label + input + label + input {' +
+                                        'top: -74px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label + input + label + input ~ label {' +
+                                        'top: -155px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label + input + label + input ~ label:last-of-type {' +
+                                        'top: -158px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label + input + label + input + label ~ input {' +
+                                        'top: -170px;' +
+                                        'left: 266px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label + input + label ~ input:last-of-type {' +
+                                        'top: -173px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label + input + label {' +
+                                        'top: -59px;' +
+                                        'left: 26px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div button {' +
+                                        'position: absolute;' +
+                                        'bottom: 15px;' +
+                                        'right: 25px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div span,' +
                                     'menu.refPointer.design + div label,' +
                                     'menu.refPointer.design + div input {' +
-                                        'position: absolute;' +
+                                        'position: relative;' +
+                                        'display: inline-block;' +
+                                        'margin: 0;' +
                                     '}' +
                                 '</style>'
                             );
+                            $colorPicker.remove();
                             $('body').append(this.$menu);
                             var finishMenuDragging = function (e) {
-                                designMode.UI.menu.dragInfo.dragging = false;
-                                var pos = designMode.UI.menu.$menu.position();
-                                designMode.UI.menu.positionX = pos.left;
-                                designMode.UI.menu.positionY = pos.top;
-                            };
+                                    designMode.UI.menu.dragInfo.dragging = false;
+                                    var pos = designMode.UI.menu.$menu.position();
+                                    designMode.UI.menu.positionX = pos.left;
+                                    designMode.UI.menu.positionY = pos.top;
+                                },
+                                addArrowMenuClick = function (e, type, $menuOption) {
+                                    e.preventDefault();
+                                    if (data.$targets.length > 1) {
+                                        designMode.UI.menu.multipleTargets.type = type;
+                                        designMode.UI.menu.multipleTargets.showMenu($menuOption.position().top);
+                                    } else {
+                                        designMode.UI.addArrow(type, 0);
+                                    }
+                                },
+                                $newLineLink = $('> a:first-of-type', designMode.UI.menu.$menu),
+                                $popup = designMode.UI.menu.$menu.eq(1);
                             $('header', designMode.UI.menu.$menu).mousedown(function (e) {
                                 designMode.UI.menu.dragInfo.dragging = true;
                                 designMode.UI.menu.dragInfo.startX = e.pageX;
@@ -382,16 +578,49 @@
                                 e.preventDefault();
                             });
 
-                            data.arrowTypes.forEach(function (e, index) {
+                            data.points.end.forEach(function (pnt, index) {
                                 designMode.UI.menu.addArrowLink();
                             });
-                            $('> a:first-of-type', designMode.UI.menu.$menu).click(function (e) {
-                                e.preventDefault();
-                                designMode.UI.addArrow('line');
+                            $newLineLink.click(function (e) {
+                                addArrowMenuClick(e, 'line', $(this));
                             });
-                            $('> a:first-of-type + a + a + a', designMode.UI.menu.$menu).removeClass(data.arrowTypes.length > 0 ? 'disabled' : null).click(function (e) {
+                            $newLineLink.next().click(function (e) {
+                                addArrowMenuClick(e, 'bezierQ', $(this));
+                            });
+                            $newLineLink.next().next().click(function (e) {
+                                addArrowMenuClick(e, 'bezierC', $(this));
+                            });
+                            $newLineLink.next().next().next().removeClass(data.arrowTypes.length > 0 ? 'disabled' : null).click(function (e) {
                                 e.preventDefault();
                                 designMode.UI.addPoint();
+                            });
+                            $newLineLink.siblings('ul').next().click(function (e) {
+                                $popup.show();
+                            });
+                            $('> div > a', $popup).click(function (e) {
+                                $popup.hide();
+                            });
+                            this.multipleTargets.$subMenu = $('menu', this.$menu).mouseleave(function () {
+                                if (!designMode.UI.menu.multipleTargets.firstMouseover) {
+                                    designMode.UI.cancelVirtualArrow();
+                                }
+                                designMode.UI.menu.multipleTargets.hideMenu();
+                            });
+                            data.$targets.each(function (index) {
+                                var $a = $('<a href="#">Target #' + (index + 1) + '</a>').mouseover(function () {
+                                    if (designMode.UI.menu.multipleTargets.firstMouseover) {
+                                        designMode.UI.menu.multipleTargets.firstMouseover = false;
+                                        designMode.UI.addVirtualArrow(designMode.UI.menu.multipleTargets.type, index);
+                                    } else {
+                                        designMode.UI.changeVirtualArrow(index);
+                                    }
+                                }).click(function (e) {
+                                    e.preventDefault();
+                                    designMode.UI.menu.multipleTargets.firstMouseover = true;
+                                    designMode.UI.saveVirtualArrow();
+                                    designMode.UI.menu.multipleTargets.hideMenu();
+                                });
+                                $('div', designMode.UI.menu.multipleTargets.$subMenu).append($a);
                             });
                         },
                         addArrowLink: function () {
@@ -452,23 +681,80 @@
                             }
                         }
                     },
-                    deleteArrow: function (arrowIdx) {
-                        if (designMode.UI.activeArrow.idx === arrowIdx) {
-                            if (arrowIdx === 0) {
-                                if (data.arrowTypes.length > 1) {
-                                    designMode.UI.activeArrow.select(1); // will run the if statement below
+                    /* Virtual arrows are those whose end point is still unknown when this function is called.
+                       The end point is known only when the user selects one of the multiple targets available.
+                       On the GUI, this happens when a submenu appears after clicking on any of the "new arrow" buttons.
+                       If only one target is available, then there is no need to handle virtual arrows, and a
+                       plain arrow is immediatelly created (with a known end point).
+                    */
+                    doAddArrow: function (type, targetIdx, virtual) {
+                        var $window = $(window),
+                            windowWidth = $window.width(),
+                            windowHeight = $window.height(),
+                            getRandomPoint = function () {
+                                return {
+                                    x: windowWidth/2 + Math.random()*windowWidth/2.5 - windowWidth/5,
+                                    y: windowHeight/2 + Math.random()*windowHeight/2.5 - windowHeight/5
+                                };
+                            };
+
+                        data.arrowTypes.push(type);
+                        switch (type) {
+                            case 'bezierQ':
+                                data.points.mid.push([getRandomPoint()]);
+                                break;
+                            case 'bezierC':
+                                data.points.mid.push([getRandomPoint(), getRandomPoint()]);
+                                break;
+                            default:
+                                data.points.mid.push([]);
+                        }
+                        data.points.end.push({
+                            x: data.points.end[targetIdx].x,
+                            y: data.points.end[targetIdx].y
+                        });
+                        data.points.layout.fromOffset.push({ dx: 0, dy: 0 });
+                        data.points.layout.toOffset.push({ dx: 0, dy: 0 });
+                        data.points.layout.topLeft.push({ x: 0, y: 0 });
+                        data.points.layout.size.push({ width: 0, height: 0 });
+                        var lastArrowIdx = data.arrowTypes.length - 1;
+                        DOM.createArrow(lastArrowIdx);
+                        if (!virtual) {
+                            this.addControlPointsAndLines(lastArrowIdx);
+                        }
+                    },
+                    addControlPointsAndLines: function (idx) {
+                        this.menu.addArrowLink();
+                        this.addStartEndControlPoints(data.points, data.points.end[idx], idx);
+                        this.addMidControlPointsAndLines(data.points, data.points.mid[idx], idx);
+                    },
+                    deleteArrow: function (arrowIdx, virtual) {
+                        if (!virtual) {
+                            if (designMode.UI.activeArrow.idx === arrowIdx) {
+                                if (arrowIdx === 0) {
+                                    if (data.arrowTypes.length > 1) {
+                                        designMode.UI.activeArrow.select(1); // will run the if statement below
+                                    } else {
+                                        designMode.UI.activeArrow.idx = null;
+                                    }
                                 } else {
-                                    designMode.UI.activeArrow.idx = null;
+                                    designMode.UI.activeArrow.select(arrowIdx - 1)
                                 }
-                            } else {
-                                designMode.UI.activeArrow.select(arrowIdx - 1)
+                            }
+                            if (designMode.UI.activeArrow.idx > arrowIdx) {
+                                designMode.UI.activeArrow.idx--;
+                            }
+                            designMode.UI.$points[arrowIdx].remove();
+                            designMode.UI.$points.splice(arrowIdx, 1);
+                            DOM.bezier.controlLines[arrowIdx].forEach(function ($e) {
+                                $e.remove();
+                            });
+                            DOM.bezier.controlLines.splice(arrowIdx, 1);
+                            $('ul li', designMode.UI.menu.$menu).eq(arrowIdx).remove();
+                            if ($('ul li', designMode.UI.menu.$menu).length === 0) {
+                                $('> a:first-of-type + a + a + a', designMode.UI.menu.$menu).addClass('disabled');
                             }
                         }
-                        if (designMode.UI.activeArrow.idx > arrowIdx) {
-                            designMode.UI.activeArrow.idx--;
-                        }
-                        designMode.UI.$points[arrowIdx].remove();
-                        designMode.UI.$points.splice(arrowIdx, 1);
 
                         data.arrowTypes.splice(arrowIdx, 1);
                         data.points.mid.splice(arrowIdx, 1);
@@ -479,34 +765,28 @@
                         data.points.layout.size.splice(arrowIdx, 1);
                         DOM.getArrow(arrowIdx).remove();
                         DOM.arrows.splice(arrowIdx, 1);
-                        DOM.bezier.controlLines[arrowIdx].forEach(function ($e) {
-                            $e.remove();
-                        });
-                        DOM.bezier.controlLines.splice(arrowIdx, 1);
                         if (opts.shadow.visible) {
                             DOM.arrowsShadow[arrowIdx].remove();
                             DOM.arrowsShadow.splice(arrowIdx, 1);
                         }
-                        $('ul li', designMode.UI.menu.$menu).eq(arrowIdx).remove();
-                        if ($('ul li', designMode.UI.menu.$menu).length === 0) {
-                            $('> a:first-of-type + a + a + a', designMode.UI.menu.$menu).addClass('disabled');
-                        }
                     },
-                    addArrow: function (type) {
-                        this.menu.addArrowLink();
-                        data.arrowTypes.push(type);
-                        data.points.mid.push([]);
-                        data.points.end.push({
-                            x: data.points.end[0].x,
-                            y: data.points.end[0].y
-                        });
-                        data.points.layout.fromOffset.push({ dx: 0, dy: 0 });
-                        data.points.layout.toOffset.push({ dx: 0, dy: 0 });
-                        data.points.layout.topLeft.push({ x: 0, y: 0 });
-                        data.points.layout.size.push({ width: 0, height: 0 });
+                    addArrow: function (type, targetIdx) {
+                        this.doAddArrow(type, targetIdx);
+                    },
+                    addVirtualArrow:  function (type, targetIdx) {
+                        this.doAddArrow(type, targetIdx, true);
+                    },
+                    changeVirtualArrow: function (targetIdx) {
                         var lastArrowIdx = data.arrowTypes.length - 1;
-                        DOM.createArrow(lastArrowIdx);
-                        this.addStartEndControlPoints(data.points, data.points.end[lastArrowIdx], lastArrowIdx);
+                        data.points.end[lastArrowIdx].x = data.points.end[targetIdx].x;
+                        data.points.end[lastArrowIdx].y = data.points.end[targetIdx].y;
+                        DOM.updateArrow(lastArrowIdx);
+                    },
+                    saveVirtualArrow: function () {
+                        this.addControlPointsAndLines(data.arrowTypes.length - 1);
+                    },
+                    cancelVirtualArrow: function () {
+                        this.deleteArrow(data.arrowTypes.length - 1, true);
                     },
                     addStartEndControlPoints: function (pts, pnt, index) {
                         var $startEndPoints = DOM.markers.getDesignModePoint(pts.start, index, index === 0, pts.layout.fromOffset).
@@ -569,7 +849,7 @@
                         this.menu.init();
 
                         var pts = data.points;
-                        DOM.$svg.add(designMode.UI.menu.$menu).
+                        DOM.$svg.add(this.menu.$menu).
                             mousemove(this.movePoint).
                             mouseup(function () {
                                 designMode.UI.dragInfo.$point = designMode.UI.dragInfo.pointType = designMode.UI.dragInfo.midRef = designMode.UI.dragInfo.bezierAnchorPointDelta = null;
@@ -585,13 +865,6 @@
                             return relativePnt; // in design mode, the mid points are absolute, not relative
                         };
                         $('ul li:first-child', designMode.UI.menu.$menu).click(); // initializes the active arrow
-
-                        data.targets = [];
-                        var $submenuAddArrow = $('menu', designMode.UI.menu.$menu);
-                        pts.end.forEach(function (pnt, index) {
-                            data.targets.push(pnt);
-                            $submenuAddArrow.append('<a href="#">Target #' + ++index + '</a>');
-                        });
                     },
                     movePoint: function (e) {
                         if (designMode.UI.dragInfo.$point) {
@@ -863,7 +1136,7 @@
                 }
                 return DOM.createSvgDom('line', attrs);
             },
-           Q: { // Quadratic beziers
+            Q: { // Quadratic beziers
                 addPoint: function (arrowIdx, midPoints, sets) {
                     var lastPntIdx = midPoints.length - 1,
                         newBezierPoint = { // new bezier point is the average of the last mid point with the last point

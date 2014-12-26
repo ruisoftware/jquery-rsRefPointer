@@ -579,6 +579,9 @@
                 },
                 samePoint: function (a, b) {
                     return this.areTheSame(a, b, .5);
+                },
+                byteToHex: function (byte) {
+                    return (byte > 15 ? '' : '0') + byte.toString(16);
                 }
             };
 
@@ -586,7 +589,8 @@
         return {
             data: data,
             DOM: DOM,
-            events: events
+            events: events,
+            util: util
         };
     };
 

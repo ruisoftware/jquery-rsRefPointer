@@ -7,7 +7,14 @@
     <script src="jquery.rsRefPointer-design.js"></script>
     <script>
         $(document).ready(function () {
-          $("a").eq(0).rsRefPointer();
+          $("a").eq(0).rsRefPointer({
+            marker: {
+              size: 0.1
+            },
+            stroke: {
+              color: 'aqua'
+            }
+          });
 
           $("#clean").click(function () {
             $("a").rsRefPointer('destroy');
