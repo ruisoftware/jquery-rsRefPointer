@@ -161,73 +161,87 @@
                                 '</menu>' +
                                 '<div>' +
                                     '<div>Arrow Properties<a href="#" title="Discard changes and close popup">&#x2715;</a>' +
-                                        '<hr><span>Markers</span><span>Preview</span>' +
-                                        '<label>Size</label>' +
-                                        '<input type="range" min="0.1" max="4" value="' + opts.marker.size + '" step="0.25">' +
-                                        '<label>Start, Mid and End Shapes</label>' +
-                                        '<svg width="340px" height="170px" xmlns="http://www.w3.org/2000/svg" version="1.1">' +
-                                            '<defs>' +
-                                                '<marker id="rsRefPMarkerPointer" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
-                                                    '<path d="M0,0 L0,6 L8,3 z" fill="white" stroke="black"></path>' +
-                                                '</marker>' +
+                                        '<hr>' +
+                                        '<g>' +
+                                            '<div>Markers</div>' +
+                                            '<span>Size</span>' +
+                                            '<input type="range" min="0.1" max="4" value="' + opts.marker.size + '" step="0.25">' +
+                                            '<span>Shapes</span><label>start</label><label>mid</label><label>end</label>' +
+                                            '<svg width="340px" height="170px" xmlns="http://www.w3.org/2000/svg" version="1.1">' +
+                                                '<defs>' +
+                                                    '<marker id="rsRefPMarkerPointer" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
+                                                        '<path d="M0,0 L0,6 L8,3 z" fill="white" stroke="black"></path>' +
+                                                    '</marker>' +
 
-                                                '<marker id="rsRefPMarkerPointer2" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
-                                                    '<path d="M2,3 L0,6 L8,3 L0,0 z" fill="black"></path>' +
-                                                '</marker>' +
+                                                    '<marker id="rsRefPMarkerPointer2" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
+                                                        '<path d="M2,3 L0,6 L8,3 L0,0 z" fill="black"></path>' +
+                                                    '</marker>' +
 
-                                                '<marker id="rsRefPMarkerCircle" markerWidth="5" markerHeight="5" refX="3" refY="3" orient="auto">' +
-                                                    '<circle cx="3" cy="3" r="2" fill="black"></circle>' +
-                                                '</marker>' +
-                                                '<marker id="rsRefPMarkerCircle2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">' +
-                                                    '<circle cx="3.5" cy="3.5" r="3" fill="black"></circle>' +
-                                                '</marker>' +
-                                                '<marker id="rsRefPMarkerCircle3" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">' +
-                                                    '<circle cx="4.5" cy="4.5" r="4" fill="black"></circle>' +
-                                                '</marker>' +
+                                                    '<marker id="rsRefPMarkerCircle" markerWidth="5" markerHeight="5" refX="3" refY="3" orient="auto">' +
+                                                        '<circle cx="3" cy="3" r="2" fill="black"></circle>' +
+                                                    '</marker>' +
+                                                    '<marker id="rsRefPMarkerCircle2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">' +
+                                                        '<circle cx="3.5" cy="3.5" r="3" fill="black"></circle>' +
+                                                    '</marker>' +
+                                                    '<marker id="rsRefPMarkerCircle3" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">' +
+                                                        '<circle cx="4.5" cy="4.5" r="4" fill="black"></circle>' +
+                                                    '</marker>' +
 
-                                                '<marker id="rsRefPMarkerRect" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">' +
-                                                    '<rect x="0" y="0" width="4" height="4" rx="1" ry="1" fill="black"></rect>' +
-                                                '</marker>' +
-                                            '</defs>' +
-                                            '<polyline points="180,20, 200,70, 220,30, 300,90" stroke="black" stroke-width="1" fill="none" marker-start="url(#rsRefPMarkerPointer)" marker-mid="url(#rsRefPMarkerCircle2)" marker-end="url(#rsRefPMarkerCircle2)"></polyline>' +
-                                            '<path d="M170,90 Q130,170 220,120 T260,140" fill="none" stroke-linecap="round" stroke="black" stroke-width="1"></path>' +
-                                            '<text x="0" y="78" ' + (isMarkerNone(opts.marker.start) ? 'class="selected"' : '') + '>none</text>' +
-                                            '<text x="45" y="78" ' + (isMarkerNone(opts.marker.mid) ? 'class="selected"' : '') + '>none</text>' +
-                                            '<text x="90" y="78" ' + (isMarkerNone(opts.marker.end) ? 'class="selected"' : '') + '>none</text>' +
-                                            // pointer
-                                            '<path d="M3,86 L3,98 L19,92 z" ' + (isMarkerPointer(opts.marker.start) ? 'class="selected"' : '') + '></path>' +
-                                            '<path d="M48,86 L48,98 L64,92 z" ' + (isMarkerPointer(opts.marker.mid) ? 'class="selected"' : '') + '></path>' +
-                                            '<path d="M93,86 L93,98 L109,92 z" ' + (isMarkerPointer(opts.marker.end) ? 'class="selected"' : '') + '></path>' +
-                                            // pointer2
-                                            '<path d="M7,112 L3,118 L19,112 L3,106 z" ' + (isMarkerPointer2(opts.marker.start) ? 'class="selected"' : '') + '></path>' +
-                                            '<path d="M52,112 L48,118 L64,112 L48,106 z" ' + (isMarkerPointer2(opts.marker.mid) ? 'class="selected"' : '') + '></path>' +
-                                            '<path d="M97,112 L93,118 L109,112 L93,106 z" ' + (isMarkerPointer2(opts.marker.end) ? 'class="selected"' : '') + '></path>' +
-                                            // сircle
-                                            '<circle cx="10" cy="132" r="6" ' + (isMarkerCircle(opts.marker.start) ? 'class="selected"' : '') + '></circle>' +
-                                            '<circle cx="55" cy="132" r="6" ' + (isMarkerCircle(opts.marker.mid) ? 'class="selected"' : '') + '></circle>' +
-                                            '<circle cx="100" cy="132" r="6" ' + (isMarkerCircle(opts.marker.end) ? 'class="selected"' : '') + '></circle>' +
-                                            // rect
-                                            '<rect x="4" y="146" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.start) ? 'class="selected"' : '') + '></rect>' +
-                                            '<rect x="49" y="146" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.mid) ? 'class="selected"' : '') + '></rect>' +
-                                            '<rect x="94" y="146" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.end) ? 'class="selected"' : '') + '></rect>' +
-                                        '</svg>' +
-                                        '<span>Stroke</span>' +
-                                        '<span>Outline</span>' +
-                                        '<label>Size</label><input type="range" min="1" max="4" value="' + opts.stroke.width + '" step="0.25">' +
-                                        '<label>Color</label><input type="color" value="' + getHexColor(opts.stroke.color) + '">' +
-                                        '<label>Opacity</label><input type="range" min="0" max="1" value="' + getColorOpacity(opts.stroke.color) + '" step="0.025">' +
-                                        // outline
-                                        '<label>Size</label><input type="range" min="0" max="4" value="' + opts.outline.width + '" step="0.25">' +
-                                        '<label>Color</label><input type="color" value="' + getHexColor(opts.outline.color) + '">' +
-                                        '<label>Opacity</label><input type="range" min="0" max="1" value="' + getColorOpacity(opts.outline.color) + '" step="0.025">' +
-                                        
-                                        '<span>Shadow</span>' +
-                                        '<input type="checkbox" ' + (opts.shadow.visible ? 'checked ' : '') + 'id="rsRefPointerChk3020-201f0"><label for="rsRefPointerChk3020-201f0">Enabled</label>' +
-                                        '<label>X Offset</label><input type="range" min="-50" max="50" value="' + opts.shadow.offsetX + '">' +
-                                        '<label>Y Offset</label><input type="range" min="-50" max="50" value="' + opts.shadow.offsetY + '">' +
-                                        '<label>Color</label><input type="color" value="' + getHexColor(opts.shadow.color) + '">' +
-                                        '<label>Opacity</label><input type="range" min="0" max="1" value="' + getColorOpacity(opts.shadow.color) + '" step="0.025">' +
-                                        '<label>Blur</label><input type="range" min="0" max="1" value="' + opts.shadow.blur + '" step="0.025">' +
+                                                    '<marker id="rsRefPMarkerRect" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">' +
+                                                        '<rect x="0" y="0" width="4" height="4" rx="1" ry="1" fill="black"></rect>' +
+                                                    '</marker>' +
+                                                '</defs>' +
+                                                '<polyline points="180,20, 200,70, 220,30, 300,90" stroke="black" stroke-width="1" fill="none" marker-start="url(#rsRefPMarkerPointer)" marker-mid="url(#rsRefPMarkerCircle2)" marker-end="url(#rsRefPMarkerCircle2)"></polyline>' +
+                                                '<path d="M170,90 Q130,170 220,120 T260,140" fill="none" stroke-linecap="round" stroke="black" stroke-width="1"></path>' +
+                                                '<text x="0" y="68" ' + (isMarkerNone(opts.marker.start) ? 'class="selected"' : '') + '>none</text>' +
+                                                '<text x="45" y="68" ' + (isMarkerNone(opts.marker.mid) ? 'class="selected"' : '') + '>none</text>' +
+                                                '<text x="90" y="68" ' + (isMarkerNone(opts.marker.end) ? 'class="selected"' : '') + '>none</text>' +
+                                                // pointer
+                                                '<path d="M3,76 L3,88 L19,82 z" ' + (isMarkerPointer(opts.marker.start) ? 'class="selected"' : '') + '></path>' +
+                                                '<path d="M48,76 L48,88 L64,82 z" ' + (isMarkerPointer(opts.marker.mid) ? 'class="selected"' : '') + '></path>' +
+                                                '<path d="M93,76 L93,88 L109,82 z" ' + (isMarkerPointer(opts.marker.end) ? 'class="selected"' : '') + '></path>' +
+                                                // pointer2
+                                                '<path d="M7,102 L3,108 L19,102 L3,96 z" ' + (isMarkerPointer2(opts.marker.start) ? 'class="selected"' : '') + '></path>' +
+                                                '<path d="M52,102 L48,108 L64,102 L48,96 z" ' + (isMarkerPointer2(opts.marker.mid) ? 'class="selected"' : '') + '></path>' +
+                                                '<path d="M97,102 L93,108 L109,102 L93,96 z" ' + (isMarkerPointer2(opts.marker.end) ? 'class="selected"' : '') + '></path>' +
+                                                // сircle
+                                                '<circle cx="10" cy="122" r="6" ' + (isMarkerCircle(opts.marker.start) ? 'class="selected"' : '') + '></circle>' +
+                                                '<circle cx="55" cy="122" r="6" ' + (isMarkerCircle(opts.marker.mid) ? 'class="selected"' : '') + '></circle>' +
+                                                '<circle cx="100" cy="122" r="6" ' + (isMarkerCircle(opts.marker.end) ? 'class="selected"' : '') + '></circle>' +
+                                                // rect
+                                                '<rect x="4" y="136" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.start) ? 'class="selected"' : '') + '></rect>' +
+                                                '<rect x="49" y="136" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.mid) ? 'class="selected"' : '') + '></rect>' +
+                                                '<rect x="94" y="136" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.end) ? 'class="selected"' : '') + '></rect>' +
+                                            '</svg>' +
+                                        '</g>' +
+                                        '<g>' +
+                                            '<div>Preview</div>' +
+                                        '</g>' +
+
+                                        '<g>' +
+                                            '<div>Stroke</div>' +
+                                            '<span>Size</span><input type="range" min="1" max="4" value="' + opts.stroke.width + '" step="0.25">' +
+                                            '<span>Color</span><input type="color" value="' + getHexColor(opts.stroke.color) + '"><br>' +
+                                            '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.stroke.color) + '" step="0.025">' +
+                                        '</g>' +
+
+
+                                        '<g>' +
+                                            '<div>Outline</div>' +
+                                            '<span>Size</span><input type="range" min="0" max="4" value="' + opts.outline.width + '" step="0.25">' +
+                                            '<span>Color</span><input type="color" value="' + getHexColor(opts.outline.color) + '"><br>' +
+                                            '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.outline.color) + '" step="0.025">' +
+                                        '</g>' +
+
+                                        '<g>' +
+                                            '<div>Shadow</div>' +
+                                            '<input type="checkbox" ' + (opts.shadow.visible ? 'checked ' : '') + 'id="rsRefPointerChk3020-201f0"><label for="rsRefPointerChk3020-201f0">Enabled</label>' +
+                                            '<span>Color</span><input type="color" value="' + getHexColor(opts.shadow.color) + '"><br>' +
+                                            '<span>X Offset</span><input type="range" min="-50" max="50" value="' + opts.shadow.offsetX + '">' +
+                                            '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.shadow.color) + '" step="0.025">' +
+                                            '<span>Y Offset</span><input type="range" min="-50" max="50" value="' + opts.shadow.offsetY + '">' +
+                                            '<span>Blur</span><input type="range" min="0" max="1" value="' + opts.shadow.blur + '" step="0.025">' +
+                                        '</g>' +
                                         '<button>Apply Changes</button>' +
                                     '</div>' +
                                 '</div>'
@@ -238,7 +252,7 @@
                                     'menu.refPointer.design menu,' +
                                     'menu.refPointer.design + div > div {' +
                                         'box-shadow: 0 0 10px black;' +
-                                        'border-radius: 20px/15px;' +
+                                        'border-radius: 5px;' +
                                         'position: absolute;' +
                                     '}' +
                                     'menu.refPointer.design,' +
@@ -360,7 +374,7 @@
                                         'cursor: default;' +
                                     '}' +
                                     'menu.refPointer.design + div {' +
-                                        'display: none;' +
+                                        //'display: none;' +
                                         'position: absolute;' +
                                         'top: 0;' +
                                         'right: 0;' +
@@ -368,15 +382,14 @@
                                         'left: 0;' +
                                         'background-color: rgba(0, 0, 0, .5);' +
                                     '}' +
-
                                     'menu.refPointer.design + div > div {' +
                                         'position: absolute;' +
                                         'left: 50%;' +
                                         'top: 50%;' +
                                         'width: 400px;' +
-                                        'height: 570px;' +
+                                        'height: 520px;' +
                                         'margin-left: -200px;' +
-                                        'margin-top: -285px;' +
+                                        'margin-top: -260px;' +
                                         'font-family: arial;' +
                                         'font-size: 12px;' +
                                         'padding: 10px;' +
@@ -396,39 +409,71 @@
                                     'menu.refPointer.design + div > div a:first-of-type + hr {' +
                                         'margin-bottom: 25px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div span {' +
+                                    'menu.refPointer.design + div g {' +
+                                        'width: 46%;' +
+                                        'display: inline-block;' +
+                                        'margin: 0 2%;' +
+                                    '}' +
+                                    'menu.refPointer.design + div g div {' +
                                         'font-size: 11px;' +
                                         'text-shadow: 1px 1px white;' +
-                                        'width: 175px;' +
                                         'left: 10px;' +
                                         'border-bottom: 1px solid #ccc;' +
                                         'font-weight: bold;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div span + span {' +
-                                        'left: 35px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div > div label {' +
-                                        'left: 25px;' +
+                                    'menu.refPointer.design + div > div g span,' +
+                                    'menu.refPointer.design + div > div g input[type=checkbox] {' +
+                                        'width: 25%;' +
                                         'font-size: 9px;' +
-                                        'top: 23px;' +
-                                        'display: block;' +
+                                        'text-align: right;' +
+                                        'margin-right: 5px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div span + span + label + input {' +
-                                        'left: 66px;' +
-                                        'top: 8px;' +
-                                        'width: 60px;' +
+                                    'menu.refPointer.design + div > div g span,' +
+                                    'menu.refPointer.design + div > div g input,' +
+                                    'menu.refPointer.design + div > div g label {' +
+                                        'display: inline-block;' +
+                                        'vertical-align: middle;' +
+                                        'height: 30px;' +
+                                        'line-height: 30px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div g:first-of-type input:first-of-type {' +
                                         'z-index: 1;' +
+                                        'position: relative;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div span + span + label + input + label {' +
-                                        'top: 20px;' +
+                                    'menu.refPointer.design + div > div g label {' +
+                                        'font-style: italic;' +
+                                        'border-radius: 8px;' +
+                                        'font-size: 9px;' +
+                                        'width: 29px;' +
+                                        'text-align: center;' +
+                                        'margin: 0 7px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > svg {' +
+                                    'menu.refPointer.design + div > div g input[type=checkbox] {' +
+                                        'width: auto;' +
+                                        'margin-left: 9.5%;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div g input[type=checkbox] + label {' +
+                                        'font-style: normal;' +
+                                        'width: auto;' +
+                                        'margin-right: 30%;' +
+                                        'line-height: 32px;'+
+                                    '}' +
+                                    'menu.refPointer.design + div > div g label:first-of-type {' +
+                                        'margin-left: 0;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div g:last-of-type span {' +
+                                        'width: 12%;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div g:last-of-type input[type=range]:nth-of-type(2n - 1) {' +
+                                        'margin-right: 4.6%;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div svg {' +
                                         'display: block;' +
                                         'fill: #ccc;' +
                                         'font-size: 9px;' +
                                         'position: relative;' +
-                                        'left: 63px;' +
-                                        'top: -40px;' +
+                                        'left: 54px;' +
+                                        'top: -63px;' +
                                     '}' +
                                     'menu.refPointer.design + div svg > text:hover,' +
                                     'menu.refPointer.design + div svg > path:hover,' +
@@ -443,100 +488,21 @@
                                     'menu.refPointer.design + div svg > rect.selected {' +
                                         'fill: black;' +
                                     '}' +
-                                    'menu.refPointer.design + div svg > g > text {' +
-                                        'font-size: 11px;' +
+                                    'menu.refPointer.design + div g svg text {' +
+                                        'font-size: 10px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > svg ~ span {' +
-                                        'top: -25px;' +
+                                    'menu.refPointer.design + div g ~ g {' +
+                                        'position: relative;' +
+                                        'top: -55px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > svg ~ span ~ label {' +
-                                        'top: -2px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div > div > svg ~ span ~ label + input + label {' +
-                                        'top: -5px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div > div > svg ~ span + label ~ input {' +
-                                        'left: 66px;' +
-                                        'top: -17px;' +
-                                        'width: 60px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div > div > input[type=color] {' +
-                                        'height: 17px;' +
-                                        'width: 54px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div > div > svg ~ span + label ~ input + label + input {' +
-                                        'top: -20px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div > div > svg ~ span + label + input + label + input + label + input {' +
-                                        'display: block;' +
-                                    '}' +
-                                    'menu.refPointer.design + div > div > svg ~ span + label + input + label + input + label + input ~ label {' +
-                                        'top: -98px;' +
-                                        'left: 225px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div > div > svg ~ span + label + input + label + input + label + input ~ label + input + label {' +
-                                        'top: -101px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div > div > svg ~ span + label + input + label + input + label + input ~ input {' +
-                                        'top: -113px;' +
-                                        'left: 266px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div > div > svg ~ span + label + input + label + input + label + input + label + input ~ input {' +
-                                        'top: -116px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div > div > svg ~ span:last-of-type {' +
-                                        'top: -100px;' +
-                                        'width: 375px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 {' +
-                                        'width: auto;' +
-                                        'top: -63px;' +
-                                        'left: -350px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label {' +
-                                        'top: -77px;' +
-                                        'left: 37px;' +
-                                        'padding-left: 6px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label {' +
-                                        'top: -56px;' +
-                                        'left: 26px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label ~ input {' +
-                                        'top: -71px;' +
-                                        'left: 66px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label + input + label + input {' +
-                                        'top: -74px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label + input + label + input ~ label {' +
-                                        'top: -155px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label + input + label + input ~ label:last-of-type {' +
-                                        'top: -158px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label + input + label + input + label ~ input {' +
-                                        'top: -170px;' +
-                                        'left: 266px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label + input + label ~ input:last-of-type {' +
-                                        'top: -173px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div #rsRefPointerChk3020-201f0 + label + label + input + label {' +
-                                        'top: -59px;' +
-                                        'left: 26px;' +
+                                    'menu.refPointer.design + div g:last-of-type {' +
+                                        'top: -32px;' +
+                                        'width: 96%;' +
                                     '}' +
                                     'menu.refPointer.design + div button {' +
                                         'position: absolute;' +
-                                        'bottom: 15px;' +
-                                        'right: 25px;' +
-                                    '}' +
-                                    'menu.refPointer.design + div span,' +
-                                    'menu.refPointer.design + div label,' +
-                                    'menu.refPointer.design + div input {' +
-                                        'position: relative;' +
-                                        'display: inline-block;' +
-                                        'margin: 0;' +
+                                        'right: 20px;' +
+                                        'bottom: 10px;' +
                                     '}' +
                                 '</style>'
                             );
@@ -558,7 +524,9 @@
                                     }
                                 },
                                 $newLineLink = $('> a:first-of-type', designMode.UI.menu.$menu),
-                                $popup = designMode.UI.menu.$menu.eq(1);
+                                $popup = designMode.UI.menu.$menu.eq(1),
+                                $previewPolyline = $('polyline', $popup),
+                                $previewBezier = $previewPolyline.next();
                             $('header', designMode.UI.menu.$menu).mousedown(function (e) {
                                 designMode.UI.menu.dragInfo.dragging = true;
                                 designMode.UI.menu.dragInfo.startX = e.pageX;
