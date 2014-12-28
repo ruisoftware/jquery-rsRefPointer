@@ -18,9 +18,13 @@
                 outline: false,    // Whether each row has an outline border
                 $targets: null,
                 shapeRelSize: {
+                    pointer: 8,
+                    pointer2: 8,
                     circle: 6.5,
                     square: 6.5,
-                    pointer: 8
+                    getSize: function (id) {
+                        return ((opts.marker.size - 1)*0.25 + 1)*this[opts.marker[id.toLowerCase()]];
+                    }
                 },
                 svgPos: {},
                 points: {
@@ -272,77 +276,100 @@
                             End: null
                         }
                     },
+                    getMarkerAttrs: function (type, size) {
+                        switch (type) {
+                            case 'pointer':
+                            case 'pointer2':
+                                return {
+                                    markerWidth: size,
+                                    markerHeight: size/1.25,
+                                    refX: Math.round(size - opts.outline.width),
+                                    refY: Math.round(size/2.5)
+                                };
+                            case 'circle':
+                                return {
+                                    markerWidth: size,
+                                    markerHeight: size,
+                                    refX: Math.round(size/2),
+                                    refY: Math.round(size/2)
+                                };
+                            case 'square':
+                                return {
+                                    markerWidth: size,
+                                    markerHeight: size,
+                                    refX: Math.round(size/2),
+                                    refY: Math.round(size/2)
+                                };
+                        }
+                        return null;
+                    },
                     getMarker: function (type, id, getIdsCallback, shade) {
                         var $marker = null,
                             ids = getIdsCallback(),
                             getNewId = function () {
                                 return ids[id] = 'refP' + $('svg.' + data.svgClass).length + id.charAt(0) + (+ new Date());
                             },
-                            size = ((opts.marker.size - 1)*0.25 + 1)*data.shapeRelSize[opts.marker[id.toLowerCase()]];
-                        switch (opts.marker[id.toLowerCase()]) {
-                            case 'circle':
-                                ids[id] = getNewId();
-                                $marker = DOM.createSvgDom('marker', {
-                                    id: ids[id],
-                                    markerWidth: size,
-                                    markerHeight: size,
-                                    refX: Math.round(size/2),
-                                    refY: Math.round(size/2)
-                                });
-                                break;
-                            case 'square':
-                                ids[id] = getNewId();
-                                $marker = DOM.createSvgDom('marker', {
-                                    id: ids[id],
-                                    markerWidth: size,
-                                    markerHeight: size,
-                                    refX: Math.round(size/2),
-                                    refY: Math.round(size/2)
-                                });
-                                break;
+                            size = data.shapeRelSize.getSize(id),
+                            attrs = this.getMarkerAttrs(type, size);
+                        ids[id] = getNewId();
+                        attrs.id = ids[id];
+                        switch (type) {
                             case 'pointer':
-                                ids[id] = getNewId();
-                                $marker = DOM.createSvgDom('marker', {
-                                    id: ids[id],
-                                    markerWidth: size,
-                                    markerHeight: size/1.25,
-                                    refX: Math.round(size - opts.outline.width),
-                                    refY: Math.round(size/2.5),
-                                    orient: 'auto'
-                                });
+                            case 'pointer2':
+                                attrs.orient = 'auto';
+                                break;
+                            case 'circle':
+                            case 'square': break;
+                            default:
+                                return null;
                         }
-                        if ($marker) {
-                            return $marker.append(this.getMarkerShape(type, shade, size));
+                        return DOM.createSvgDom('marker', attrs).append(this.getMarkerShape(type, shade, size));
+                    },
+                    getMarkerShapeData: function (type, size) {
+                        switch (type) {
+                            case 'pointer':
+                                return {
+                                    d: 'M0,0 L0,' + (size/1.25) + ' L' + size + ',' + (size/2.5) + ' z'
+                                }
+                            case 'pointer2':
+                                return {
+                                    d: 'M' + (size/4) + ',' + (size/2.5) + ' L0,' + (size/1.25) + ' L' + size + ',' + (size/2.5) + ' L0,0 z'
+                                }
+                            case 'circle':
+                                return  {
+                                    cx: size/2,
+                                    cy: size/2,
+                                    r: size/2
+                                }
+                            case 'square':
+                                return {
+                                    x: 0,
+                                    y: 0,
+                                    width: size,
+                                    height: size,
+                                    rx: 2,
+                                    ry: 2
+                                }
                         }
                         return null;
                     },
                     getMarkerShape: function (type, shade, size) {
-                        var style = {
-                            fill: (shade ? opts.shadow.color : opts.stroke.color)
-                        };
-                        if (data.outline) {
-                            style.stroke = shade ? opts.shadow.color : opts.outline.color;
-                            style['stroke-width'] = opts.outline.width/2;
-                        }
-                        switch (type) {
-                            case 'circle':
-                                style.cx = size/2;
-                                style.cy = size/2;
-                                style.r = size/2 - 1;
-                                return DOM.createSvgDom('circle', style);
-
-                            case 'square':
-                                style.x = 0;
-                                style.y = 0;
-                                style.width = size - 1;
-                                style.height = size - 1;
-                                style.rx = 2;
-                                style.ry = 2;
-                                return DOM.createSvgDom('rect', style);
-
-                            case 'pointer':
-                                style.d = 'M0,0 L0,' + (size/1.25) + ' L' + size + ',' + (size/2.5) + ' z';
-                                return DOM.createSvgDom('path', style);
+                        var style = this.getMarkerShapeData(type, size);
+                        if (style !== null) {
+                            style.fill = (shade ? opts.shadow.color : opts.stroke.color);
+                            if (data.outline) {
+                                style.stroke = shade ? opts.shadow.color : opts.outline.color;
+                                style['stroke-width'] = opts.outline.width/2;
+                            }
+                            switch (type) {
+                                case 'pointer':
+                                case 'pointer2':
+                                    return DOM.createSvgDom('path', style);
+                                case 'circle':
+                                    return DOM.createSvgDom('circle', style);
+                                case 'square':
+                                    return DOM.createSvgDom('rect', style);
+                            }
                         }
                         return null;
                     },
@@ -388,7 +415,7 @@
                         return this.$defs;
                     }
                 },
-                getShapeAttrs: function (index, shadeOffset) {
+                getShapeAttrs : function (index, shadeOffset) {
                     var getX = function (pnt, offset) {
                             return Math.round(pnt.x + (offset ? offset.dx : 0) - data.svgPos.x) + .5;
                         },
@@ -636,7 +663,7 @@
         marker: {
             start: 'circle',
             mid: 'square',
-            end: 'pointer',
+            end: 'pointer2',
             size: 1
         },
         stroke: {

@@ -165,74 +165,80 @@
                                         '<g>' +
                                             '<div>Markers</div>' +
                                             '<span>Size</span>' +
-                                            '<input type="range" min="0.1" max="4" value="' + opts.marker.size + '" step="0.25">' +
+                                            '<input type="range" min="0.1" max="4" value="' + opts.marker.size + '" step="0.1">' +
                                             '<span>Shapes</span><label>start</label><label>mid</label><label>end</label>' +
                                             '<svg width="340px" height="170px" xmlns="http://www.w3.org/2000/svg" version="1.1">' +
                                                 '<defs>' +
-                                                    '<marker id="rsRefPMarkerPointer" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
-                                                        '<path d="M0,0 L0,6 L8,3 z" fill="white" stroke="black"></path>' +
+                                                    '<marker id="rsRefPMarkerPointer" orient="auto">' +
+                                                        '<path></path>' +
+                                                    '</marker>' +
+                                                    '<marker id="rsRefPMarkerPointer2" orient="auto">' +
+                                                        '<path></path>' +
+                                                    '</marker>' +
+                                                    '<marker id="rsRefPMarkerCircle" orient="auto">' +
+                                                        '<circle></circle>' +
+                                                    '</marker>' +
+                                                    '<marker id="rsRefPMarkerRect" orient="auto">' +
+                                                        '<rect></rect>' +
                                                     '</marker>' +
 
-                                                    '<marker id="rsRefPMarkerPointer2" markerWidth="8" markerHeight="6" refX="3" refY="3" orient="auto">' +
-                                                        '<path d="M2,3 L0,6 L8,3 L0,0 z" fill="black"></path>' +
-                                                    '</marker>' +
+                                                    '<filter id="rsRefPMarkerFilter">' +
+                                                        '<feGaussianBlur in="SourceGraphic"></feGaussianBlur>' +
+                                                    '</filter>' +
 
-                                                    '<marker id="rsRefPMarkerCircle" markerWidth="5" markerHeight="5" refX="3" refY="3" orient="auto">' +
-                                                        '<circle cx="3" cy="3" r="2" fill="black"></circle>' +
+                                                    '<marker id="rsRefPfMarkerPointer" orient="auto">' +
+                                                        '<path></path>' +
                                                     '</marker>' +
-                                                    '<marker id="rsRefPMarkerCircle2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">' +
-                                                        '<circle cx="3.5" cy="3.5" r="3" fill="black"></circle>' +
+                                                    '<marker id="rsRefPfMarkerPointer2" orient="auto">' +
+                                                        '<path></path>' +
                                                     '</marker>' +
-                                                    '<marker id="rsRefPMarkerCircle3" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">' +
-                                                        '<circle cx="4.5" cy="4.5" r="4" fill="black"></circle>' +
+                                                    '<marker id="rsRefPfMarkerCircle" orient="auto">' +
+                                                        '<circle></circle>' +
                                                     '</marker>' +
-
-                                                    '<marker id="rsRefPMarkerRect" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">' +
-                                                        '<rect x="0" y="0" width="4" height="4" rx="1" ry="1" fill="black"></rect>' +
+                                                    '<marker id="rsRefPfMarkerRect" orient="auto">' +
+                                                        '<rect></rect>' +
                                                     '</marker>' +
                                                 '</defs>' +
-                                                '<polyline points="180,20, 200,70, 220,30, 300,90" stroke="black" stroke-width="1" fill="none" marker-start="url(#rsRefPMarkerPointer)" marker-mid="url(#rsRefPMarkerCircle2)" marker-end="url(#rsRefPMarkerCircle2)"></polyline>' +
+                                                '<polyline points="180,20, 200,70, 220,30, 300,90" stroke="black" stroke-width="1" fill="none" marker-start="url(#rsRefPMarkerPointer)" marker-mid="url(#rsRefPMarkerCircle)" marker-end="url(#rsRefPMarkerCircle)"></polyline>' +
                                                 '<path d="M170,90 Q130,170 220,120 T260,140" fill="none" stroke-linecap="round" stroke="black" stroke-width="1"></path>' +
-                                                '<text x="0" y="68" ' + (isMarkerNone(opts.marker.start) ? 'class="selected"' : '') + '>none</text>' +
-                                                '<text x="45" y="68" ' + (isMarkerNone(opts.marker.mid) ? 'class="selected"' : '') + '>none</text>' +
-                                                '<text x="90" y="68" ' + (isMarkerNone(opts.marker.end) ? 'class="selected"' : '') + '>none</text>' +
-                                                // pointer
-                                                '<path d="M3,76 L3,88 L19,82 z" ' + (isMarkerPointer(opts.marker.start) ? 'class="selected"' : '') + '></path>' +
-                                                '<path d="M48,76 L48,88 L64,82 z" ' + (isMarkerPointer(opts.marker.mid) ? 'class="selected"' : '') + '></path>' +
-                                                '<path d="M93,76 L93,88 L109,82 z" ' + (isMarkerPointer(opts.marker.end) ? 'class="selected"' : '') + '></path>' +
-                                                // pointer2
-                                                '<path d="M7,102 L3,108 L19,102 L3,96 z" ' + (isMarkerPointer2(opts.marker.start) ? 'class="selected"' : '') + '></path>' +
-                                                '<path d="M52,102 L48,108 L64,102 L48,96 z" ' + (isMarkerPointer2(opts.marker.mid) ? 'class="selected"' : '') + '></path>' +
-                                                '<path d="M97,102 L93,108 L109,102 L93,96 z" ' + (isMarkerPointer2(opts.marker.end) ? 'class="selected"' : '') + '></path>' +
-                                                // сircle
-                                                '<circle cx="10" cy="122" r="6" ' + (isMarkerCircle(opts.marker.start) ? 'class="selected"' : '') + '></circle>' +
-                                                '<circle cx="55" cy="122" r="6" ' + (isMarkerCircle(opts.marker.mid) ? 'class="selected"' : '') + '></circle>' +
-                                                '<circle cx="100" cy="122" r="6" ' + (isMarkerCircle(opts.marker.end) ? 'class="selected"' : '') + '></circle>' +
-                                                // rect
-                                                '<rect x="4" y="136" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.start) ? 'class="selected"' : '') + '></rect>' +
-                                                '<rect x="49" y="136" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.mid) ? 'class="selected"' : '') + '></rect>' +
-                                                '<rect x="94" y="136" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.end) ? 'class="selected"' : '') + '></rect>' +
+                                                '<g>' +
+                                                    '<text x="0" y="68" ' + (isMarkerNone(opts.marker.start) ? 'class="selected"' : '') + '>none</text>' +
+                                                    '<text x="45" y="68" ' + (isMarkerNone(opts.marker.mid) ? 'class="selected"' : '') + '>none</text>' +
+                                                    '<text x="90" y="68" ' + (isMarkerNone(opts.marker.end) ? 'class="selected"' : '') + '>none</text>' +
+                                                    // pointer
+                                                    '<path d="M3,76 L3,88 L19,82 z" ' + (isMarkerPointer(opts.marker.start) ? 'class="selected"' : '') + '></path>' +
+                                                    '<path d="M48,76 L48,88 L64,82 z" ' + (isMarkerPointer(opts.marker.mid) ? 'class="selected"' : '') + '></path>' +
+                                                    '<path d="M93,76 L93,88 L109,82 z" ' + (isMarkerPointer(opts.marker.end) ? 'class="selected"' : '') + '></path>' +
+                                                    // pointer2
+                                                    '<path d="M7,102 L3,108 L19,102 L3,96 z" ' + (isMarkerPointer2(opts.marker.start) ? 'class="selected"' : '') + '></path>' +
+                                                    '<path d="M52,102 L48,108 L64,102 L48,96 z" ' + (isMarkerPointer2(opts.marker.mid) ? 'class="selected"' : '') + '></path>' +
+                                                    '<path d="M97,102 L93,108 L109,102 L93,96 z" ' + (isMarkerPointer2(opts.marker.end) ? 'class="selected"' : '') + '></path>' +
+                                                    // сircle
+                                                    '<circle cx="10" cy="122" r="6" ' + (isMarkerCircle(opts.marker.start) ? 'class="selected"' : '') + '></circle>' +
+                                                    '<circle cx="55" cy="122" r="6" ' + (isMarkerCircle(opts.marker.mid) ? 'class="selected"' : '') + '></circle>' +
+                                                    '<circle cx="100" cy="122" r="6" ' + (isMarkerCircle(opts.marker.end) ? 'class="selected"' : '') + '></circle>' +
+                                                    // rect
+                                                    '<rect x="4" y="136" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.start) ? 'class="selected"' : '') + '></rect>' +
+                                                    '<rect x="49" y="136" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.mid) ? 'class="selected"' : '') + '></rect>' +
+                                                    '<rect x="94" y="136" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.end) ? 'class="selected"' : '') + '></rect>' +
+                                                '</g>' +
                                             '</svg>' +
                                         '</g>' +
                                         '<g>' +
                                             '<div>Preview</div>' +
                                         '</g>' +
-
                                         '<g>' +
                                             '<div>Stroke</div>' +
                                             '<span>Size</span><input type="range" min="1" max="4" value="' + opts.stroke.width + '" step="0.25">' +
                                             '<span>Color</span><input type="color" value="' + getHexColor(opts.stroke.color) + '"><br>' +
                                             '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.stroke.color) + '" step="0.025">' +
                                         '</g>' +
-
-
                                         '<g>' +
                                             '<div>Outline</div>' +
                                             '<span>Size</span><input type="range" min="0" max="4" value="' + opts.outline.width + '" step="0.25">' +
                                             '<span>Color</span><input type="color" value="' + getHexColor(opts.outline.color) + '"><br>' +
                                             '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.outline.color) + '" step="0.025">' +
                                         '</g>' +
-
                                         '<g>' +
                                             '<div>Shadow</div>' +
                                             '<input type="checkbox" ' + (opts.shadow.visible ? 'checked ' : '') + 'id="rsRefPointerChk3020-201f0"><label for="rsRefPointerChk3020-201f0">Enabled</label>' +
@@ -374,7 +380,7 @@
                                         'cursor: default;' +
                                     '}' +
                                     'menu.refPointer.design + div {' +
-                                        //'display: none;' +
+                                        'display: none;' +
                                         'position: absolute;' +
                                         'top: 0;' +
                                         'right: 0;' +
@@ -409,38 +415,38 @@
                                     'menu.refPointer.design + div > div a:first-of-type + hr {' +
                                         'margin-bottom: 25px;' +
                                     '}' +
-                                    'menu.refPointer.design + div g {' +
+                                    'menu.refPointer.design + div > div > g {' +
                                         'width: 46%;' +
                                         'display: inline-block;' +
                                         'margin: 0 2%;' +
                                     '}' +
-                                    'menu.refPointer.design + div g div {' +
+                                    'menu.refPointer.design + div > div > g div {' +
                                         'font-size: 11px;' +
                                         'text-shadow: 1px 1px white;' +
                                         'left: 10px;' +
                                         'border-bottom: 1px solid #ccc;' +
                                         'font-weight: bold;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div g span,' +
-                                    'menu.refPointer.design + div > div g input[type=checkbox] {' +
+                                    'menu.refPointer.design + div > div > g span,' +
+                                    'menu.refPointer.design + div > div > g input[type=checkbox] {' +
                                         'width: 25%;' +
                                         'font-size: 9px;' +
                                         'text-align: right;' +
                                         'margin-right: 5px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div g span,' +
-                                    'menu.refPointer.design + div > div g input,' +
-                                    'menu.refPointer.design + div > div g label {' +
+                                    'menu.refPointer.design + div > div > g span,' +
+                                    'menu.refPointer.design + div > div > g input,' +
+                                    'menu.refPointer.design + div > div > g label {' +
                                         'display: inline-block;' +
                                         'vertical-align: middle;' +
                                         'height: 30px;' +
                                         'line-height: 30px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div g:first-of-type input:first-of-type {' +
+                                    'menu.refPointer.design + div > div > g:first-of-type input:first-of-type {' +
                                         'z-index: 1;' +
                                         'position: relative;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div g label {' +
+                                    'menu.refPointer.design + div > div > g label {' +
                                         'font-style: italic;' +
                                         'border-radius: 8px;' +
                                         'font-size: 9px;' +
@@ -448,23 +454,23 @@
                                         'text-align: center;' +
                                         'margin: 0 7px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div g input[type=checkbox] {' +
+                                    'menu.refPointer.design + div > div > g input[type=checkbox] {' +
                                         'width: auto;' +
                                         'margin-left: 9.5%;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div g input[type=checkbox] + label {' +
+                                    'menu.refPointer.design + div > div > g input[type=checkbox] + label {' +
                                         'font-style: normal;' +
                                         'width: auto;' +
                                         'margin-right: 30%;' +
                                         'line-height: 32px;'+
                                     '}' +
-                                    'menu.refPointer.design + div > div g label:first-of-type {' +
+                                    'menu.refPointer.design + div > div > g label:first-of-type {' +
                                         'margin-left: 0;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div g:last-of-type span {' +
+                                    'menu.refPointer.design + div > div > g:last-of-type span {' +
                                         'width: 12%;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div g:last-of-type input[type=range]:nth-of-type(2n - 1) {' +
+                                    'menu.refPointer.design + div > div > g:last-of-type input[type=range]:nth-of-type(2n - 1) {' +
                                         'margin-right: 4.6%;' +
                                     '}' +
                                     'menu.refPointer.design + div > div svg {' +
@@ -475,27 +481,35 @@
                                         'left: 54px;' +
                                         'top: -63px;' +
                                     '}' +
-                                    'menu.refPointer.design + div svg > text:hover,' +
-                                    'menu.refPointer.design + div svg > path:hover,' +
-                                    'menu.refPointer.design + div svg > circle:hover,' +
-                                    'menu.refPointer.design + div svg > rect:hover {' +
+                                    'menu.refPointer.design + div svg > g > text,' +
+                                    'menu.refPointer.design + div svg > g > path,' +
+                                    'menu.refPointer.design + div svg > g > circle,' +
+                                    'menu.refPointer.design + div svg > g > rect {' +
+                                        '-webkit-transition: .1s fill;' +
+                                        '-moz-transition: .1s fill;' +
+                                        'transition: .1s fill;' +
+                                    '}' +
+                                    'menu.refPointer.design + div svg > g > text:hover,' +
+                                    'menu.refPointer.design + div svg > g > path:hover,' +
+                                    'menu.refPointer.design + div svg > g > circle:hover,' +
+                                    'menu.refPointer.design + div svg > g > rect:hover {' +
                                         'cursor: pointer;' +
                                         'fill: black;' +
                                     '}' +
-                                    'menu.refPointer.design + div svg > text.selected,' +
-                                    'menu.refPointer.design + div svg > path.selected,' +
-                                    'menu.refPointer.design + div svg > circle.selected,' +
-                                    'menu.refPointer.design + div svg > rect.selected {' +
+                                    'menu.refPointer.design + div svg > g > text.selected,' +
+                                    'menu.refPointer.design + div svg > g > path.selected,' +
+                                    'menu.refPointer.design + div svg > g > circle.selected,' +
+                                    'menu.refPointer.design + div svg > g > rect.selected {' +
                                         'fill: black;' +
                                     '}' +
-                                    'menu.refPointer.design + div g svg text {' +
+                                    'menu.refPointer.design + div > div svg > g > text {' +
                                         'font-size: 10px;' +
                                     '}' +
-                                    'menu.refPointer.design + div g ~ g {' +
+                                    'menu.refPointer.design + div > div > g ~ g {' +
                                         'position: relative;' +
                                         'top: -55px;' +
                                     '}' +
-                                    'menu.refPointer.design + div g:last-of-type {' +
+                                    'menu.refPointer.design + div > div > g:last-of-type {' +
                                         'top: -32px;' +
                                         'width: 96%;' +
                                     '}' +
@@ -526,7 +540,20 @@
                                 $newLineLink = $('> a:first-of-type', designMode.UI.menu.$menu),
                                 $popup = designMode.UI.menu.$menu.eq(1),
                                 $previewPolyline = $('polyline', $popup),
-                                $previewBezier = $previewPolyline.next();
+                                $previewBezier = $previewPolyline.next(),
+                                $markers = {
+                                    pointer: $('#rsRefPMarkerPointer'),
+                                    pointer2: $('#rsRefPMarkerPointer2'),
+                                    circle: $('#rsRefPMarkerCircle'),
+                                    square: $('#rsRefPMarkerRect')
+                                },
+                                $filter = $('#rsRefPMarkerFilter'),
+                                $markersShadow = {
+                                    pointer: $('#rsRefPfMarkerPointer'),
+                                    pointer2: $('#rsRefPfMarkerPointer2'),
+                                    circle: $('#rsRefPfMarkerCircle'),
+                                    square: $('#rsRefPfMarkerRect')
+                                };
                             $('header', designMode.UI.menu.$menu).mousedown(function (e) {
                                 designMode.UI.menu.dragInfo.dragging = true;
                                 designMode.UI.menu.dragInfo.startX = e.pageX;
@@ -567,6 +594,37 @@
                             });
                             $('> div > a', $popup).click(function (e) {
                                 $popup.hide();
+                            });
+                            // marker size
+                            $(".refPointer.design + div > div > g:first-of-type input").on('input', function (e) {
+                                opts.marker.size = + this.value;
+                                for(var key in $markers) {
+                                    $markers[key].attr(DOM.markers.getMarkerAttrs(key, opts.marker.size)).
+                                        children().attr(DOM.markers.getMarkerShapeData(key, opts.marker.size));
+                                }
+                            });
+                            var $startShapes =  $('> div svg > g > text:eq(0), > div svg > g > path:eq(0), > div svg > g > path:eq(3), > div svg > g > circle:eq(0), > div svg > g > rect:eq(0)', $popup),
+                                $midShapes =    $('> div svg > g > text:eq(1), > div svg > g > path:eq(1), > div svg > g > path:eq(4), > div svg > g > circle:eq(1), > div svg > g > rect:eq(1)', $popup),
+                                $endShapes =    $('> div svg > g > text:eq(2), > div svg > g > path:eq(2), > div svg > g > path:eq(5), > div svg > g > circle:eq(2), > div svg > g > rect:eq(2)', $popup);
+                            $('> div svg > g > text, > div svg > g > path, > div svg > g > circle, > div svg > g > rect', $popup).click(function (e) {
+                                // index is used to select the shape (0 for start, 1 for mid, 2 for end)
+                                var $this = $(this),
+                                    index = $this.index() % 3,
+                                    getMarkerId = function (selected) {
+                                        return [null, 'url(#rsRefPMarkerPointer)', 'url(#rsRefPMarkerPointer2)', 'url(#rsRefPMarkerCircle)', 'url(#rsRefPMarkerRect)'][selected];
+                                    },
+                                    markerId;
+                                [$startShapes, $midShapes, $endShapes][index].removeAttr('class');
+                                $this.attr('class', 'selected');
+                                switch (index) {
+                                    case 0:
+                                        markerId = getMarkerId($startShapes.index($this));
+                                        if (markerId === null) {
+                                            $previewPolyline.add($previewBezier).removeAttr('marker-start');
+                                        } else {
+                                            $previewPolyline.add($previewBezier).attr('marker-start', markerId);
+                                        }
+                                } 
                             });
                             this.multipleTargets.$subMenu = $('menu', this.$menu).mouseleave(function () {
                                 if (!designMode.UI.menu.multipleTargets.firstMouseover) {
