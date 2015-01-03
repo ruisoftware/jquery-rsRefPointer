@@ -124,23 +124,41 @@
                                     }
                                     return 1;
                                 },
-                                isMarkerPointer = function (marker) {
-                                    return marker === 'pointer';
+                                getRgbaColor = function (hexColor, opacity) {
+                                    if (Math.abs(opacity - 1) > 1e-5) {
+                                        var tokens = /^#([0-9A-Fa-f][0-9A-Fa-f])([0-9A-Fa-f][0-9A-Fa-f])([0-9A-Fa-f][0-9A-Fa-f])$/g.exec(hexColor);
+                                        if (tokens && tokens.length === 4) {
+                                            return 'rgba(' + parseInt(tokens[1], 16) + ',' + parseInt(tokens[2], 16) + ',' + parseInt(tokens[3], 16) + ',' + opacity + ')';
+                                        }
+                                    }
+                                    return hexColor;
                                 },
-                                isMarkerPointer2 = function (marker) {
-                                    return marker === 'pointer2';
+                                getShadowPoints = function (value, isX, offset) {
+                                    return value + (isX ? offset.offsetX : offset.offsetY);
                                 },
-                                isMarkerCircle = function (marker) {
-                                    return marker === 'circle';
+                                getMidPointsPolyline = function () {
+                                    return [200,70, 230,30];
                                 },
-                                isMarkerSquare = function (marker) {
-                                    return marker === 'square';
+                                getMidPointsBezier = function (stringify) {
+                                    return [130,170, 220*(stringify? - 1 : 1),115];
                                 },
-                                isMarkerNone = function (marker) {
-                                    return !isMarkerPointer(marker) &&
-                                           !isMarkerPointer2(marker) &&
-                                           !isMarkerCircle(marker) &&
-                                           !isMarkerSquare(marker);
+                                getShadowPointsPolyline = function () {
+                                    return getMidPointsPolyline().map(function (value, index) {
+                                        return getShadowPoints(value, !(index % 2), opts.shadow);
+                                    }).join(',');
+                                },
+                                getShadowPointsBezier = function () {
+                                    return getMidPointsBezier().map(function (value, index) {
+                                        var isX = !(index % 2);
+                                        value = getShadowPoints(value, isX, opts.shadow);
+                                        return isX && index ? - value : value;  // use the minus as a place for whitespace, not comma
+                                    }).join(',').replace(/,-/g, ' '); 
+                                },
+                                getPolylinePoints = function (shadow) {
+                                    return '180,32, ' + (shadow ? getShadowPointsPolyline() : getMidPointsPolyline().join(',')) + ', 290,60';
+                                };
+                                getBezierPoints = function (shadow) {
+                                    return 'M170,90 Q' + (shadow ? getShadowPointsBezier() : getMidPointsBezier(true).join(',').replace(/,-/g, ' ')) + ' T270,130';
                                 };
 
                             $('body').append($colorPicker);
@@ -166,7 +184,7 @@
                                             '<div>Markers</div>' +
                                             '<span>Size</span>' +
                                             '<input type="range" min="0.1" max="4" value="' + opts.marker.size + '" step="0.1">' +
-                                            '<span>Shapes</span><label>start</label><label>mid</label><label>end</label>' +
+                                            '<span>Shapes</span><label></label><label></label><label></label>' +
                                             '<svg width="340px" height="170px" xmlns="http://www.w3.org/2000/svg" version="1.1">' +
                                                 '<defs>' +
                                                     '<marker id="rsRefPMarkerPointer" orient="auto">' +
@@ -182,8 +200,8 @@
                                                         '<rect></rect>' +
                                                     '</marker>' +
 
-                                                    '<filter id="rsRefPMarkerFilter">' +
-                                                        '<feGaussianBlur in="SourceGraphic"></feGaussianBlur>' +
+                                                    '<filter id="rsRefPMarkerFilter" x="-100%" y="-100%" width="300%" height="300%">' +
+                                                        '<feGaussianBlur in="SourceGraphic" stdDeviation="' + opts.shadow.blur + '"></feGaussianBlur>' +
                                                     '</filter>' +
 
                                                     '<marker id="rsRefPfMarkerPointer" orient="auto">' +
@@ -199,28 +217,35 @@
                                                         '<rect></rect>' +
                                                     '</marker>' +
                                                 '</defs>' +
-                                                '<polyline points="180,20, 200,70, 220,30, 300,90" stroke="black" stroke-width="1" fill="none" marker-start="url(#rsRefPMarkerPointer)" marker-mid="url(#rsRefPMarkerCircle)" marker-end="url(#rsRefPMarkerCircle)"></polyline>' +
-                                                '<path d="M170,90 Q130,170 220,120 T260,140" fill="none" stroke-linecap="round" stroke="black" stroke-width="1"></path>' +
+                                                // shade
+                                                '<polyline points="' + getPolylinePoints(true) + '" stroke="black" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none" filter="url(#rsRefPMarkerFilter)"></polyline>' +
+                                                '<path d="' + getBezierPoints(true) + '" fill="none" stroke-linecap="round" stroke="black" stroke-width="1" filter="url(#rsRefPMarkerFilter)"></path>' +
+                                                // outline
+                                                '<polyline points="' + getPolylinePoints() + '" stroke="black" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"></polyline>' +
+                                                '<path d="' + getBezierPoints() + '" fill="none" stroke-linecap="round" stroke="black" stroke-width="1"></path>' +
+                                                // stroke
+                                                '<polyline points="' + getPolylinePoints() + '" stroke="black" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"></polyline>' +
+                                                '<path d="' + getBezierPoints() + '" fill="none" stroke-linecap="round" stroke="black" stroke-width="1"></path>' +
                                                 '<g>' +
-                                                    '<text x="0" y="68" ' + (isMarkerNone(opts.marker.start) ? 'class="selected"' : '') + '>none</text>' +
-                                                    '<text x="45" y="68" ' + (isMarkerNone(opts.marker.mid) ? 'class="selected"' : '') + '>none</text>' +
-                                                    '<text x="90" y="68" ' + (isMarkerNone(opts.marker.end) ? 'class="selected"' : '') + '>none</text>' +
+                                                    '<text x="4" y="68">none</text>' +
+                                                    '<text x="38" y="68">none</text>' +
+                                                    '<text x="74" y="68">none</text>' +
                                                     // pointer
-                                                    '<path d="M3,76 L3,88 L19,82 z" ' + (isMarkerPointer(opts.marker.start) ? 'class="selected"' : '') + '></path>' +
-                                                    '<path d="M48,76 L48,88 L64,82 z" ' + (isMarkerPointer(opts.marker.mid) ? 'class="selected"' : '') + '></path>' +
-                                                    '<path d="M93,76 L93,88 L109,82 z" ' + (isMarkerPointer(opts.marker.end) ? 'class="selected"' : '') + '></path>' +
+                                                    '<path d="M7,76 L7,88 L23,82 z"></path>' +
+                                                    '<path d="M42,76 L42,88 L58,82 z"></path>' +
+                                                    '<path d="M77,76 L77,88 L93,82 z"></path>' +
                                                     // pointer2
-                                                    '<path d="M7,102 L3,108 L19,102 L3,96 z" ' + (isMarkerPointer2(opts.marker.start) ? 'class="selected"' : '') + '></path>' +
-                                                    '<path d="M52,102 L48,108 L64,102 L48,96 z" ' + (isMarkerPointer2(opts.marker.mid) ? 'class="selected"' : '') + '></path>' +
-                                                    '<path d="M97,102 L93,108 L109,102 L93,96 z" ' + (isMarkerPointer2(opts.marker.end) ? 'class="selected"' : '') + '></path>' +
+                                                    '<path d="M10,102 L6,108 L22,102 L6,96 z"></path>' +
+                                                    '<path d="M45,102 L41,108 L57,102 L41,96 z"></path>' +
+                                                    '<path d="M80,102 L76,108 L92,102 L76,96 z"></path>' +
                                                     // сircle
-                                                    '<circle cx="10" cy="122" r="6" ' + (isMarkerCircle(opts.marker.start) ? 'class="selected"' : '') + '></circle>' +
-                                                    '<circle cx="55" cy="122" r="6" ' + (isMarkerCircle(opts.marker.mid) ? 'class="selected"' : '') + '></circle>' +
-                                                    '<circle cx="100" cy="122" r="6" ' + (isMarkerCircle(opts.marker.end) ? 'class="selected"' : '') + '></circle>' +
+                                                    '<circle cx="14" cy="122" r="6"></circle>' +
+                                                    '<circle cx="49" cy="122" r="6"></circle>' +
+                                                    '<circle cx="84" cy="122" r="6"></circle>' +
                                                     // rect
-                                                    '<rect x="4" y="136" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.start) ? 'class="selected"' : '') + '></rect>' +
-                                                    '<rect x="49" y="136" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.mid) ? 'class="selected"' : '') + '></rect>' +
-                                                    '<rect x="94" y="136" width="12" height="12" rx="1" ry="1" ' + (isMarkerSquare(opts.marker.end) ? 'class="selected"' : '') + '></rect>' +
+                                                    '<rect x="8" y="136" width="12" height="12" rx="1" ry="1"></rect>' +
+                                                    '<rect x="43" y="136" width="12" height="12" rx="1" ry="1"></rect>' +
+                                                    '<rect x="78" y="136" width="12" height="12" rx="1" ry="1"></rect>' +
                                                 '</g>' +
                                             '</svg>' +
                                         '</g>' +
@@ -241,12 +266,12 @@
                                         '</g>' +
                                         '<g>' +
                                             '<div>Shadow</div>' +
-                                            '<input type="checkbox" ' + (opts.shadow.visible ? 'checked ' : '') + 'id="rsRefPointerChk3020-201f0"><label for="rsRefPointerChk3020-201f0">Enabled</label>' +
+                                            '<input type="checkbox" ' + (opts.shadow.visible ? 'checked ' : '') + 'id="rsRefPointerChk3020-201f0"><label for="rsRefPointerChk3020-201f0">Visible</label>' +
                                             '<span>Color</span><input type="color" value="' + getHexColor(opts.shadow.color) + '"><br>' +
                                             '<span>X Offset</span><input type="range" min="-50" max="50" value="' + opts.shadow.offsetX + '">' +
                                             '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.shadow.color) + '" step="0.025">' +
                                             '<span>Y Offset</span><input type="range" min="-50" max="50" value="' + opts.shadow.offsetY + '">' +
-                                            '<span>Blur</span><input type="range" min="0" max="1" value="' + opts.shadow.blur + '" step="0.025">' +
+                                            '<span>Blur</span><input type="range" min="0" max="5" value="' + opts.shadow.blur + '" step="0.025">' +
                                         '</g>' +
                                         '<button>Apply Changes</button>' +
                                     '</div>' +
@@ -442,17 +467,51 @@
                                         'height: 30px;' +
                                         'line-height: 30px;' +
                                     '}' +
+                                    'menu.refPointer.design + div > div > g input[type=range] {' +
+                                        'width: 55%;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > g:last-of-type input[type=range] {' +
+                                        'width: auto;' +
+                                    '}' +
                                     'menu.refPointer.design + div > div > g:first-of-type input:first-of-type {' +
                                         'z-index: 1;' +
                                         'position: relative;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g label {' +
-                                        'font-style: italic;' +
-                                        'border-radius: 8px;' +
+                                    'menu.refPointer.design + div > div > g:first-of-type label {' +
+                                        'border-radius: 15px 2px 2px 8px;' +
                                         'font-size: 9px;' +
-                                        'width: 29px;' +
+                                        'width: 31px;' +
                                         'text-align: center;' +
-                                        'margin: 0 7px;' +
+                                        'background-color: #fff;' +
+                                        'height: 110px;' +
+                                        'position: absolute;' +
+                                        'border: 1px #ccc solid;' +
+                                        'border-width: 18px 1px 1px 1px;' +
+                                        'display: inline-block;' +
+                                        'margin-top: 4px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > g:first-of-type label + label {' +
+                                        'border-radius: 2px;' +
+                                        'left: 104px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > g:first-of-type label + label + label {' +
+                                        'border-radius: 2px 15px 8px 2px;' +
+                                        'left: 139px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > g:first-of-type label:before {' +
+                                        'content: "start";' +
+                                        'position: absolute;' +
+                                        'text-align: center;' +
+                                        'left: 0;' +
+                                        'right: 0;' +
+                                        'top: -22px;' +
+                                        'color: grey;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > g:first-of-type label + label:before {' +
+                                        'content: "mid";' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div > g:first-of-type label + label + label:before {' +
+                                        'content: "end";' +
                                     '}' +
                                     'menu.refPointer.design + div > div > g input[type=checkbox] {' +
                                         'width: auto;' +
@@ -462,7 +521,8 @@
                                         'font-style: normal;' +
                                         'width: auto;' +
                                         'margin-right: 30%;' +
-                                        'line-height: 32px;'+
+                                        'line-height: 32px;' +
+                                        'font-size: 9px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div > g label:first-of-type {' +
                                         'margin-left: 0;' +
@@ -475,11 +535,11 @@
                                     '}' +
                                     'menu.refPointer.design + div > div svg {' +
                                         'display: block;' +
-                                        'fill: #ccc;' +
+                                        'fill: #ddd;' +
                                         'font-size: 9px;' +
                                         'position: relative;' +
                                         'left: 54px;' +
-                                        'top: -63px;' +
+                                        'top: -57px;' +
                                     '}' +
                                     'menu.refPointer.design + div svg > g > text,' +
                                     'menu.refPointer.design + div svg > g > path,' +
@@ -503,7 +563,7 @@
                                         'fill: black;' +
                                     '}' +
                                     'menu.refPointer.design + div > div svg > g > text {' +
-                                        'font-size: 10px;' +
+                                        'font-size: 9px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div > g ~ g {' +
                                         'position: relative;' +
@@ -521,6 +581,7 @@
                                 '</style>'
                             );
                             $colorPicker.remove();
+                            getHexColor = getColorOpacity = null;
                             $('body').append(this.$menu);
                             var finishMenuDragging = function (e) {
                                     designMode.UI.menu.dragInfo.dragging = false;
@@ -547,7 +608,7 @@
                                     circle: $('#rsRefPMarkerCircle'),
                                     square: $('#rsRefPMarkerRect')
                                 },
-                                $filter = $('#rsRefPMarkerFilter'),
+                                $filter = $('#rsRefPMarkerFilter').children(),
                                 $markersShadow = {
                                     pointer: $('#rsRefPfMarkerPointer'),
                                     pointer2: $('#rsRefPfMarkerPointer2'),
@@ -598,34 +659,148 @@
                             // marker size
                             $(".refPointer.design + div > div > g:first-of-type input").on('input', function (e) {
                                 opts.marker.size = + this.value;
-                                for(var key in $markers) {
-                                    $markers[key].attr(DOM.markers.getMarkerAttrs(key, opts.marker.size)).
-                                        children().attr(DOM.markers.getMarkerShapeData(key, opts.marker.size));
+                                var size, key;
+                                for(key in $markers) {
+                                    size = data.shapeRelSize.getSize(key);
+                                    DOM.updateSvgAttrs($markers[key][0], DOM.markers.getMarkerAttrs(key, size));
+                                    DOM.updateSvgAttrs($markers[key].children()[0], DOM.markers.getMarkerShapeData(key, size));
                                 }
-                            });
-                            var $startShapes =  $('> div svg > g > text:eq(0), > div svg > g > path:eq(0), > div svg > g > path:eq(3), > div svg > g > circle:eq(0), > div svg > g > rect:eq(0)', $popup),
-                                $midShapes =    $('> div svg > g > text:eq(1), > div svg > g > path:eq(1), > div svg > g > path:eq(4), > div svg > g > circle:eq(1), > div svg > g > rect:eq(1)', $popup),
-                                $endShapes =    $('> div svg > g > text:eq(2), > div svg > g > path:eq(2), > div svg > g > path:eq(5), > div svg > g > circle:eq(2), > div svg > g > rect:eq(2)', $popup);
+                                for(key in $markersShadow) {
+                                    size = data.shapeRelSize.getSize(key);
+                                    DOM.updateSvgAttrs($markersShadow[key][0], DOM.markers.getMarkerAttrs(key, size, true));
+                                    DOM.updateSvgAttrs($markersShadow[key].children()[0], DOM.markers.getMarkerShapeData(key, size, true));
+                                }
+                            }).triggerHandler('input');
+                            var $startShapes = $('> div svg > g > text:eq(0), > div svg > g > path:eq(0), > div svg > g > path:eq(3), > div svg > g > circle:eq(0), > div svg > g > rect:eq(0)', $popup),
+                                $midShapes =   $('> div svg > g > text:eq(1), > div svg > g > path:eq(1), > div svg > g > path:eq(4), > div svg > g > circle:eq(1), > div svg > g > rect:eq(1)', $popup),
+                                $endShapes =   $('> div svg > g > text:eq(2), > div svg > g > path:eq(2), > div svg > g > path:eq(5), > div svg > g > circle:eq(2), > div svg > g > rect:eq(2)', $popup),
+                                getShapeIdx = function(type) {
+                                    var index = [null, 'pointer', 'pointer2', 'circle', 'square'].indexOf(type);
+                                    return index < 0 ? 0 : index;
+                                };
+
+                            // shapes click
                             $('> div svg > g > text, > div svg > g > path, > div svg > g > circle, > div svg > g > rect', $popup).click(function (e) {
                                 // index is used to select the shape (0 for start, 1 for mid, 2 for end)
                                 var $this = $(this),
                                     index = $this.index() % 3,
-                                    getMarkerId = function (selected) {
-                                        return [null, 'url(#rsRefPMarkerPointer)', 'url(#rsRefPMarkerPointer2)', 'url(#rsRefPMarkerCircle)', 'url(#rsRefPMarkerRect)'][selected];
-                                    },
-                                    markerId;
+                                    setAttrs = function($elems, $shapes, attr, shadow) {
+                                        var markerId = [null, 'url(#rsRefPMarkerPointer)', 'url(#rsRefPMarkerPointer2)', 'url(#rsRefPMarkerCircle)', 'url(#rsRefPMarkerRect)'][$shapes.index($this)];
+                                        if (markerId === null) {
+                                            $elems.removeAttr(attr);
+                                        } else {
+                                            $elems.attr(attr, shadow ? markerId.replace(/RefPM/, 'RefPfM') : markerId);
+                                        }
+                                    };
                                 [$startShapes, $midShapes, $endShapes][index].removeAttr('class');
                                 $this.attr('class', 'selected');
                                 switch (index) {
                                     case 0:
-                                        markerId = getMarkerId($startShapes.index($this));
-                                        if (markerId === null) {
-                                            $previewPolyline.add($previewBezier).removeAttr('marker-start');
-                                        } else {
-                                            $previewPolyline.add($previewBezier).attr('marker-start', markerId);
-                                        }
+                                        setAttrs($previewPolyline.eq(0).add($previewBezier.eq(0)), $startShapes, 'marker-start', true);
+                                        setAttrs($previewPolyline.eq(2).add($previewBezier.eq(2)), $startShapes, 'marker-start');
+                                        break;
+                                    case 1:
+                                        setAttrs($previewPolyline.eq(0), $midShapes, 'marker-mid', true);
+                                        setAttrs($previewPolyline.eq(2), $midShapes, 'marker-mid');
+                                        break;
+                                    case 2:
+                                        setAttrs($previewPolyline.eq(0).add($previewBezier.eq(0)), $endShapes, 'marker-end', true);
+                                        setAttrs($previewPolyline.eq(2).add($previewBezier.eq(2)), $endShapes, 'marker-end');
                                 } 
                             });
+                            // initialize the shapes
+                            $('> div svg > g > ' + ['text', 'path', 'path:gt(2)', 'circle', 'rect'][getShapeIdx(opts.marker.start)], $popup).eq(0).click();
+                            $('> div svg > g > ' + ['text', 'path', 'path:gt(2)', 'circle', 'rect'][getShapeIdx(opts.marker.mid)], $popup).eq(1).click();
+                            $('> div svg > g > ' + ['text', 'path', 'path:gt(2)', 'circle', 'rect'][getShapeIdx(opts.marker.end)], $popup).eq(2).click();
+
+                            // stroke size
+                            $(".refPointer.design + div > div > g:first-of-type + g + g input:first-of-type").on('input', function (e) {
+                                opts.stroke.width = + this.value;
+                                var $outlines = $previewPolyline.eq(1).add($previewBezier.eq(1));
+                                $previewPolyline.add($previewBezier).not($outlines).attr('stroke-width', opts.stroke.width);
+                                $outlines.attr('stroke-width', DOM.getStrokeWidthForOutlineArrow());
+                            }).triggerHandler('input');
+
+                            // stroke color and opacity
+                            var $strokeColor = $(".refPointer.design + div > div > g:first-of-type + g + g input[type=color]"),
+                                $strokeOpacity = $(".refPointer.design + div > div > g:first-of-type + g + g input[type=color] ~ input"),
+                                $shapes = $("#rsRefPMarkerPointer path, #rsRefPMarkerPointer2 path, #rsRefPMarkerCircle circle, #rsRefPMarkerRect rect"),
+                                $shadowShapes = $("#rsRefPfMarkerPointer path, #rsRefPfMarkerPointer2 path, #rsRefPfMarkerCircle circle, #rsRefPfMarkerRect rect");
+                            $strokeColor.add($strokeOpacity).on('input', function() {
+                                opts.stroke.color = getRgbaColor($strokeColor.val(), + $strokeOpacity.val());
+                                $previewPolyline.eq(2).add($previewBezier.eq(2)).attr('stroke', opts.stroke.color);
+                                $shapes.attr('fill', opts.stroke.color);
+                            }).triggerHandler('input');
+
+                            // outline size
+                            $(".refPointer.design + div > div > g:first-of-type + g + g + g input:first-of-type").on('input', function (e) {
+                                opts.outline.width = + this.value;
+                                var $outlines = $previewPolyline.eq(1).add($previewBezier.eq(1));
+                                $outlines.attr('stroke-width', DOM.getStrokeWidthForOutlineArrow());
+                                if (Math.abs(opts.outline.width) < 1e-5) {
+                                    $outlines.hide();
+                                } else {
+                                    $outlines.show();
+                                }
+                                $shapes.add($shadowShapes).attr('stroke-width', DOM.getStrokeWidthForShape());
+                            }).triggerHandler('input');
+
+                            // outline color and opacity
+                            var $outlineColor = $(".refPointer.design + div > div > g:first-of-type + g + g + g input[type=color]"),
+                                $outlineOpacity = $(".refPointer.design + div > div > g:first-of-type + g + g + g input[type=color] ~ input");
+                            $outlineColor.add($outlineOpacity).on('input', function() {
+                                opts.outline.color = getRgbaColor($outlineColor.val(), + $outlineOpacity.val());
+                                $previewPolyline.eq(1).add($previewBezier.eq(1)).attr('stroke', opts.outline.color);
+                                $shapes.attr('stroke', opts.outline.color);
+                            }).triggerHandler('input');
+                            
+                            // shadow color and opacity
+                            var $shadowColor = $(".refPointer.design + div > div > g:last-of-type input[type=color]"),
+                                $shadowRanges = $(".refPointer.design + div > div > g:last-of-type input[type=range]"),
+                                $shadowOpacity = $shadowRanges.eq(1);
+                            $shadowColor.add($shadowOpacity).on('input', function() {
+                                opts.shadow.color = getRgbaColor($shadowColor.val(), + $shadowOpacity.val());
+                                $previewPolyline.eq(0).add($previewBezier.eq(0)).attr('stroke', opts.shadow.color);
+                                $shadowShapes.attr({
+                                    'stroke': opts.shadow.color,
+                                    'fill': opts.shadow.color
+                                });
+                            }).triggerHandler('input');
+
+                            // shadow enabled
+                            $("#rsRefPointerChk3020-201f0").change(function () {
+                                $(".refPointer.design + div > div > g:last-of-type span").css('color', this.checked ? '' : 'grey');
+                                if (this.checked) {
+                                    $shadowColor.add($shadowRanges).removeAttr('disabled');
+                                    $previewPolyline.eq(0).add($previewBezier.eq(0)).show();
+                                } else {
+                                    $shadowColor.add($shadowRanges).attr('disabled', 'disabled');
+                                    $previewPolyline.eq(0).add($previewBezier.eq(0)).hide();
+                                }
+                            }).triggerHandler('change');
+
+                            // shadow X offset
+                            $shadowRanges.eq(0).on('input', function() {
+                                opts.shadow.offsetX = + this.value;
+                                $previewPolyline.eq(0).attr('points', getPolylinePoints(true));
+                                $previewBezier.eq(0).attr('d', getBezierPoints(true));
+                            });
+
+                            // shadow Y offset
+                            $shadowRanges.eq(2).on('input', function() {
+                                opts.shadow.offsetY = + this.value;
+                                $previewPolyline.eq(0).attr('points', getPolylinePoints(true));
+                                $previewBezier.eq(0).attr('d', getBezierPoints(true));
+                            });
+
+                            // shadow blur
+                            $shadowRanges.eq(3).on('input', function() {
+                                opts.shadow.blur = + this.value;
+                                DOM.updateSvgAttrs($filter[0], {
+                                    stdDeviation: opts.shadow.blur
+                                });
+                            });
+
                             this.multipleTargets.$subMenu = $('menu', this.$menu).mouseleave(function () {
                                 if (!designMode.UI.menu.multipleTargets.firstMouseover) {
                                     designMode.UI.cancelVirtualArrow();

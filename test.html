@@ -9,7 +9,18 @@
         $(document).ready(function () {
           $("a").eq(0).rsRefPointer({
             marker: {
+              start: null,
+              mid: 'circle',
+              end: 'pointer2',
               size: 4
+            },
+            stroke: {
+              color: 'white',
+              width: 4
+            },
+            outline: {
+              color: 'black',
+              width: 2
             }
           });
 
