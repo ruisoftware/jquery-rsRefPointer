@@ -183,7 +183,7 @@
                                         '<g>' +
                                             '<div>Markers</div>' +
                                             '<span>Size</span>' +
-                                            '<input type="range" min="0.1" max="4" value="' + opts.marker.size + '" step="0.1">' +
+                                            '<input type="range" min="0.1" max="4" value="' + opts.marker.size + '" step="0.1"><var></var>' +
                                             '<span>Shapes</span><label></label><label></label><label></label>' +
                                             '<svg width="340px" height="170px" xmlns="http://www.w3.org/2000/svg" version="1.1">' +
                                                 '<defs>' +
@@ -254,24 +254,24 @@
                                         '</g>' +
                                         '<g>' +
                                             '<div>Stroke</div>' +
-                                            '<span>Size</span><input type="range" min="1" max="4" value="' + opts.stroke.width + '" step="0.25">' +
+                                            '<span>Size</span><input type="range" min="1" max="4" value="' + opts.stroke.width + '" step="0.25"><var></var>' +
                                             '<span>Color</span><input type="color" value="' + getHexColor(opts.stroke.color) + '"><br>' +
-                                            '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.stroke.color) + '" step="0.025">' +
+                                            '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.stroke.color) + '" step="0.025"><var></var>' +
                                         '</g>' +
                                         '<g>' +
                                             '<div>Outline</div>' +
-                                            '<span>Size</span><input type="range" min="0" max="4" value="' + opts.outline.width + '" step="0.25">' +
+                                            '<span>Size</span><input type="range" min="0" max="4" value="' + opts.outline.width + '" step="0.25"><var></var>' +
                                             '<span>Color</span><input type="color" value="' + getHexColor(opts.outline.color) + '"><br>' +
-                                            '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.outline.color) + '" step="0.025">' +
+                                            '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.outline.color) + '" step="0.025"><var></var>' +
                                         '</g>' +
                                         '<g>' +
                                             '<div>Shadow</div>' +
                                             '<input type="checkbox" ' + (opts.shadow.visible ? 'checked ' : '') + 'id="rsRefPointerChk3020-201f0"><label for="rsRefPointerChk3020-201f0">Visible</label>' +
                                             '<span>Color</span><input type="color" value="' + getHexColor(opts.shadow.color) + '"><br>' +
-                                            '<span>X Offset</span><input type="range" min="-50" max="50" value="' + opts.shadow.offsetX + '">' +
-                                            '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.shadow.color) + '" step="0.025">' +
-                                            '<span>Y Offset</span><input type="range" min="-50" max="50" value="' + opts.shadow.offsetY + '">' +
-                                            '<span>Blur</span><input type="range" min="0" max="5" value="' + opts.shadow.blur + '" step="0.025">' +
+                                            '<span>X Offset</span><input type="range" min="-20" max="20" value="' + opts.shadow.offsetX + '"><var></var>' +
+                                            '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.shadow.color) + '" step="0.025"><var></var>' +
+                                            '<span>Y Offset</span><input type="range" min="-20" max="20" value="' + opts.shadow.offsetY + '"><var></var>' +
+                                            '<span>Blur</span><input type="range" min="0" max="5" value="' + opts.shadow.blur + '" step="0.025"><var></var>' +
                                         '</g>' +
                                         '<button>Apply Changes</button>' +
                                     '</div>' +
@@ -468,10 +468,14 @@
                                         'line-height: 30px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div > g input[type=range] {' +
-                                        'width: 55%;' +
+                                        'width: 90px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g:last-of-type input[type=range] {' +
-                                        'width: auto;' +
+                                    'menu.refPointer.design + div > div var {' +
+                                        'width: 30px;' +
+                                        'display: inline-block;' +
+                                        'font-size: 9px;' +
+                                        'font-style: normal;' +
+                                        'margin-left: 2px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div > g:first-of-type input:first-of-type {' +
                                         'z-index: 1;' +
@@ -520,7 +524,7 @@
                                     'menu.refPointer.design + div > div > g input[type=checkbox] + label {' +
                                         'font-style: normal;' +
                                         'width: auto;' +
-                                        'margin-right: 30%;' +
+                                        'margin-right: 31.7%;' +
                                         'line-height: 32px;' +
                                         'font-size: 9px;' +
                                     '}' +
@@ -530,8 +534,8 @@
                                     'menu.refPointer.design + div > div > g:last-of-type span {' +
                                         'width: 12%;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g:last-of-type input[type=range]:nth-of-type(2n - 1) {' +
-                                        'margin-right: 4.6%;' +
+                                    'menu.refPointer.design + div > div > g:last-of-type input[type=range]:nth-of-type(2n - 1) + var {' +
+                                        'width: 53px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div svg {' +
                                         'display: block;' +
@@ -670,6 +674,7 @@
                                     DOM.updateSvgAttrs($markersShadow[key][0], DOM.markers.getMarkerAttrs(key, size, true));
                                     DOM.updateSvgAttrs($markersShadow[key].children()[0], DOM.markers.getMarkerShapeData(key, size, true));
                                 }
+                                $(this).next('var').text(opts.marker.size);
                             }).triggerHandler('input');
                             var $startShapes = $('> div svg > g > text:eq(0), > div svg > g > path:eq(0), > div svg > g > path:eq(3), > div svg > g > circle:eq(0), > div svg > g > rect:eq(0)', $popup),
                                 $midShapes =   $('> div svg > g > text:eq(1), > div svg > g > path:eq(1), > div svg > g > path:eq(4), > div svg > g > circle:eq(1), > div svg > g > rect:eq(1)', $popup),
@@ -719,6 +724,7 @@
                                 var $outlines = $previewPolyline.eq(1).add($previewBezier.eq(1));
                                 $previewPolyline.add($previewBezier).not($outlines).attr('stroke-width', opts.stroke.width);
                                 $outlines.attr('stroke-width', DOM.getStrokeWidthForOutlineArrow());
+                                $(this).next('var').text(opts.stroke.width);
                             }).triggerHandler('input');
 
                             // stroke color and opacity
@@ -732,6 +738,10 @@
                                 $shapes.attr('fill', opts.stroke.color);
                             }).triggerHandler('input');
 
+                            $strokeOpacity.on('input', function() {
+                                $(this).next('var').text($strokeOpacity.val());
+                            }).triggerHandler('input');
+
                             // outline size
                             $(".refPointer.design + div > div > g:first-of-type + g + g + g input:first-of-type").on('input', function (e) {
                                 opts.outline.width = + this.value;
@@ -743,6 +753,7 @@
                                     $outlines.show();
                                 }
                                 $shapes.add($shadowShapes).attr('stroke-width', DOM.getStrokeWidthForShape());
+                                $(this).next('var').text(opts.outline.width);
                             }).triggerHandler('input');
 
                             // outline color and opacity
@@ -753,7 +764,11 @@
                                 $previewPolyline.eq(1).add($previewBezier.eq(1)).attr('stroke', opts.outline.color);
                                 $shapes.attr('stroke', opts.outline.color);
                             }).triggerHandler('input');
-                            
+
+                            $outlineOpacity.on('input', function() {
+                                $(this).next('var').text($outlineOpacity.val());
+                            }).triggerHandler('input');
+
                             // shadow color and opacity
                             var $shadowColor = $(".refPointer.design + div > div > g:last-of-type input[type=color]"),
                                 $shadowRanges = $(".refPointer.design + div > div > g:last-of-type input[type=range]"),
@@ -767,9 +782,13 @@
                                 });
                             }).triggerHandler('input');
 
+                            $shadowOpacity.on('input', function() {
+                                $(this).next('var').text($shadowOpacity.val());
+                            }).triggerHandler('input');
+
                             // shadow enabled
-                            $("#rsRefPointerChk3020-201f0").change(function () {
-                                $(".refPointer.design + div > div > g:last-of-type span").css('color', this.checked ? '' : 'grey');
+                            $('#rsRefPointerChk3020-201f0').change(function () {
+                                $('span, var', '.refPointer.design + div > div > g:last-of-type').css('color', this.checked ? '' : 'grey');
                                 if (this.checked) {
                                     $shadowColor.add($shadowRanges).removeAttr('disabled');
                                     $previewPolyline.eq(0).add($previewBezier.eq(0)).show();
@@ -784,14 +803,16 @@
                                 opts.shadow.offsetX = + this.value;
                                 $previewPolyline.eq(0).attr('points', getPolylinePoints(true));
                                 $previewBezier.eq(0).attr('d', getBezierPoints(true));
-                            });
+                                $(this).next('var').text(opts.shadow.offsetX === 0 ? 0 : ((opts.shadow.offsetX > 0 ? '+' : '') + opts.shadow.offsetX));
+                            }).triggerHandler('input');
 
                             // shadow Y offset
                             $shadowRanges.eq(2).on('input', function() {
                                 opts.shadow.offsetY = + this.value;
                                 $previewPolyline.eq(0).attr('points', getPolylinePoints(true));
                                 $previewBezier.eq(0).attr('d', getBezierPoints(true));
-                            });
+                                $(this).next('var').text(opts.shadow.offsetY === 0 ? 0 : ((opts.shadow.offsetY > 0 ? '+' : '') + opts.shadow.offsetY));
+                            }).triggerHandler('input');
 
                             // shadow blur
                             $shadowRanges.eq(3).on('input', function() {
@@ -799,7 +820,8 @@
                                 DOM.updateSvgAttrs($filter[0], {
                                     stdDeviation: opts.shadow.blur
                                 });
-                            });
+                                $(this).next('var').text(opts.shadow.blur);
+                            }).triggerHandler('input');
 
                             this.multipleTargets.$subMenu = $('menu', this.$menu).mouseleave(function () {
                                 if (!designMode.UI.menu.multipleTargets.firstMouseover) {
