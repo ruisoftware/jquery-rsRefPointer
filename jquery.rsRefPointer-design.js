@@ -91,6 +91,7 @@
                     $points: null, // Array of jQuery set. Each jQuery object contains the points (start, end, mid) that belong to each arrow and their length is >= 2
                     menu: {
                         $menu: null,
+                        $popupProperties: null,
                         multipleTargets: {
                             $subMenu: null,
                             firstMouseover: true,
@@ -111,20 +112,7 @@
                             startY: 0
                         },
                         init: function () {
-                            var $colorPicker = $('<span>').hide(),
-                                getHexColor = function (color) {
-                                    $colorPicker[0].style.color = color;
-                                    var rgb = window.getComputedStyle($colorPicker[0]).color.replace(/rgb\(|rgba\(| |\)/g, '').split(',');
-                                    return '#' + util.byteToHex(parseInt(rgb[0])) + util.byteToHex(parseInt(rgb[1])) + util.byteToHex(parseInt(rgb[2]));
-                                },
-                                getColorOpacity = function (color) {
-                                    var tokens = /(rgba|hsla)\((.*),(.*),(.*),(.*)\)/.exec(color);
-                                    if (tokens && tokens.length === 6) {
-                                        return parseFloat(tokens[5]);
-                                    }
-                                    return 1;
-                                },
-                                getRgbaColor = function (hexColor, opacity) {
+                            var getRgbaColor = function (hexColor, opacity) {
                                     if (Math.abs(opacity - 1) > 1e-5) {
                                         var tokens = /^#([0-9A-Fa-f][0-9A-Fa-f])([0-9A-Fa-f][0-9A-Fa-f])([0-9A-Fa-f][0-9A-Fa-f])$/g.exec(hexColor);
                                         if (tokens && tokens.length === 4) {
@@ -161,7 +149,6 @@
                                     return 'M170,90 Q' + (shadow ? getShadowPointsBezier() : getMidPointsBezier(true).join(',').replace(/,-/g, ' ')) + ' T270,130';
                                 };
 
-                            $('body').append($colorPicker);
                             this.$menu = $(
                                 '<menu class="refPointer design">' +
                                     '<header>Draggable Menu</header>' +
@@ -176,14 +163,15 @@
                                     '<a href="#">Arrow Properties</a>' +
                                     '<hr>' +
                                     '<a href="#">Generate Code to Console</a>' +
-                                '</menu>' +
+                                '</menu>');
+                            this.$popupProperties = $(
                                 '<div>' +
                                     '<div>Arrow Properties<a href="#" title="Discard changes and close popup">&#x2715;</a>' +
                                         '<hr>' +
                                         '<g>' +
                                             '<div>Markers</div>' +
                                             '<span>Size</span>' +
-                                            '<input type="range" min="0.1" max="4" value="' + opts.marker.size + '" step="0.1"><var></var>' +
+                                            '<input type="range" min="0.1" max="4" step="0.1"><var></var>' +
                                             '<span>Shapes</span><label></label><label></label><label></label>' +
                                             '<svg width="340px" height="170px" xmlns="http://www.w3.org/2000/svg" version="1.1">' +
                                                 '<defs>' +
@@ -201,7 +189,7 @@
                                                     '</marker>' +
 
                                                     '<filter id="rsRefPMarkerFilter" x="-100%" y="-100%" width="300%" height="300%">' +
-                                                        '<feGaussianBlur in="SourceGraphic" stdDeviation="' + opts.shadow.blur + '"></feGaussianBlur>' +
+                                                        '<feGaussianBlur in="SourceGraphic"></feGaussianBlur>' +
                                                     '</filter>' +
 
                                                     '<marker id="rsRefPfMarkerPointer" orient="auto">' +
@@ -243,9 +231,9 @@
                                                     '<circle cx="49" cy="122" r="6"></circle>' +
                                                     '<circle cx="84" cy="122" r="6"></circle>' +
                                                     // rect
-                                                    '<rect x="8" y="136" width="12" height="12" rx="1" ry="1"></rect>' +
-                                                    '<rect x="43" y="136" width="12" height="12" rx="1" ry="1"></rect>' +
-                                                    '<rect x="78" y="136" width="12" height="12" rx="1" ry="1"></rect>' +
+                                                    '<rect x="8" y="136" width="12" height="12"></rect>' +
+                                                    '<rect x="43" y="136" width="12" height="12"></rect>' +
+                                                    '<rect x="78" y="136" width="12" height="12"></rect>' +
                                                 '</g>' +
                                             '</svg>' +
                                         '</g>' +
@@ -254,24 +242,24 @@
                                         '</g>' +
                                         '<g>' +
                                             '<div>Stroke</div>' +
-                                            '<span>Size</span><input type="range" min="1" max="4" value="' + opts.stroke.width + '" step="0.25"><var></var>' +
-                                            '<span>Color</span><input type="color" value="' + getHexColor(opts.stroke.color) + '"><br>' +
-                                            '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.stroke.color) + '" step="0.025"><var></var>' +
+                                            '<span>Size</span><input type="range" min="1" max="4" step="0.25"><var></var>' +
+                                            '<span>Color</span><input type="color"><br>' +
+                                            '<span>Opacity</span><input type="range" min="0" max="1" step="0.025"><var></var>' +
                                         '</g>' +
                                         '<g>' +
                                             '<div>Outline</div>' +
-                                            '<span>Size</span><input type="range" min="0" max="4" value="' + opts.outline.width + '" step="0.25"><var></var>' +
-                                            '<span>Color</span><input type="color" value="' + getHexColor(opts.outline.color) + '"><br>' +
-                                            '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.outline.color) + '" step="0.025"><var></var>' +
+                                            '<span>Size</span><input type="range" min="0" max="4" step="0.25"><var></var>' +
+                                            '<span>Color</span><input type="color"><br>' +
+                                            '<span>Opacity</span><input type="range" min="0" max="1" step="0.025"><var></var>' +
                                         '</g>' +
                                         '<g>' +
                                             '<div>Shadow</div>' +
-                                            '<input type="checkbox" ' + (opts.shadow.visible ? 'checked ' : '') + 'id="rsRefPointerChk3020-201f0"><label for="rsRefPointerChk3020-201f0">Visible</label>' +
-                                            '<span>Color</span><input type="color" value="' + getHexColor(opts.shadow.color) + '"><br>' +
-                                            '<span>X Offset</span><input type="range" min="-20" max="20" value="' + opts.shadow.offsetX + '"><var></var>' +
-                                            '<span>Opacity</span><input type="range" min="0" max="1" value="' + getColorOpacity(opts.shadow.color) + '" step="0.025"><var></var>' +
-                                            '<span>Y Offset</span><input type="range" min="-20" max="20" value="' + opts.shadow.offsetY + '"><var></var>' +
-                                            '<span>Blur</span><input type="range" min="0" max="5" value="' + opts.shadow.blur + '" step="0.025"><var></var>' +
+                                            '<input type="checkbox" id="rsRefPointerChk3020-201f0"><label for="rsRefPointerChk3020-201f0">Visible</label>' +
+                                            '<span>Color</span><input type="color"><br>' +
+                                            '<span>X Offset</span><input type="range" min="-20" max="20"><var></var>' +
+                                            '<span>Opacity</span><input type="range" min="0" max="1" step="0.025"><var></var>' +
+                                            '<span>Y Offset</span><input type="range" min="-20" max="20"><var></var>' +
+                                            '<span>Blur</span><input type="range" min="0" max="5" step="0.025"><var></var>' +
                                         '</g>' +
                                         '<button>Apply Changes</button>' +
                                     '</div>' +
@@ -584,9 +572,7 @@
                                     '}' +
                                 '</style>'
                             );
-                            $colorPicker.remove();
-                            getHexColor = getColorOpacity = null;
-                            $('body').append(this.$menu);
+                            $('body').append(this.$menu).append(this.$popupProperties);
                             var finishMenuDragging = function (e) {
                                     designMode.UI.menu.dragInfo.dragging = false;
                                     var pos = designMode.UI.menu.$menu.position();
@@ -602,9 +588,80 @@
                                         designMode.UI.addArrow(type, 0);
                                     }
                                 },
+                                initModel = function () {
+                                    var $colorPicker = $('<span>').hide(),
+                                        getHexColor = function (color) {
+                                            $colorPicker[0].style.color = color;
+                                            var rgb = window.getComputedStyle($colorPicker[0]).color.replace(/rgb\(|rgba\(| |\)/g, '').split(',');
+                                            return '#' + util.byteToHex(parseInt(rgb[0])) + util.byteToHex(parseInt(rgb[1])) + util.byteToHex(parseInt(rgb[2]));
+                                        },
+                                        getColorOpacity = function (color) {
+                                            var tokens = /(rgba|hsla)\((.*),(.*),(.*),(.*)\)/.exec(color);
+                                            if (tokens && tokens.length === 6) {
+                                                return parseFloat(tokens[5]);
+                                            }
+                                            return 1;
+                                        },
+                                        getShapeIdx = function(type) {
+                                            var index = [null, 'pointer', 'pointer2', 'circle', 'square'].indexOf(type);
+                                            return index < 0 ? 0 : index;
+                                        };
+                                    $('body').append($colorPicker);
+                                    try {
+                                        selector.marker.$size.val(opts.marker.size).triggerHandler('input');
+                                        $('> div svg > g > ' + ['text', 'path', 'path:gt(2)', 'circle', 'rect'][getShapeIdx(opts.marker.start)], designMode.UI.menu.$popupProperties).eq(0).click();
+                                        $('> div svg > g > ' + ['text', 'path', 'path:gt(2)', 'circle', 'rect'][getShapeIdx(opts.marker.mid)], designMode.UI.menu.$popupProperties).eq(1).click();
+                                        $('> div svg > g > ' + ['text', 'path', 'path:gt(2)', 'circle', 'rect'][getShapeIdx(opts.marker.end)], designMode.UI.menu.$popupProperties).eq(2).click();
+                                        selector.stroke.$size.val(opts.stroke.size).triggerHandler('input');
+                                        selector.stroke.$color.val(getHexColor(opts.stroke.color));
+                                        selector.stroke.$opacity.val(getColorOpacity(opts.stroke.color)).triggerHandler('input');
+                                        selector.outline.$size.val(opts.outline.size).triggerHandler('input');
+                                        selector.outline.$color.val(getHexColor(opts.outline.color));
+                                        selector.outline.$opacity.val(getColorOpacity(opts.outline.color)).triggerHandler('input');
+                                        selector.shadow.$color.val(getHexColor(opts.shadow.color));
+                                        selector.shadow.$opacity.val(getColorOpacity(opts.shadow.color)).triggerHandler('input');
+                                        selector.shadow.$visible[0].checked = opts.shadow.visible;
+                                        selector.shadow.$visible.triggerHandler('change');
+                                        selector.shadow.$ranges.eq(0).val(opts.shadow.offsetX).triggerHandler('input');
+                                        selector.shadow.$ranges.eq(2).val(opts.shadow.offsetY).triggerHandler('input');
+                                        selector.shadow.$ranges.eq(3).val(opts.shadow.blur).triggerHandler('input');
+                                    } finally {
+                                        $colorPicker.remove();
+                                    }
+                                },
                                 $newLineLink = $('> a:first-of-type', designMode.UI.menu.$menu),
-                                $popup = designMode.UI.menu.$menu.eq(1),
-                                $previewPolyline = $('polyline', $popup),
+                                selector = {
+                                    marker: {
+                                        $size: $(".refPointer.design + div > div > g:first-of-type input"),
+                                        shapes: {
+                                            $start: $('> div svg > g > text:eq(0), > div svg > g > path:eq(0), > div svg > g > path:eq(3), > div svg > g > circle:eq(0), > div svg > g > rect:eq(0)', designMode.UI.menu.$popupProperties),
+                                            $mid: $('> div svg > g > text:eq(1), > div svg > g > path:eq(1), > div svg > g > path:eq(4), > div svg > g > circle:eq(1), > div svg > g > rect:eq(1)', designMode.UI.menu.$popupProperties),
+                                            $end: $('> div svg > g > text:eq(2), > div svg > g > path:eq(2), > div svg > g > path:eq(5), > div svg > g > circle:eq(2), > div svg > g > rect:eq(2)', designMode.UI.menu.$popupProperties),
+                                            $all: $('> div svg > g > text, > div svg > g > path, > div svg > g > circle, > div svg > g > rect', designMode.UI.menu.$popupProperties)
+                                        }
+                                    },
+                                    stroke: {
+                                        $size: $(".refPointer.design + div > div > g:first-of-type + g + g input:first-of-type"),
+                                        $color: $(".refPointer.design + div > div > g:first-of-type + g + g input[type=color]"),
+                                        $opacity: $(".refPointer.design + div > div > g:first-of-type + g + g input[type=color] ~ input")
+                                    },
+                                    outline: {
+                                        $size: $(".refPointer.design + div > div > g:first-of-type + g + g + g input:first-of-type"),
+                                        $color: $(".refPointer.design + div > div > g:first-of-type + g + g + g input[type=color]"),
+                                        $opacity: $(".refPointer.design + div > div > g:first-of-type + g + g + g input[type=color] ~ input")
+                                    },
+                                    shadow: {
+                                        $visible: $('#rsRefPointerChk3020-201f0'),
+                                        $color: $(".refPointer.design + div > div > g:last-of-type input[type=color]"),
+                                        $ranges: $(".refPointer.design + div > div > g:last-of-type input[type=range]"),
+                                        $opacity: $(".refPointer.design + div > div > g:last-of-type input[type=range]").eq(1)
+                                    },
+                                    defs: {
+                                        $normal: $("#rsRefPMarkerPointer path, #rsRefPMarkerPointer2 path, #rsRefPMarkerCircle circle, #rsRefPMarkerRect rect"),
+                                        $shadow: $("#rsRefPfMarkerPointer path, #rsRefPfMarkerPointer2 path, #rsRefPfMarkerCircle circle, #rsRefPfMarkerRect rect")
+                                    }
+                                },
+                                $previewPolyline = $('polyline', designMode.UI.menu.$popupProperties),
                                 $previewBezier = $previewPolyline.next(),
                                 $markers = {
                                     pointer: $('#rsRefPMarkerPointer'),
@@ -655,13 +712,16 @@
                                 designMode.UI.addPoint();
                             });
                             $newLineLink.siblings('ul').next().click(function (e) {
-                                $popup.show();
+                                initModel();
+                                data.currentOpts = $.extend(true, {}, opts);
+                                designMode.UI.menu.$popupProperties.show();
                             });
-                            $('> div > a', $popup).click(function (e) {
-                                $popup.hide();
+                            $('> div > a', designMode.UI.menu.$popupProperties).click(function (e) {
+                                designMode.UI.menu.$popupProperties.hide();
+                                $.extend(opts, data.currentOpts);
                             });
                             // marker size
-                            $(".refPointer.design + div > div > g:first-of-type input").on('input', function (e) {
+                            selector.marker.$size.on('input', function (e) {
                                 opts.marker.size = + this.value;
                                 var size, key;
                                 for(key in $markers) {
@@ -675,17 +735,10 @@
                                     DOM.updateSvgAttrs($markersShadow[key].children()[0], DOM.markers.getMarkerShapeData(key, size, true));
                                 }
                                 $(this).next('var').text(opts.marker.size);
-                            }).triggerHandler('input');
-                            var $startShapes = $('> div svg > g > text:eq(0), > div svg > g > path:eq(0), > div svg > g > path:eq(3), > div svg > g > circle:eq(0), > div svg > g > rect:eq(0)', $popup),
-                                $midShapes =   $('> div svg > g > text:eq(1), > div svg > g > path:eq(1), > div svg > g > path:eq(4), > div svg > g > circle:eq(1), > div svg > g > rect:eq(1)', $popup),
-                                $endShapes =   $('> div svg > g > text:eq(2), > div svg > g > path:eq(2), > div svg > g > path:eq(5), > div svg > g > circle:eq(2), > div svg > g > rect:eq(2)', $popup),
-                                getShapeIdx = function(type) {
-                                    var index = [null, 'pointer', 'pointer2', 'circle', 'square'].indexOf(type);
-                                    return index < 0 ? 0 : index;
-                                };
+                            });
 
                             // shapes click
-                            $('> div svg > g > text, > div svg > g > path, > div svg > g > circle, > div svg > g > rect', $popup).click(function (e) {
+                            selector.marker.shapes.$all.click(function (e) {
                                 // index is used to select the shape (0 for start, 1 for mid, 2 for end)
                                 var $this = $(this),
                                     index = $this.index() % 3,
@@ -696,132 +749,122 @@
                                         } else {
                                             $elems.attr(attr, shadow ? markerId.replace(/RefPM/, 'RefPfM') : markerId);
                                         }
+                                    },
+                                    getShapeName = function($shapes) {
+                                        return [null, 'pointer', 'pointer2', 'circle', 'square'][$shapes.index($this)];
                                     };
-                                [$startShapes, $midShapes, $endShapes][index].removeAttr('class');
+                                [selector.marker.shapes.$start, selector.marker.shapes.$mid, selector.marker.shapes.$end][index].removeAttr('class');
                                 $this.attr('class', 'selected');
                                 switch (index) {
                                     case 0:
-                                        setAttrs($previewPolyline.eq(0).add($previewBezier.eq(0)), $startShapes, 'marker-start', true);
-                                        setAttrs($previewPolyline.eq(2).add($previewBezier.eq(2)), $startShapes, 'marker-start');
+                                        setAttrs($previewPolyline.eq(0).add($previewBezier.eq(0)), selector.marker.shapes.$start, 'marker-start', true);
+                                        setAttrs($previewPolyline.eq(2).add($previewBezier.eq(2)), selector.marker.shapes.$start, 'marker-start');
+                                        opts.marker.start = getShapeName(selector.marker.shapes.$start);
                                         break;
                                     case 1:
-                                        setAttrs($previewPolyline.eq(0), $midShapes, 'marker-mid', true);
-                                        setAttrs($previewPolyline.eq(2), $midShapes, 'marker-mid');
+                                        setAttrs($previewPolyline.eq(0), selector.marker.shapes.$mid, 'marker-mid', true);
+                                        setAttrs($previewPolyline.eq(2), selector.marker.shapes.$mid, 'marker-mid');
+                                        opts.marker.mid = getShapeName(selector.marker.shapes.$mid);
                                         break;
                                     case 2:
-                                        setAttrs($previewPolyline.eq(0).add($previewBezier.eq(0)), $endShapes, 'marker-end', true);
-                                        setAttrs($previewPolyline.eq(2).add($previewBezier.eq(2)), $endShapes, 'marker-end');
+                                        setAttrs($previewPolyline.eq(0).add($previewBezier.eq(0)), selector.marker.shapes.$end, 'marker-end', true);
+                                        setAttrs($previewPolyline.eq(2).add($previewBezier.eq(2)), selector.marker.shapes.$end, 'marker-end');
+                                        opts.marker.end = getShapeName(selector.marker.shapes.$end);
                                 } 
                             });
-                            // initialize the shapes
-                            $('> div svg > g > ' + ['text', 'path', 'path:gt(2)', 'circle', 'rect'][getShapeIdx(opts.marker.start)], $popup).eq(0).click();
-                            $('> div svg > g > ' + ['text', 'path', 'path:gt(2)', 'circle', 'rect'][getShapeIdx(opts.marker.mid)], $popup).eq(1).click();
-                            $('> div svg > g > ' + ['text', 'path', 'path:gt(2)', 'circle', 'rect'][getShapeIdx(opts.marker.end)], $popup).eq(2).click();
 
                             // stroke size
-                            $(".refPointer.design + div > div > g:first-of-type + g + g input:first-of-type").on('input', function (e) {
-                                opts.stroke.width = + this.value;
+                            selector.stroke.$size.on('input', function (e) {
+                                opts.stroke.size = + this.value;
                                 var $outlines = $previewPolyline.eq(1).add($previewBezier.eq(1));
-                                $previewPolyline.add($previewBezier).not($outlines).attr('stroke-width', opts.stroke.width);
+                                $previewPolyline.add($previewBezier).not($outlines).attr('stroke-width', opts.stroke.size);
                                 $outlines.attr('stroke-width', DOM.getStrokeWidthForOutlineArrow());
-                                $(this).next('var').text(opts.stroke.width);
-                            }).triggerHandler('input');
+                                $(this).next('var').text(opts.stroke.size);
+                            });
 
                             // stroke color and opacity
-                            var $strokeColor = $(".refPointer.design + div > div > g:first-of-type + g + g input[type=color]"),
-                                $strokeOpacity = $(".refPointer.design + div > div > g:first-of-type + g + g input[type=color] ~ input"),
-                                $shapes = $("#rsRefPMarkerPointer path, #rsRefPMarkerPointer2 path, #rsRefPMarkerCircle circle, #rsRefPMarkerRect rect"),
-                                $shadowShapes = $("#rsRefPfMarkerPointer path, #rsRefPfMarkerPointer2 path, #rsRefPfMarkerCircle circle, #rsRefPfMarkerRect rect");
-                            $strokeColor.add($strokeOpacity).on('input', function() {
-                                opts.stroke.color = getRgbaColor($strokeColor.val(), + $strokeOpacity.val());
+                            selector.stroke.$color.add(selector.stroke.$opacity).on('input', function() {
+                                opts.stroke.color = getRgbaColor(selector.stroke.$color.val(), + selector.stroke.$opacity.val());
                                 $previewPolyline.eq(2).add($previewBezier.eq(2)).attr('stroke', opts.stroke.color);
-                                $shapes.attr('fill', opts.stroke.color);
-                            }).triggerHandler('input');
-
-                            $strokeOpacity.on('input', function() {
-                                $(this).next('var').text($strokeOpacity.val());
-                            }).triggerHandler('input');
+                                selector.defs.$normal.attr('fill', opts.stroke.color);
+                            });
+                            selector.stroke.$opacity.on('input', function() {
+                                $(this).next('var').text(selector.stroke.$opacity.val());
+                            });
 
                             // outline size
-                            $(".refPointer.design + div > div > g:first-of-type + g + g + g input:first-of-type").on('input', function (e) {
-                                opts.outline.width = + this.value;
+                            selector.outline.$size.on('input', function (e) {
+                                opts.outline.size = + this.value;
                                 var $outlines = $previewPolyline.eq(1).add($previewBezier.eq(1));
                                 $outlines.attr('stroke-width', DOM.getStrokeWidthForOutlineArrow());
-                                if (Math.abs(opts.outline.width) < 1e-5) {
+                                if (Math.abs(opts.outline.size) < 1e-5) {
                                     $outlines.hide();
                                 } else {
                                     $outlines.show();
                                 }
-                                $shapes.add($shadowShapes).attr('stroke-width', DOM.getStrokeWidthForShape());
-                                $(this).next('var').text(opts.outline.width);
-                            }).triggerHandler('input');
+                                selector.defs.$normal.add(selector.defs.$shadow).attr('stroke-width', DOM.getStrokeWidthForShape());
+                                $(this).next('var').text(opts.outline.size);
+                            });
 
                             // outline color and opacity
-                            var $outlineColor = $(".refPointer.design + div > div > g:first-of-type + g + g + g input[type=color]"),
-                                $outlineOpacity = $(".refPointer.design + div > div > g:first-of-type + g + g + g input[type=color] ~ input");
-                            $outlineColor.add($outlineOpacity).on('input', function() {
-                                opts.outline.color = getRgbaColor($outlineColor.val(), + $outlineOpacity.val());
+                            selector.outline.$color.add(selector.outline.$opacity).on('input', function() {
+                                opts.outline.color = getRgbaColor(selector.outline.$color.val(), + selector.outline.$opacity.val());
                                 $previewPolyline.eq(1).add($previewBezier.eq(1)).attr('stroke', opts.outline.color);
-                                $shapes.attr('stroke', opts.outline.color);
-                            }).triggerHandler('input');
-
-                            $outlineOpacity.on('input', function() {
-                                $(this).next('var').text($outlineOpacity.val());
-                            }).triggerHandler('input');
+                                selector.defs.$normal.attr('stroke', opts.outline.color);
+                            });
+                            selector.outline.$opacity.on('input', function() {
+                                $(this).next('var').text(selector.outline.$opacity.val());
+                            });
 
                             // shadow color and opacity
-                            var $shadowColor = $(".refPointer.design + div > div > g:last-of-type input[type=color]"),
-                                $shadowRanges = $(".refPointer.design + div > div > g:last-of-type input[type=range]"),
-                                $shadowOpacity = $shadowRanges.eq(1);
-                            $shadowColor.add($shadowOpacity).on('input', function() {
-                                opts.shadow.color = getRgbaColor($shadowColor.val(), + $shadowOpacity.val());
+                            selector.shadow.$color.add(selector.shadow.$opacity).on('input', function() {
+                                opts.shadow.color = getRgbaColor(selector.shadow.$color.val(), + selector.shadow.$opacity.val());
                                 $previewPolyline.eq(0).add($previewBezier.eq(0)).attr('stroke', opts.shadow.color);
-                                $shadowShapes.attr({
+                                selector.defs.$shadow.attr({
                                     'stroke': opts.shadow.color,
                                     'fill': opts.shadow.color
                                 });
-                            }).triggerHandler('input');
-
-                            $shadowOpacity.on('input', function() {
-                                $(this).next('var').text($shadowOpacity.val());
-                            }).triggerHandler('input');
+                            });
+                            selector.shadow.$opacity.on('input', function() {
+                                $(this).next('var').text(selector.shadow.$opacity.val());
+                            });
 
                             // shadow enabled
-                            $('#rsRefPointerChk3020-201f0').change(function () {
+                            selector.shadow.$visible.change(function () {
                                 $('span, var', '.refPointer.design + div > div > g:last-of-type').css('color', this.checked ? '' : 'grey');
                                 if (this.checked) {
-                                    $shadowColor.add($shadowRanges).removeAttr('disabled');
+                                    selector.shadow.$color.add(selector.shadow.$ranges).removeAttr('disabled');
                                     $previewPolyline.eq(0).add($previewBezier.eq(0)).show();
                                 } else {
-                                    $shadowColor.add($shadowRanges).attr('disabled', 'disabled');
+                                    selector.shadow.$color.add(selector.shadow.$ranges).attr('disabled', 'disabled');
                                     $previewPolyline.eq(0).add($previewBezier.eq(0)).hide();
                                 }
-                            }).triggerHandler('change');
+                            });
 
                             // shadow X offset
-                            $shadowRanges.eq(0).on('input', function() {
+                            selector.shadow.$ranges.eq(0).on('input', function() {
                                 opts.shadow.offsetX = + this.value;
                                 $previewPolyline.eq(0).attr('points', getPolylinePoints(true));
                                 $previewBezier.eq(0).attr('d', getBezierPoints(true));
                                 $(this).next('var').text(opts.shadow.offsetX === 0 ? 0 : ((opts.shadow.offsetX > 0 ? '+' : '') + opts.shadow.offsetX));
-                            }).triggerHandler('input');
+                            });
 
                             // shadow Y offset
-                            $shadowRanges.eq(2).on('input', function() {
+                            selector.shadow.$ranges.eq(2).on('input', function() {
                                 opts.shadow.offsetY = + this.value;
                                 $previewPolyline.eq(0).attr('points', getPolylinePoints(true));
                                 $previewBezier.eq(0).attr('d', getBezierPoints(true));
                                 $(this).next('var').text(opts.shadow.offsetY === 0 ? 0 : ((opts.shadow.offsetY > 0 ? '+' : '') + opts.shadow.offsetY));
-                            }).triggerHandler('input');
+                            });
 
                             // shadow blur
-                            $shadowRanges.eq(3).on('input', function() {
+                            selector.shadow.$ranges.eq(3).on('input', function() {
                                 opts.shadow.blur = + this.value;
                                 DOM.updateSvgAttrs($filter[0], {
                                     stdDeviation: opts.shadow.blur
                                 });
                                 $(this).next('var').text(opts.shadow.blur);
-                            }).triggerHandler('input');
+                            });
 
                             this.multipleTargets.$subMenu = $('menu', this.$menu).mouseleave(function () {
                                 if (!designMode.UI.menu.multipleTargets.firstMouseover) {
@@ -936,8 +979,8 @@
                             x: data.points.end[targetIdx].x,
                             y: data.points.end[targetIdx].y
                         });
-                        data.points.layout.fromOffset.push({ dx: 0, dy: 0 });
-                        data.points.layout.toOffset.push({ dx: 0, dy: 0 });
+                        data.points.layout.fromOffset.push(data.points.getElementCenterPos());
+                        data.points.layout.toOffset.push(data.points.getElementCenterPos(data.$targets.eq(targetIdx)));
                         data.points.layout.topLeft.push({ x: 0, y: 0 });
                         data.points.layout.size.push({ width: 0, height: 0 });
                         var lastArrowIdx = data.arrowTypes.length - 1;
@@ -996,13 +1039,16 @@
                     addArrow: function (type, targetIdx) {
                         this.doAddArrow(type, targetIdx);
                     },
-                    addVirtualArrow:  function (type, targetIdx) {
+                    addVirtualArrow: function (type, targetIdx) {
                         this.doAddArrow(type, targetIdx, true);
                     },
                     changeVirtualArrow: function (targetIdx) {
-                        var lastArrowIdx = data.arrowTypes.length - 1;
+                        var lastArrowIdx = data.arrowTypes.length - 1,
+                            centerArrow = data.points.getElementCenterPos(data.$targets.eq(targetIdx));
                         data.points.end[lastArrowIdx].x = data.points.end[targetIdx].x;
                         data.points.end[lastArrowIdx].y = data.points.end[targetIdx].y;
+                        data.points.layout.toOffset[lastArrowIdx].dx = centerArrow.dx;
+                        data.points.layout.toOffset[lastArrowIdx].dy = centerArrow.dy;
                         DOM.updateArrow(lastArrowIdx);
                     },
                     saveVirtualArrow: function () {

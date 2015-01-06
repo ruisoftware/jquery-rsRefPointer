@@ -8,19 +8,27 @@
     <script>
         $(document).ready(function () {
           $("a").eq(0).rsRefPointer({
+            targetSelector: '.target',
             marker: {
-              start: null,
-              mid: 'circle',
-              end: 'pointer2',
-              size: 4
+                start: null,
+                mid: null,
+                end: 'pointer2',
+                size: 2
             },
             stroke: {
-              color: 'white',
-              width: 4
+                color: 'black',
+                size: 2
             },
             outline: {
-              color: 'black',
-              width: 2
+                color: 'white',
+                size: 2
+            },
+            shadow: {
+                visible: true,
+                color: 'rgba(95,95,95,.2)',
+                offsetX: -8,
+                offsetY: -8,
+                blur: 3
             }
           });
 
@@ -45,9 +53,9 @@
   </head>
   <body>
     <div id="p"></div>
-    <span contenteditable>Type something here to change the target location...</span><span class="target">first target</span><button id="clean">test bbbbbcccccccccccccccbbbb click</button>
+    <span contenteditable>Type something here to change the target location...</span><span class="ttarget">first target</span><button id="clean">test bbbbbcccccccccccccccbbbb click</button>
     This is a diagram with <a tabindex="0" href="#">2 references.</a><br><br><br>
-    <span contenteditable>Type something here to change the target location...</span><span class="target">second target</span>
+    <span contenteditable>Type something here to change the target location...</span><span class="target">second.............. target</span>
     <br><br><br><br><br>
     and the second instance <a tabindex="1" href="#">here</a>
     <span class="target">third target</span>

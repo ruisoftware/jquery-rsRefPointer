@@ -20,8 +20,8 @@
                 shapeRelSize: {
                     pointer: 8,
                     pointer2: 8,
-                    circle: 6.5,
-                    square: 6.5,
+                    circle: 4,
+                    square: 4,
                     getSize: function (type) {
                         return ((opts.marker.size - 1)*0.25 + 1)*this[type];
                     }
@@ -92,6 +92,16 @@
                             DOM.updateArrow(index);
                         });
                     },
+                    getElementCenterPos: function ($element) {
+                        // this is way to retrieve the content dimensions for blocked elements
+                        var $span = ($element || $elem).wrapInner('<span style="display: inline;">').children('span'),
+                            offset = {
+                                dx: $span.width()/2,
+                                dy: $span.height()/2
+                            };
+                        $span.contents().unwrap();
+                        return offset;
+                    },
                     init: function () {
                         data.$targets = opts.targetSelector ? $(opts.targetSelector) : $();
                         $elem.add(data.$targets).each(function (index, e) {
@@ -101,15 +111,9 @@
                             }
                         });
 
-
                         var pos = $elem.offset(),
-                            // this is way to retrieve the content dimensions for blocked elements
-                            $elemSpan = $elem.wrapInner('<span style="display: inline;">').children('span'),
-                            fromOffset = {
-                                dx: $elemSpan.width()/2,
-                                dy: $elemSpan.height()/2
-                            };
-                        $elemSpan.contents().unwrap();
+                            fromOffset = this.getElementCenterPos($elem);
+
                         this.start = {
                             x: pos.left,
                             y: pos.top
@@ -140,13 +144,8 @@
 
                             var $target = $(e),
                                 targetPos = $target.offset(),
-                                // this is way to retrieve the content dimensions for blocked elements
-                                $targetSpan = $target.wrapInner('<span style="display: inline;">').children('span'),
-                                toOffset = {
-                                    dx: $targetSpan.width()/2,
-                                    dy: $targetSpan.height()/2
-                                };
-                            $targetSpan.contents().unwrap();
+                                toOffset = data.points.getElementCenterPos($target);
+
                             data.points.layout.toOffset.push(toOffset);
                             data.points.end.push({
                                 x: targetPos.left,
@@ -219,7 +218,7 @@
                 },
                 init: function () {
                     this.points.init();
-                    this.outline = opts.outline.width && opts.outline.color !== 'transparent';
+                    this.outline = opts.outline.size && opts.outline.color !== 'transparent';
                     var bounds = this.getBoundsRect(),
                         css = {
                             position: 'absolute',
@@ -269,10 +268,10 @@
                     }
                 },
                 getStrokeWidthForOutlineArrow: function () {
-                    return opts.outline.width*opts.stroke.width + opts.stroke.width;
+                    return opts.outline.size*opts.stroke.size + opts.stroke.size;
                 },
                 getStrokeWidthForShape: function () {
-                    return opts.outline.width/2;
+                    return opts.outline.size/2;
                 },
                 markers: {
                     $defs: null,
@@ -358,9 +357,7 @@
                                     x: 1,
                                     y: 1,
                                     width: size,
-                                    height: size,
-                                    rx: 2,
-                                    ry: 2
+                                    height: size
                                 };
                                 break;
                             default:
@@ -531,7 +528,7 @@
                     if (opts.shadow.visible) {
                         attrsShade.stroke = opts.shadow.color;
                         attrsShade.filter = 'url(#' + this.markers.ids.filter.shadow + ')';
-                        attrsShade['stroke-width'] = opts.stroke.width;
+                        attrsShade['stroke-width'] = opts.stroke.size;
                         ['Start', 'Mid', 'End'].forEach(function (e) { 
                             if (DOM.markers.ids.filter[e]) {
                                 attrsShade['marker-' + e.toLowerCase()] = 'url(#' + DOM.markers.ids.filter[e] + ')';
@@ -563,7 +560,8 @@
                     }
 
                     attrs.stroke = opts.stroke.color;
-                    attrs['stroke-width'] = opts.stroke.width;
+                    console.log(opts.stroke.size);
+                    attrs['stroke-width'] = opts.stroke.size;
                     ['start', 'mid', 'end'].forEach(function (e) { 
                         if (DOM.markers.ids[e]) {
                             attrs['marker-' + e] = 'url(#' + DOM.markers.ids[e] + ')';
@@ -683,11 +681,11 @@
         },
         stroke: {
             color: 'black',
-            width: 1.5
+            size: 2
         },
         outline: {
-            color: '#fff',
-            width: 1
+            color: 'white',
+            size: 1
         },
         shadow: {
             visible: true,
