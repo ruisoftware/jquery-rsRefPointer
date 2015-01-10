@@ -502,7 +502,7 @@
                 getSVGtag: function (arrowType) {
                     return arrowType === 'bezierQ' || arrowType === 'bezierC' ? 'path' : arrowType;
                 },
-                createOrReplaceArrow: function (index, replace) {
+                createOrReplaceArrow: function (index, createShadow, createOutline, createStroke, replace) {
                     var attrs = this.getShapeAttrs(index),
                         attrsShade = this.getShapeAttrs(index, {
                             dx: opts.shadow.offsetX,
@@ -525,7 +525,7 @@
                             attrsShade['stroke-linecap'] = 'round';
                     }
 
-                    if (opts.shadow.visible) {
+                    if (createShadow) {
                         attrsShade.stroke = opts.shadow.color;
                         attrsShade.filter = 'url(#' + this.markers.ids.filter.shadow + ')';
                         attrsShade['stroke-width'] = opts.stroke.size;
@@ -548,7 +548,7 @@
                         
                     }
 
-                    if (data.outline) {
+                    if (createOutline) {
                         attrs.stroke = opts.outline.color;
                         attrs['stroke-width'] = this.getStrokeWidthForOutlineArrow();
                         $arrowElement = this.createSvgDom(this.getSVGtag(data.arrowTypes[index]), attrs);
@@ -559,28 +559,29 @@
                         }
                     }
 
-                    attrs.stroke = opts.stroke.color;
-                    console.log(opts.stroke.size);
-                    attrs['stroke-width'] = opts.stroke.size;
-                    ['start', 'mid', 'end'].forEach(function (e) { 
-                        if (DOM.markers.ids[e]) {
-                            attrs['marker-' + e] = 'url(#' + DOM.markers.ids[e] + ')';
+                    if (createStroke) {
+                        attrs.stroke = opts.stroke.color;
+                        attrs['stroke-width'] = opts.stroke.size;
+                        ['start', 'mid', 'end'].forEach(function (e) { 
+                            if (DOM.markers.ids[e]) {
+                                attrs['marker-' + e] = 'url(#' + DOM.markers.ids[e] + ')';
+                            }
+                        });
+                        $arrowElement = this.createSvgDom(this.getSVGtag(data.arrowTypes[index]), attrs);
+                        if (replace === true) {
+                            this.arrows[index].replaceWith($arrowElement);
+                            this.arrows[index] = $arrowElement;
+                        } else {
+                            this.$svg.append($arrowElement);
+                            this.arrows.push($arrowElement);
                         }
-                    });
-                    $arrowElement = this.createSvgDom(this.getSVGtag(data.arrowTypes[index]), attrs);
-                    if (replace === true) {
-                        this.arrows[index].replaceWith($arrowElement);
-                        this.arrows[index] = $arrowElement;
-                    } else {
-                        this.$svg.append($arrowElement);
-                        this.arrows.push($arrowElement);
                     }
                 },
                 createArrow: function (index) {
-                    this.createOrReplaceArrow(index);
+                    this.createOrReplaceArrow(index, opts.shadow.visible, data.outline, true);
                 },
                 replaceArrow: function (index) {
-                    this.createOrReplaceArrow(index, true);
+                    this.createOrReplaceArrow(index, opts.shadow.visible, data.outline, true, true);
                 }
             },
             events = {
@@ -592,13 +593,8 @@
                     DOM.$svg.hide();
                 },
                 onDestroy: function () {
-                    this.unbindAll();
+                    events.unbindAll();
                     DOM.$svg.remove();
-
-
-                    // TODO: clean all data structures
-
-
                 },
                 bindAll: function () {
                     $elem.

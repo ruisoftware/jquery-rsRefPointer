@@ -13,7 +13,7 @@
     var runtime = $.fn.rsRefPointer,
         defaults = $.fn.rsRefPointer.defaults;
 
-//TODO Design mode should ouput the topLeft and size. Othewise, the arrows will not have the designed shape if the page is reloaded with a size different than the designed page size.
+//TODO Design mode should ouput the topLeft and size. Otherwise, the arrows will not have the designed shape if the page is reloaded with a size different than the designed page size.
 
     if (!runtime) {
         console.error('jquery.rsRefPointer.js not loaded! Please, include jquery.rsRefPointer.js before the jquery.rsRefPointer-design.js.');
@@ -168,7 +168,7 @@
                                 '<div>' +
                                     '<div>Arrow Properties<a href="#" title="Discard changes and close popup">&#x2715;</a>' +
                                         '<hr>' +
-                                        '<g>' +
+                                        '<aside>' +
                                             '<div>Markers</div>' +
                                             '<span>Size</span>' +
                                             '<input type="range" min="0.1" max="4" step="0.1"><var></var>' +
@@ -236,23 +236,23 @@
                                                     '<rect x="78" y="136" width="12" height="12"></rect>' +
                                                 '</g>' +
                                             '</svg>' +
-                                        '</g>' +
-                                        '<g>' +
+                                        '</aside>' +
+                                        '<aside>' +
                                             '<div>Preview</div>' +
-                                        '</g>' +
-                                        '<g>' +
+                                        '</aside>' +
+                                        '<aside>' +
                                             '<div>Stroke</div>' +
                                             '<span>Size</span><input type="range" min="1" max="4" step="0.25"><var></var>' +
                                             '<span>Color</span><input type="color"><br>' +
                                             '<span>Opacity</span><input type="range" min="0" max="1" step="0.025"><var></var>' +
-                                        '</g>' +
-                                        '<g>' +
+                                        '</aside>' +
+                                        '<aside>' +
                                             '<div>Outline</div>' +
                                             '<span>Size</span><input type="range" min="0" max="4" step="0.25"><var></var>' +
                                             '<span>Color</span><input type="color"><br>' +
                                             '<span>Opacity</span><input type="range" min="0" max="1" step="0.025"><var></var>' +
-                                        '</g>' +
-                                        '<g>' +
+                                        '</aside>' +
+                                        '<aside>' +
                                             '<div>Shadow</div>' +
                                             '<input type="checkbox" id="rsRefPointerChk3020-201f0"><label for="rsRefPointerChk3020-201f0">Visible</label>' +
                                             '<span>Color</span><input type="color"><br>' +
@@ -260,7 +260,7 @@
                                             '<span>Opacity</span><input type="range" min="0" max="1" step="0.025"><var></var>' +
                                             '<span>Y Offset</span><input type="range" min="-20" max="20"><var></var>' +
                                             '<span>Blur</span><input type="range" min="0" max="5" step="0.025"><var></var>' +
-                                        '</g>' +
+                                        '</aside>' +
                                         '<button>Apply Changes</button>' +
                                     '</div>' +
                                 '</div>'
@@ -428,34 +428,34 @@
                                     'menu.refPointer.design + div > div a:first-of-type + hr {' +
                                         'margin-bottom: 25px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g {' +
+                                    'menu.refPointer.design + div > div > aside {' +
                                         'width: 46%;' +
                                         'display: inline-block;' +
                                         'margin: 0 2%;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g div {' +
+                                    'menu.refPointer.design + div > div > aside div {' +
                                         'font-size: 11px;' +
                                         'text-shadow: 1px 1px white;' +
                                         'left: 10px;' +
                                         'border-bottom: 1px solid #ccc;' +
                                         'font-weight: bold;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g span,' +
-                                    'menu.refPointer.design + div > div > g input[type=checkbox] {' +
+                                    'menu.refPointer.design + div > div > aside span,' +
+                                    'menu.refPointer.design + div > div > aside input[type=checkbox] {' +
                                         'width: 25%;' +
                                         'font-size: 9px;' +
                                         'text-align: right;' +
                                         'margin-right: 5px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g span,' +
-                                    'menu.refPointer.design + div > div > g input,' +
-                                    'menu.refPointer.design + div > div > g label {' +
+                                    'menu.refPointer.design + div > div > aside span,' +
+                                    'menu.refPointer.design + div > div > aside input,' +
+                                    'menu.refPointer.design + div > div > aside label {' +
                                         'display: inline-block;' +
                                         'vertical-align: middle;' +
                                         'height: 30px;' +
                                         'line-height: 30px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g input[type=range] {' +
+                                    'menu.refPointer.design + div > div > aside input[type=range] {' +
                                         'width: 90px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div var {' +
@@ -465,11 +465,11 @@
                                         'font-style: normal;' +
                                         'margin-left: 2px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g:first-of-type input:first-of-type {' +
+                                    'menu.refPointer.design + div > div > aside:first-of-type input:first-of-type {' +
                                         'z-index: 1;' +
                                         'position: relative;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g:first-of-type label {' +
+                                    'menu.refPointer.design + div > div > aside:first-of-type label {' +
                                         'border-radius: 15px 2px 2px 8px;' +
                                         'font-size: 9px;' +
                                         'width: 31px;' +
@@ -482,15 +482,15 @@
                                         'display: inline-block;' +
                                         'margin-top: 4px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g:first-of-type label + label {' +
+                                    'menu.refPointer.design + div > div > aside:first-of-type label + label {' +
                                         'border-radius: 2px;' +
                                         'left: 104px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g:first-of-type label + label + label {' +
+                                    'menu.refPointer.design + div > div > aside:first-of-type label + label + label {' +
                                         'border-radius: 2px 15px 8px 2px;' +
                                         'left: 139px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g:first-of-type label:before {' +
+                                    'menu.refPointer.design + div > div > aside:first-of-type label:before {' +
                                         'content: "start";' +
                                         'position: absolute;' +
                                         'text-align: center;' +
@@ -499,30 +499,30 @@
                                         'top: -22px;' +
                                         'color: grey;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g:first-of-type label + label:before {' +
+                                    'menu.refPointer.design + div > div > aside:first-of-type label + label:before {' +
                                         'content: "mid";' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g:first-of-type label + label + label:before {' +
+                                    'menu.refPointer.design + div > div > aside:first-of-type label + label + label:before {' +
                                         'content: "end";' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g input[type=checkbox] {' +
+                                    'menu.refPointer.design + div > div > aside input[type=checkbox] {' +
                                         'width: auto;' +
                                         'margin-left: 9.5%;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g input[type=checkbox] + label {' +
+                                    'menu.refPointer.design + div > div > aside input[type=checkbox] + label {' +
                                         'font-style: normal;' +
                                         'width: auto;' +
                                         'margin-right: 31.7%;' +
                                         'line-height: 32px;' +
                                         'font-size: 9px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g label:first-of-type {' +
+                                    'menu.refPointer.design + div > div > aside label:first-of-type {' +
                                         'margin-left: 0;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g:last-of-type span {' +
+                                    'menu.refPointer.design + div > div > aside:last-of-type span {' +
                                         'width: 12%;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g:last-of-type input[type=range]:nth-of-type(2n - 1) + var {' +
+                                    'menu.refPointer.design + div > div > aside:last-of-type input[type=range]:nth-of-type(2n - 1) + var {' +
                                         'width: 53px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div svg {' +
@@ -557,11 +557,11 @@
                                     'menu.refPointer.design + div > div svg > g > text {' +
                                         'font-size: 9px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g ~ g {' +
+                                    'menu.refPointer.design + div > div > aside ~ aside {' +
                                         'position: relative;' +
                                         'top: -55px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div > g:last-of-type {' +
+                                    'menu.refPointer.design + div > div > aside:last-of-type {' +
                                         'top: -32px;' +
                                         'width: 96%;' +
                                     '}' +
@@ -632,7 +632,7 @@
                                 $newLineLink = $('> a:first-of-type', designMode.UI.menu.$menu),
                                 selector = {
                                     marker: {
-                                        $size: $(".refPointer.design + div > div > g:first-of-type input"),
+                                        $size: $(".refPointer.design + div > div > aside:first-of-type input"),
                                         shapes: {
                                             $start: $('> div svg > g > text:eq(0), > div svg > g > path:eq(0), > div svg > g > path:eq(3), > div svg > g > circle:eq(0), > div svg > g > rect:eq(0)', designMode.UI.menu.$popupProperties),
                                             $mid: $('> div svg > g > text:eq(1), > div svg > g > path:eq(1), > div svg > g > path:eq(4), > div svg > g > circle:eq(1), > div svg > g > rect:eq(1)', designMode.UI.menu.$popupProperties),
@@ -641,20 +641,20 @@
                                         }
                                     },
                                     stroke: {
-                                        $size: $(".refPointer.design + div > div > g:first-of-type + g + g input:first-of-type"),
-                                        $color: $(".refPointer.design + div > div > g:first-of-type + g + g input[type=color]"),
-                                        $opacity: $(".refPointer.design + div > div > g:first-of-type + g + g input[type=color] ~ input")
+                                        $size: $(".refPointer.design + div > div > aside:first-of-type + aside + aside input:first-of-type"),
+                                        $color: $(".refPointer.design + div > div > aside:first-of-type + aside + aside input[type=color]"),
+                                        $opacity: $(".refPointer.design + div > div > aside:first-of-type + aside + aside input[type=color] ~ input")
                                     },
                                     outline: {
-                                        $size: $(".refPointer.design + div > div > g:first-of-type + g + g + g input:first-of-type"),
-                                        $color: $(".refPointer.design + div > div > g:first-of-type + g + g + g input[type=color]"),
-                                        $opacity: $(".refPointer.design + div > div > g:first-of-type + g + g + g input[type=color] ~ input")
+                                        $size: $(".refPointer.design + div > div > aside:first-of-type + aside + aside + aside input:first-of-type"),
+                                        $color: $(".refPointer.design + div > div > aside:first-of-type + aside + aside + aside input[type=color]"),
+                                        $opacity: $(".refPointer.design + div > div > aside:first-of-type + aside + aside + aside input[type=color] ~ input")
                                     },
                                     shadow: {
                                         $visible: $('#rsRefPointerChk3020-201f0'),
-                                        $color: $(".refPointer.design + div > div > g:last-of-type input[type=color]"),
-                                        $ranges: $(".refPointer.design + div > div > g:last-of-type input[type=range]"),
-                                        $opacity: $(".refPointer.design + div > div > g:last-of-type input[type=range]").eq(1)
+                                        $color: $(".refPointer.design + div > div > aside:last-of-type input[type=color]"),
+                                        $ranges: $(".refPointer.design + div > div > aside:last-of-type input[type=range]"),
+                                        $opacity: $(".refPointer.design + div > div > aside:last-of-type input[type=range]").eq(1)
                                     },
                                     defs: {
                                         $normal: $("#rsRefPMarkerPointer path, #rsRefPMarkerPointer2 path, #rsRefPMarkerCircle circle, #rsRefPMarkerRect rect"),
@@ -719,6 +719,10 @@
                             $('> div > a', designMode.UI.menu.$popupProperties).click(function (e) {
                                 designMode.UI.menu.$popupProperties.hide();
                                 $.extend(opts, data.currentOpts);
+                            });
+                            $('button', designMode.UI.menu.$popupProperties).click(function (e) {
+                                designMode.UI.menu.$popupProperties.hide();
+                                applyChanges();
                             });
                             // marker size
                             selector.marker.$size.on('input', function (e) {
@@ -831,7 +835,8 @@
 
                             // shadow enabled
                             selector.shadow.$visible.change(function () {
-                                $('span, var', '.refPointer.design + div > div > g:last-of-type').css('color', this.checked ? '' : 'grey');
+                                $('span, var', '.refPointer.design + div > div > aside:last-of-type').css('color', this.checked ? '' : 'grey');
+                                opts.shadow.visible = this.checked;
                                 if (this.checked) {
                                     selector.shadow.$color.add(selector.shadow.$ranges).removeAttr('disabled');
                                     $previewPolyline.eq(0).add($previewBezier.eq(0)).show();
@@ -919,11 +924,11 @@
                                 break;
                             case 'bezierQ':
                                 DOM.bezier.Q.addPoint(arrowIdx, midPoints, sets);
-                                DOM.markers.$defs.next('g').append(sets.controlLines);
+                                DOM.$controlLinesSvgGroup.append(sets.controlLines);
                                 break;
                             case 'bezierC':
                                 DOM.bezier.C.addPoint(arrowIdx, midPoints, sets);
-                                DOM.markers.$defs.next('g').append(sets.controlLines);
+                                DOM.$controlLinesSvgGroup.append(sets.controlLines);
                         }
                         DOM.$svg.append(sets.controlPoints);
                         DOM.updateArrow(arrowIdx);
@@ -1261,8 +1266,63 @@
                     events.onShow();
                     this.UI.init();
                 }
+            },
+            applyChanges = function () {
+                DOM.clean();
+                var hadOutline = data.outline;
+                data.outline = opts.outline.size && opts.outline.color !== 'transparent';
+                var fromNoOutline_ToOutline = !hadOutline && data.outline,
+                    attrs = {};
+                DOM.$svg.prepend(DOM.markers.init());
+                
+                if (fromNoOutline_ToOutline || opts.shadow.visible) {
+                    for(var index in DOM.arrows) {
+                        DOM.createOrReplaceArrow(index, opts.shadow.visible, fromNoOutline_ToOutline, false);
+                    }
+                }
+
+                ['start', 'mid', 'end'].forEach(function (e) { 
+                    if (DOM.markers.ids[e]) {
+                        attrs['marker-' + e] = 'url(#' + DOM.markers.ids[e] + ')';
+                    }
+                });
+                attrs.stroke = opts.stroke.color;
+                attrs['stroke-width'] = opts.stroke.size;
+                for(var index in DOM.arrows) {
+                    // had outline before. Now it hasn't
+                    if (hadOutline && !data.outline) {
+                        DOM.arrows[index].prev().remove();
+                    } else {
+                        // had outline before and still has
+                        if (hadOutline && data.outline) {
+                            DOM.arrows[index].prev().attr({
+                                stroke: opts.outline.color,
+                                'stroke-width': DOM.getStrokeWidthForOutlineArrow()
+                            });
+                        }
+                    }
+                    DOM.arrows[index].removeAttr('marker-start marker-mid marker-end').attr(attrs);
+                }
             };
         DOM.$controlLinesSvgGroup = null;
+        DOM.clean = function () {
+            if (this.markers.$defs) {
+                this.markers.$defs.remove();
+            }
+            if (this.$shadowGroup) {
+                this.$shadowGroup.remove();
+            }
+            this.markers.$defs =
+            this.markers.ids.start =
+            this.markers.ids.mid =
+            this.markers.ids.end =
+            this.markers.ids.filter.shadow =
+            this.markers.ids.filter.Start =
+            this.markers.ids.filter.Mid =
+            this.markers.ids.filter.End =
+            this.$shadowGroup = null;
+            this.arrowsShadow = [];
+        };
         DOM.markers.getArrowInfo = function ($point) {
             var indexPoint;
             for (var idx = 0, qtArrows = data.arrowTypes.length; idx < qtArrows; ++idx) {
