@@ -56,6 +56,7 @@
             DOM = allData.DOM,
             events = allData.events,
             util = allData.util,
+            callerFunction = arguments && arguments.callee && arguments.callee.caller ? arguments.callee.caller.toString() : null,
             designMode = {
                 UI: {
                     activeArrow: {
@@ -92,6 +93,7 @@
                     menu: {
                         $menu: null,
                         $popupProperties: null,
+                        $generatedCode: null,
                         multipleTargets: {
                             $subMenu: null,
                             firstMouseover: true,
@@ -162,7 +164,7 @@
                                     '<ul></ul>' +
                                     '<a href="#">Arrow Properties</a>' +
                                     '<hr>' +
-                                    '<a href="#">Generate Code to Console</a>' +
+                                    '<a href="#">Generate Code</a>' +
                                 '</menu>');
                             this.$popupProperties = $(
                                 '<div>' +
@@ -265,11 +267,28 @@
                                     '</div>' +
                                 '</div>'
                             );
+                            this.$generatedCode = $(
+                                '<div>' +
+                                    '<div>Generated Code<a href="#">&#x2715;</a>' +
+                                        '<hr>' +
+                                        '<header>Replace your current <pre>rsRefPointer(...)</pre> call with this one:</header>' +
+                                        '<code>' +
+                                        '</code>' +
+                                        '<ul>' +
+                                            '<li><button>Select all</button> the text and copy it, by pressing <kbd><kbd>Ctrl</kbd>+<kbd>C</kbd></kbd> or <kbd><kbd>Cmd</kbd>+<kbd>C</kbd></kbd> if you are on a Mac;</li>' +
+                                            '<li>Paste it to your page, to replace your current plug-in call with this new code snippet;</li>' +
+                                            '<li>Remove the design-time library <pre>&lt;script src="jquery.rsRefPointer-design.js"&gt;&lt;/script&gt;</pre> from your page.</li>' +
+                                        '</ul>' +
+                                        '<button>Close</button>' +
+                                    '</div>' +
+                                '</div>'
+                            );
                             $('head').append(
                                 '<style> ' + 
                                     'menu.refPointer.design,' +
                                     'menu.refPointer.design menu,' +
-                                    'menu.refPointer.design + div > div {' +
+                                    'menu.refPointer.design + div > div,' +
+                                    'menu.refPointer.design + div + div > div {' +
                                         'box-shadow: 0 0 10px black;' +
                                         'border-radius: 5px;' +
                                         'position: absolute;' +
@@ -283,6 +302,7 @@
                                         'left: 5px;' +
                                         'top: 50px;' +
                                         'padding: 8px;' +
+                                        'width: 140px;' +
                                         '-moz-user-select: none;' +
                                         '-ms-user-select: none;' +
                                         '-webkit-user-select: none;' +
@@ -291,7 +311,7 @@
                                     'menu.refPointer.design menu {' +
                                         'display: none;' +
                                         'width: 85px;' +
-                                        'left: 172px;' +
+                                        'left: 156px;' +
                                         'border-radius: 0;' +
                                         'border-top-right-radius: 20px 15px;' +
                                         'border-bottom-right-radius: 20px 15px;' +
@@ -392,7 +412,8 @@
                                         'background-color: inherit;' +
                                         'cursor: default;' +
                                     '}' +
-                                    'menu.refPointer.design + div {' +
+                                    'menu.refPointer.design + div,' +
+                                    'menu.refPointer.design + div + div {' +
                                         'display: none;' +
                                         'position: absolute;' +
                                         'top: 0;' +
@@ -401,7 +422,8 @@
                                         'left: 0;' +
                                         'background-color: rgba(0, 0, 0, .5);' +
                                     '}' +
-                                    'menu.refPointer.design + div > div {' +
+                                    'menu.refPointer.design + div > div,' +
+                                    'menu.refPointer.design + div + div > div {' +
                                         'position: absolute;' +
                                         'left: 50%;' +
                                         'top: 50%;' +
@@ -414,7 +436,14 @@
                                         'padding: 10px;' +
                                         'background-color: #eee;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div a:first-of-type {' +
+                                    'menu.refPointer.design + div + div > div {' +
+                                        'margin-left: -400px;' +
+                                        'margin-top: -200px;' +
+                                        'width: 800px;' +
+                                        'height: 400px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div a:first-of-type,' +
+                                    'menu.refPointer.design + div + div > div a:first-of-type {' +
                                         'position: absolute;' +
                                         'right: 10px;' +
                                         'font-size: 15px;' +
@@ -422,10 +451,12 @@
                                         'color: grey;' +
                                         'top: 7px;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div a:first-of-type:hover {' +
+                                    'menu.refPointer.design + div > div a:first-of-type:hover,' +
+                                    'menu.refPointer.design + div + div > div a:first-of-type:hover {' +
                                         'color: red;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div a:first-of-type + hr {' +
+                                    'menu.refPointer.design + div > div a:first-of-type + hr,' +
+                                    'menu.refPointer.design + div + div > div a:first-of-type + hr {' +
                                         'margin-bottom: 25px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div > aside {' +
@@ -570,9 +601,67 @@
                                         'right: 20px;' +
                                         'bottom: 10px;' +
                                     '}' +
+                                    'menu.refPointer.design + div + div header {' +
+                                        'font-size: 14px;' +
+                                        'margin-left: 10px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div + div ul {' +
+                                        'line-height: 20px;' +
+                                        'list-style: none;' +
+                                        'padding-left: 20px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div + div li:before {' +
+                                        'content: "1";' +
+                                        'color: #eee;' +
+                                        'font-size: 9px;' + 
+                                        'background-color: #aaa;' +
+                                        'border-radius: 50%;' +
+                                        'width: 12px;' +
+                                        'height: 12px;' +
+                                        'line-height: 13px;' +
+                                        'display: inline-block;' +
+                                        'text-align: center;' +
+                                        'margin-right: 6px;' +
+                                        'vertical-align: 1px;' +
+                                        'padding-left: 1px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div + div li + li:before {' +
+                                        'content: "2";' +
+                                    '}' +
+                                    'menu.refPointer.design + div + div li + li + li:before {' +
+                                        'content: "3";' +
+                                    '}' +
+                                    'menu.refPointer.design + div + div pre {' +
+                                        'display: inline-block;' +
+                                        'margin: 0;' +
+                                        'border: 1px #ccc solid;' +
+                                    '}' +
+                                    'menu.refPointer.design + div + div code pre {' +
+                                        'display: block;' +
+                                        'border: none;' +
+                                    '}' +
+                                    'menu.refPointer.design + div + div ul pre {' +
+                                        'border: 1px #ccc solid;' +
+                                        'padding: 0 5px;' +
+                                        'border-radius: 3px;' +
+                                    '}' +
+                                    'menu.refPointer.design + div + div code {' +
+                                        'display: block;' +
+                                        'background-color: white;' +
+                                        'border: 1px #ccc solid;' +
+                                        'border-radius: 3px;' +
+                                        'padding: 5px 10px;' +
+                                        'margin: 10px;' +
+                                        'height: 210px;' +
+                                        'overflow: auto;' +
+                                    '}' +
+                                    'menu.refPointer.design + div + div > div > button {' +
+                                        'position: absolute;' +
+                                        'right: 18px;' +
+                                    '}' +
                                 '</style>'
                             );
-                            $('body').append(this.$menu).append(this.$popupProperties);
+                            $('body').append(this.$menu).append(this.$popupProperties).append(this.$generatedCode);
                             var finishMenuDragging = function (e) {
                                     designMode.UI.menu.dragInfo.dragging = false;
                                     var pos = designMode.UI.menu.$menu.position();
@@ -712,17 +801,32 @@
                                 designMode.UI.addPoint();
                             });
                             $newLineLink.siblings('ul').next().click(function (e) {
+                                e.preventDefault();
                                 initModel();
                                 data.currentOpts = $.extend(true, {}, opts);
                                 designMode.UI.menu.$popupProperties.show();
                             });
+                            $newLineLink.siblings('ul').next().next().next().click(function (e) {
+                                e.preventDefault();
+                                generateCode.show();
+                            });
                             $('> div > a', designMode.UI.menu.$popupProperties).click(function (e) {
+                                e.preventDefault();
                                 designMode.UI.menu.$popupProperties.hide();
                                 $.extend(opts, data.currentOpts);
                             });
                             $('button', designMode.UI.menu.$popupProperties).click(function (e) {
+                                e.preventDefault();
                                 designMode.UI.menu.$popupProperties.hide();
                                 applyChanges();
+                            });
+                            $('ul button', designMode.UI.menu.$generatedCode).click(function (e) {
+                                e.preventDefault();
+                                generateCode.selectAll();
+                            });
+                            $('> div > a, > div > button', designMode.UI.menu.$generatedCode).click(function (e) {
+                                e.preventDefault();
+                                designMode.UI.menu.$generatedCode.hide();
                             });
                             // marker size
                             selector.marker.$size.on('input', function (e) {
@@ -1302,6 +1406,44 @@
                         }
                     }
                     DOM.arrows[index].removeAttr('marker-start marker-mid marker-end').attr(attrs);
+                }
+            },
+            generateCode = {
+                selectAll: function () {
+                    var codeBox = $('menu.refPointer.design + div + div code')[0],
+                        range, selection;
+                    if (document.body.createTextRange) {
+                        range = document.body.createTextRange();
+                        range.moveToElementText(codeBox);
+                        range.select();
+                    } else {
+                        if (window.getSelection) {
+                            selection = window.getSelection();
+                            range = document.createRange();
+                            range.selectNodeContents(codeBox);
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                        }
+                    }
+                },
+                getCode: function () {
+                    return JSON.stringify(opts, null, '\t').
+                        replace(/{$/gm, '{</pre><pre>').
+                        replace(/,$/gm, ',</pre><pre>').
+                        replace(/^{|}$/g, '').
+                        replace(/"(\w*)":/g, '$1:');
+                },
+                show: function () {
+                    var userPluginCall = callerFunction ? callerFunction.match(/^\s*\S*rsRefPointer/m) : null,
+                        snippet = this.getCode();
+                    if (userPluginCall) {
+                        userPluginCall = userPluginCall[0].trim();
+                    } else {
+                        userPluginCall = '$yourObj.rsRefPointer';
+                    }
+                    $('code', designMode.UI.menu.$generatedCode).html(userPluginCall + '({' + snippet + '});');
+                    designMode.UI.menu.$generatedCode.show();
+                    generateCode.selectAll();
                 }
             };
         DOM.$controlLinesSvgGroup = null;
