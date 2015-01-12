@@ -49,15 +49,14 @@
                                 y: data.points.start.y
                             },
                             newStartPos = $elem.offset(),
-                            fromPositionChanged = !util.samePoint(oldStartPos.x, newStartPos.left) || !util.samePoint(oldStartPos.y, newStartPos.top);
+                            fromPositionChanged = !util.samePoint(oldStartPos, { x: newStartPos.left, y: newStartPos.top });
 
                         data.points.start.x = newStartPos.left;
                         data.points.start.y = newStartPos.top;
                         data.$targets.each(function (index, e) {
                             var $target = $(e),
                                 targetPos = $target.offset(),
-                                toPositionChanged = !util.samePoint(targetPos.left, data.points.end[index].x) ||
-                                                    !util.samePoint(targetPos.top, data.points.end[index].y);
+                                toPositionChanged = !util.samePoint({ x: targetPos.left, y: targetPos.top }, data.points.end[index]);
 
                             if (fromPositionChanged || toPositionChanged) {
                                 var newTopLeft = data.points.layout.topLeft[index];
@@ -613,8 +612,8 @@
                 areTheSame: function (a, b, precision) {
                     return Math.abs(a - b) < (precision ? precision : 0.000005);
                 },
-                samePoint: function (a, b) {
-                    return this.areTheSame(a, b, .5);
+                samePoint: function (pnt1, pnt2) {
+                    return this.areTheSame(pnt1.x, pnt2.x, .5) && this.areTheSame(pnt1.y, pnt2.y, .5);
                 },
                 byteToHex: function (byte) {
                     return (byte > 15 ? '' : '0') + byte.toString(16);

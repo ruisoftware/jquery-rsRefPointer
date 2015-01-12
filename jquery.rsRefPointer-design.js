@@ -160,7 +160,6 @@
                                     '<a href="#">New Quadratic Bezier</a>' +
                                     '<a href="#">New Cubic Bezier</a>' +
                                     '<a href="#" class="disabled">Add Middle Point</a>' +
-                                    '<aside>Double click on point to delete it</aside>' +
                                     '<ul></ul>' +
                                     '<a href="#">Arrow Properties</a>' +
                                     '<hr>' +
@@ -333,12 +332,6 @@
                                         'cursor: move;' +
                                         'padding: 3px 5px 6px;' +
                                         'text-align: center;' +
-                                    '}' +
-                                    'menu.refPointer.design aside {' +
-                                        'font-size: 9px;' +
-                                        'color: grey;' +
-                                        'padding-left: 5px;' +
-                                        'margin-bottom: 10px;' +
                                     '}' +
                                     'menu.refPointer.design > a,' +
                                     'menu.refPointer.design menu a {' +
@@ -613,17 +606,16 @@
                                     'menu.refPointer.design + div + div li:before {' +
                                         'content: "1";' +
                                         'color: #eee;' +
-                                        'font-size: 9px;' + 
+                                        'font-size: 10px;' + 
                                         'background-color: #aaa;' +
                                         'border-radius: 50%;' +
                                         'width: 12px;' +
                                         'height: 12px;' +
-                                        'line-height: 13px;' +
+                                        'line-height: 12px;' +
                                         'display: inline-block;' +
                                         'text-align: center;' +
                                         'margin-right: 6px;' +
                                         'vertical-align: 1px;' +
-                                        'padding-left: 1px;' +
                                     '}' +
                                     'menu.refPointer.design + div + div li + li:before {' +
                                         'content: "2";' +
@@ -634,12 +626,11 @@
                                     'menu.refPointer.design + div + div pre {' +
                                         'display: inline-block;' +
                                         'margin: 0;' +
-                                        'border: 1px #ccc solid;' +
                                     '}' +
                                     'menu.refPointer.design + div + div code pre {' +
                                         'display: block;' +
-                                        'border: none;' +
                                     '}' +
+                                    'menu.refPointer.design + div + div header pre,' +
                                     'menu.refPointer.design + div + div ul pre {' +
                                         'border: 1px #ccc solid;' +
                                         'padding: 0 5px;' +
@@ -674,7 +665,7 @@
                                         designMode.UI.menu.multipleTargets.type = type;
                                         designMode.UI.menu.multipleTargets.showMenu($menuOption.position().top);
                                     } else {
-                                        designMode.UI.addArrow(type, 0);
+                                        designMode.UI.addArrow(type, 0, data.$targets.eq(0).offset());
                                     }
                                 },
                                 initModel = function () {
@@ -785,7 +776,7 @@
                             });
 
                             data.points.end.forEach(function (pnt, index) {
-                                designMode.UI.menu.addArrowLink();
+                                designMode.UI.menu.addArrowLink(index);
                             });
                             $newLineLink.click(function (e) {
                                 addArrowMenuClick(e, 'line', $(this));
@@ -982,12 +973,13 @@
                                 designMode.UI.menu.multipleTargets.hideMenu();
                             });
                             data.$targets.each(function (index) {
-                                var $a = $('<a href="#">Target #' + (index + 1) + '</a>').mouseover(function () {
+                                var targetPos = $(this).offset(),
+                                    $a = $('<a href="#">Target #' + (index + 1) + '</a>').mouseover(function () {
                                     if (designMode.UI.menu.multipleTargets.firstMouseover) {
                                         designMode.UI.menu.multipleTargets.firstMouseover = false;
-                                        designMode.UI.addVirtualArrow(designMode.UI.menu.multipleTargets.type, index);
+                                        designMode.UI.addVirtualArrow(designMode.UI.menu.multipleTargets.type, index, targetPos);
                                     } else {
-                                        designMode.UI.changeVirtualArrow(index);
+                                        designMode.UI.changeVirtualArrow(index, targetPos);
                                     }
                                 }).click(function (e) {
                                     e.preventDefault();
@@ -998,9 +990,18 @@
                                 $('div', designMode.UI.menu.multipleTargets.$subMenu).append($a);
                             });
                         },
-                        addArrowLink: function () {
+                        getArrowName: function (idx) {
+                            switch (data.arrowTypes[idx]) {
+                                case 'line': return 'Line';
+                                case 'polyline': return 'Polyline';
+                                case 'bezierC': return 'Cubic Bezier';
+                                case 'bezierQ': return 'Quadratic Bezier';
+                            }
+                            return 'Arrow';
+                        },
+                        addArrowLink: function (idx) {
                             var $a = $('<a href="#" title="Delete arrow">&#x2715;</a>'),
-                                $li = $('<li>').text('arrow').append($a);
+                                $li = $('<li>').text(this.getArrowName(idx)).append($a);
                             $('ul', designMode.UI.menu.$menu).append($li);
                             $li.click(function (e) {
                                 e.preventDefault();
@@ -1022,6 +1023,7 @@
                         switch(data.arrowTypes[arrowIdx]) {
                             case 'line':
                                 DOM.line.addPoint(arrowIdx, midPoints, sets);
+                                $('ul li', this.menu.$menu).eq(arrowIdx).contents().first().replaceWith(this.menu.getArrowName(arrowIdx));
                                 break;
                             case 'polyline':
                                 DOM.polyline.addPoint(arrowIdx, midPoints, sets);
@@ -1047,6 +1049,9 @@
                                     break;
                                 case 'polyline':
                                     DOM.polyline.deletePoint(arrowInfo.arrow, arrowInfo.point);
+                                    if (data.points.mid[arrowInfo.arrow].length === 0) {
+                                        $('ul li', this.menu.$menu).eq(arrowInfo.arrow).contents().first().replaceWith(this.menu.getArrowName(arrowInfo.arrow));
+                                    }
                                     break;
                                 case 'bezierQ':
                                     DOM.bezier.Q.deletePoint(arrowInfo.arrow, arrowInfo.point);
@@ -1062,7 +1067,7 @@
                        If only one target is available, then there is no need to handle virtual arrows, and a
                        plain arrow is immediatelly created (with a known end point).
                     */
-                    doAddArrow: function (type, targetIdx, virtual) {
+                    doAddArrow: function (type, targetIdx, targetPos, virtual) {
                         var $window = $(window),
                             windowWidth = $window.width(),
                             windowHeight = $window.height(),
@@ -1085,8 +1090,8 @@
                                 data.points.mid.push([]);
                         }
                         data.points.end.push({
-                            x: data.points.end[targetIdx].x,
-                            y: data.points.end[targetIdx].y
+                            x: targetPos.left,
+                            y: targetPos.top
                         });
                         data.points.layout.fromOffset.push(data.points.getElementCenterPos());
                         data.points.layout.toOffset.push(data.points.getElementCenterPos(data.$targets.eq(targetIdx)));
@@ -1099,9 +1104,14 @@
                         }
                     },
                     addControlPointsAndLines: function (idx) {
-                        this.menu.addArrowLink();
+                        this.menu.addArrowLink(idx);
                         this.addStartEndControlPoints(data.points, data.points.end[idx], idx);
                         this.addMidControlPointsAndLines(data.points, data.points.mid[idx], idx);
+                        var $li = $('ul li', designMode.UI.menu.$menu);
+                        if ($li.length === 1) {
+                            $('> a:first-of-type + a + a + a', designMode.UI.menu.$menu).removeClass('disabled');
+                        }
+                        $li.eq($li.length - 1).click();
                     },
                     deleteArrow: function (arrowIdx, virtual) {
                         if (!virtual) {
@@ -1145,17 +1155,17 @@
                             DOM.arrowsShadow.splice(arrowIdx, 1);
                         }
                     },
-                    addArrow: function (type, targetIdx) {
-                        this.doAddArrow(type, targetIdx);
+                    addArrow: function (type, targetIdx, targetPos) {
+                        this.doAddArrow(type, targetIdx, targetPos);
                     },
-                    addVirtualArrow: function (type, targetIdx) {
-                        this.doAddArrow(type, targetIdx, true);
+                    addVirtualArrow: function (type, targetIdx, targetPos) {
+                        this.doAddArrow(type, targetIdx, targetPos, true);
                     },
-                    changeVirtualArrow: function (targetIdx) {
+                    changeVirtualArrow: function (targetIdx, targetPos) {
                         var lastArrowIdx = data.arrowTypes.length - 1,
                             centerArrow = data.points.getElementCenterPos(data.$targets.eq(targetIdx));
-                        data.points.end[lastArrowIdx].x = data.points.end[targetIdx].x;
-                        data.points.end[lastArrowIdx].y = data.points.end[targetIdx].y;
+                        data.points.end[lastArrowIdx].x = targetPos.left;
+                        data.points.end[lastArrowIdx].y = targetPos.top;
                         data.points.layout.toOffset[lastArrowIdx].dx = centerArrow.dx;
                         data.points.layout.toOffset[lastArrowIdx].dy = centerArrow.dy;
                         DOM.updateArrow(lastArrowIdx);
@@ -1485,7 +1495,7 @@
                     cy: pnt.y + (offsetArray === undefined ? 0 : offsetArray[arrowIdx].dy),
                     r: ((opts.marker.size - 1)*0.25 + 1)*maxSize/1.5 + 1,
                     style: 'fill:transparent; stroke:rgba(255,0,0,.3); stroke-width:' + (selected ? designMode.UI.activeArrow.strokeSelected : designMode.UI.activeArrow.strokeUnselected)
-                });
+                }).append(DOM.createSvgDom('title').append('Double-click to delete this point'));
             return $point.mouseover(function () {
                 if (!designMode.UI.dragInfo.$point) {
                     $point.css({
