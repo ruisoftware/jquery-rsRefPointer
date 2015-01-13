@@ -43,40 +43,48 @@
                         topLeft: [],      // Array of {x, y}
                         size: []          // Array of {width, height}
                     },
-                    refreshPositions: function () {
+                    getElementOffset: function ($e) {
+                        var pos = ($e ? $e : $elem).offset();
+                        return {
+                            x: Math.round(pos.left),
+                            y: Math.round(pos.top)
+                        }
+                    },
+                    refreshPositions: function (onlyUpdateArrowBounds) {
                         var oldStartPos = {
                                 x: data.points.start.x,
                                 y: data.points.start.y
                             },
-                            newStartPos = $elem.offset(),
-                            fromPositionChanged = !util.samePoint(oldStartPos, { x: newStartPos.left, y: newStartPos.top });
+                            newStartPos = this.getElementOffset(),
+                            fromPositionChanged = !util.samePoint(oldStartPos, newStartPos);
 
-                        data.points.start.x = newStartPos.left;
-                        data.points.start.y = newStartPos.top;
+                        data.points.start = newStartPos;
                         data.$targets.each(function (index, e) {
                             var $target = $(e),
-                                targetPos = $target.offset(),
-                                toPositionChanged = !util.samePoint({ x: targetPos.left, y: targetPos.top }, data.points.end[index]);
+                                targetPos = data.points.getElementOffset($target),
+                                toPositionChanged = onlyUpdateArrowBounds || !util.samePoint(targetPos, data.points.end[index]);
 
                             if (fromPositionChanged || toPositionChanged) {
                                 var newTopLeft = data.points.layout.topLeft[index];
-                                newTopLeft.x = Math.min(newStartPos.left + data.points.layout.fromOffset[index].dx,
-                                                        targetPos.left + data.points.layout.toOffset[index].dx);
-                                newTopLeft.y = Math.min(newStartPos.top + data.points.layout.fromOffset[index].dy,
-                                                        targetPos.top + data.points.layout.toOffset[index].dy);
+                                newTopLeft.x = Math.min(newStartPos.x + data.points.layout.fromOffset[index].dx,
+                                                        targetPos.x + data.points.layout.toOffset[index].dx);
+                                newTopLeft.y = Math.min(newStartPos.y + data.points.layout.fromOffset[index].dy,
+                                                        targetPos.y + data.points.layout.toOffset[index].dy);
                                 var newSize = data.points.layout.size[index];
-                                newSize.width = Math.max(newStartPos.left + data.points.layout.fromOffset[index].dx,
-                                                         targetPos.left + data.points.layout.toOffset[index].dx) - newTopLeft.x;
-                                newSize.height = Math.max(newStartPos.top + data.points.layout.fromOffset[index].dy,
-                                                          targetPos.top + data.points.layout.toOffset[index].dy) - newTopLeft.y;
+                                newSize.width = Math.max(newStartPos.x + data.points.layout.fromOffset[index].dx,
+                                                         targetPos.x + data.points.layout.toOffset[index].dx) - newTopLeft.x;
+                                newSize.height = Math.max(newStartPos.y + data.points.layout.fromOffset[index].dy,
+                                                          targetPos.y + data.points.layout.toOffset[index].dy) - newTopLeft.y;
                             }
 
                             if (toPositionChanged) {
-                                data.points.end[index].x = targetPos.left;
-                                data.points.end[index].y = targetPos.top;
+                                data.points.end[index].x = targetPos.x;
+                                data.points.end[index].y = targetPos.y;
                             }
                         });
-
+                        if (onlyUpdateArrowBounds === true) {
+                            return;
+                        }
                         var bounds = data.getBoundsRect();
                         data.svgPos.x = bounds.left;
                         data.svgPos.y = bounds.top;
@@ -93,13 +101,15 @@
                     },
                     getElementCenterPos: function ($element) {
                         // this is way to retrieve the content dimensions for blocked elements
-                        var $span = ($element || $elem).wrapInner('<span style="display: inline;">').children('span'),
-                            offset = {
-                                dx: $span.width()/2,
-                                dy: $span.height()/2
+                        var $span = ($element || $elem).wrapInner('<span style="display: inline;">').children('span');
+                        try {
+                            return {
+                                dx: Math.round($span.width()/2),
+                                dy: Math.round($span.height()/2)
                             };
-                        $span.contents().unwrap();
-                        return offset;
+                        } finally {
+                            $span.contents().unwrap();
+                        }
                     },
                     init: function () {
                         data.$targets = opts.targetSelector ? $(opts.targetSelector) : $();
@@ -110,13 +120,9 @@
                             }
                         });
 
-                        var pos = $elem.offset(),
-                            fromOffset = this.getElementCenterPos($elem);
+                        var fromOffset = this.getElementCenterPos($elem);
 
-                        this.start = {
-                            x: pos.left,
-                            y: pos.top
-                        };
+                        this.start = this.getElementOffset();
                         this.mid = [];
                         this.end = [];
                         data.$targets.each(function (index, e) {
@@ -128,10 +134,7 @@
                                 default: data.arrowTypes.push('line');
                             }
 
-                            data.points.layout.fromOffset.push({
-                                dx: fromOffset.dx,
-                                dy: fromOffset.dy
-                            });
+                            data.points.layout.fromOffset.push(fromOffset);
 
                             // TODO
                             switch (data.arrowTypes.length) {
@@ -142,14 +145,10 @@
                             }
 
                             var $target = $(e),
-                                targetPos = $target.offset(),
                                 toOffset = data.points.getElementCenterPos($target);
 
                             data.points.layout.toOffset.push(toOffset);
-                            data.points.end.push({
-                                x: targetPos.left,
-                                y: targetPos.top
-                            });
+                            data.points.end.push(data.points.getElementOffset($target));
 
                             var topLeft = {
                                     x: Math.min(data.points.start.x + data.points.layout.fromOffset[index].dx,
@@ -213,6 +212,10 @@
                         bounds.right += opts.shadow.offsetX > 0 ? opts.shadow.offsetX + opts.shadow.blur : 0;
                         bounds.bottom += opts.shadow.offsetY > 0 ? opts.shadow.offsetY + opts.shadow.blur: 0;
                     }
+                    bounds.top = Math.floor(bounds.top);
+                    bounds.left = Math.floor(bounds.left);
+                    bounds.right = Math.ceil(bounds.right);
+                    bounds.bottom = Math.ceil(bounds.bottom);
                     return bounds;
                 },
                 init: function () {

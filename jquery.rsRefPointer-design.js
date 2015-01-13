@@ -665,7 +665,7 @@
                                         designMode.UI.menu.multipleTargets.type = type;
                                         designMode.UI.menu.multipleTargets.showMenu($menuOption.position().top);
                                     } else {
-                                        designMode.UI.addArrow(type, 0, data.$targets.eq(0).offset());
+                                        designMode.UI.addArrow(type, 0, data.points.getElementOffset(data.$targets.eq(0)));
                                     }
                                 },
                                 initModel = function () {
@@ -973,7 +973,7 @@
                                 designMode.UI.menu.multipleTargets.hideMenu();
                             });
                             data.$targets.each(function (index) {
-                                var targetPos = $(this).offset(),
+                                var targetPos = data.points.getElementOffset($(this)),
                                     $a = $('<a href="#">Target #' + (index + 1) + '</a>').mouseover(function () {
                                     if (designMode.UI.menu.multipleTargets.firstMouseover) {
                                         designMode.UI.menu.multipleTargets.firstMouseover = false;
@@ -1089,10 +1089,7 @@
                             default:
                                 data.points.mid.push([]);
                         }
-                        data.points.end.push({
-                            x: targetPos.left,
-                            y: targetPos.top
-                        });
+                        data.points.end.push(targetPos);
                         data.points.layout.fromOffset.push(data.points.getElementCenterPos());
                         data.points.layout.toOffset.push(data.points.getElementCenterPos(data.$targets.eq(targetIdx)));
                         data.points.layout.topLeft.push({ x: 0, y: 0 });
@@ -1164,8 +1161,7 @@
                     changeVirtualArrow: function (targetIdx, targetPos) {
                         var lastArrowIdx = data.arrowTypes.length - 1,
                             centerArrow = data.points.getElementCenterPos(data.$targets.eq(targetIdx));
-                        data.points.end[lastArrowIdx].x = targetPos.left;
-                        data.points.end[lastArrowIdx].y = targetPos.top;
+                        data.points.end[lastArrowIdx] = targetPos;
                         data.points.layout.toOffset[lastArrowIdx].dx = centerArrow.dx;
                         data.points.layout.toOffset[lastArrowIdx].dy = centerArrow.dy;
                         DOM.updateArrow(lastArrowIdx);
@@ -1437,7 +1433,22 @@
                     }
                 },
                 getCode: function () {
-                    return JSON.stringify(opts, null, '\t').
+                    data.points.refreshPositions(true);
+                    var allOpts = $.extend(true, {}, opts);
+                    allOpts.arrows = [];
+                    for(var index in data.arrowTypes) {
+                        allOpts.arrows.push({
+                            type: data.arrowTypes[index],
+                            bounds: [
+                                data.points.layout.topLeft[index].x,
+                                data.points.layout.topLeft[index].y,
+                                data.points.layout.size[index].width,
+                                data.points.layout.size[index].height
+                            ]
+                        });
+                    }
+
+                    return JSON.stringify(allOpts, null, '\t').
                         replace(/{$/gm, '{</pre><pre>').
                         replace(/,$/gm, ',</pre><pre>').
                         replace(/^{|}$/g, '').
