@@ -1442,7 +1442,7 @@
                     var allOpts = $.extend(true, {}, opts);
                     allOpts.arrows = [];
                     for(var index in data.arrowTypes) {
-                        var opts = {
+                        var arrowOpts = {
                             type: data.arrowTypes[index],
                             target: data.points.end[index],
                             offset: [
@@ -1459,26 +1459,35 @@
                             ]
                         };
                         if (data.arrowTypes[index] !== 'line') {
-                            opts.mid = [];
+                            arrowOpts.mid = [];
                             data.points.mid[index].forEach(function (pnt) {
-                                opts.mid.push(pnt.x, pnt.y);
+                                arrowOpts.mid.push(pnt.x, pnt.y);
                             });
                         }
-                        allOpts.arrows.push(opts);
+                        allOpts.arrows.push(arrowOpts);
                     }
-
                     return JSON.stringify(allOpts, null, '\t').
+                        // remove double quotes from keys
+                        replace(/^(.*)"(.*)":/gm, '$1$2:').
+
+                        // remove the new line between [ and {
                         replace(/\[\s*{/gm, '[{').
+                        
+                        // remove the new line between } and ] and also remove one indentation tab
                         replace(/^(\t*)\t}\s*\]/gm, '$1}]').
-                        replace(/^(\t*)\t},\s*{/gm, '$1}, {').
-                        replace(/(\[{|}, {)\n(\t*)\t"/gm, '$1\n$2"').
-                        replace(/(\[{|}, {)\n(.*)\n(\t*)\t"/gm, '$1\n$2\n$3"').
-                        replace(/(\[{|}, {)\n(.*)\n(.*)\n(\t*)\t"/gm, '$1\n$2\n$3\n$4"').
-                        replace(/\[\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*\]/gm, '[$1, $2, $3, $4]').
+                        
+                        // removes the new line between }, and {
+                        replace(/^(\t*)},\s*{/gm, '$1}, {').
+
+                        // removes new lines after each array element. This causes all the array to be on a single line
+                        replace(/\[((\s|\w|\.|-|,|\n)*)\]/g, function(match, g1) { return '[' + g1.replace(/\s*/g, '') + ']'; } ).
+                        
+                        // insert the <pre> markup to emulate new lines inside the <code> element
                         replace(/{$/gm, '{</pre><pre>').
                         replace(/,$/gm, ',</pre><pre>').
-                        replace(/^{|}$/g, '').
-                        replace(/"(\w*)":/g, '$1:');
+
+                        // remove the first { and the last }
+                        replace(/^{|}$/g, '');
                 },
                 show: function () {
                     var userPluginCall = callerFunction ? callerFunction.match(/^\s*\S*rsRefPointer/m) : null,
