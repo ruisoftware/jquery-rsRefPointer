@@ -70,12 +70,10 @@
                                     DOM.bezier.controlLines[this.idx].forEach(function ($e) {
                                         $e.attr('stroke-dasharray', designMode.UI.activeArrow.dasharray);
                                     });
-                                    this.$backgroundArrowsRect.remove().appendTo(DOM.$svg);
-                                } else {
-                                    this.$backgroundArrowsRect.appendTo(DOM.$svg);
+                                    DOM.getArrow(this.idx).detach().insertBefore(this.$backgroundArrowsRect);
                                 }
-                                DOM.getArrow(newIndex).detach().appendTo(DOM.$svg);
-                                designMode.UI.$points[newIndex].css('stroke-width', this.strokeSelected).detach().appendTo(DOM.$svg);
+                                DOM.getArrow(newIndex).detach().insertAfter(this.$backgroundArrowsRect);
+                                designMode.UI.$points[newIndex].css('stroke-width', this.strokeSelected);
                                 this.idx = newIndex;
                                 $('ul li', designMode.UI.menu.$menu).removeClass('selected').eq(this.idx).addClass('selected');
                                 DOM.bezier.controlLines[newIndex].forEach(function ($e) {
@@ -1186,8 +1184,7 @@
                     addMidControlPointsAndLines: function (pts, midPnts, index) {
                         if (data.arrowTypes[index] === 'bezierQ' || data.arrowTypes[index] === 'bezierC') {
                             if (DOM.$controlLinesSvgGroup === null) {
-                                DOM.$controlLinesSvgGroup = DOM.createSvgDom('g', { stroke: '#f7abab' });
-                                DOM.markers.$defs.after(DOM.$controlLinesSvgGroup);
+                                DOM.$controlLinesSvgGroup = DOM.createSvgDom('g', { stroke: '#f7abab' }).insertAfter(designMode.UI.activeArrow.$backgroundArrowsRect);
                             }
                         }
                         for(var $controlLine, pnt = 0, last = midPnts.length - 1; pnt <= last; ++pnt) {
@@ -1378,7 +1375,7 @@
                     }).css({
                         fill: 'rgba(255,255,255,.65)',
                         'pointer-events': 'none'
-                    });
+                    }).appendTo(DOM.$svg);
                     $window.resize(doResize);
                     doResize();
                     this.UI.init();
