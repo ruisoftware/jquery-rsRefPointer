@@ -167,7 +167,7 @@
                                 '</menu>');
                             this.$popupProperties = $(
                                 '<div>' +
-                                    '<div>Arrow Properties<a href="#" title="Discard changes and close popup">&#x2715;</a>' +
+                                    '<div><header>Arrow Properties<a href="#" title="Discard changes and close popup">&#x2715;</a></header>' +
                                         '<hr>' +
                                         '<aside>' +
                                             '<div>Markers</div>' +
@@ -268,7 +268,7 @@
                             );
                             this.$generatedCode = $(
                                 '<div>' +
-                                    '<div>Generated Code<a href="#">&#x2715;</a>' +
+                                    '<div><header>Generated Code<a href="#">&#x2715;</a></header>' +
                                         '<hr>' +
                                         '<header>Replace your current <pre>rsRefPointer(...)</pre> call with this one:</header>' +
                                         '<code>' +
@@ -430,12 +430,13 @@
                                         'font-size: 12px;' +
                                         'padding: 10px;' +
                                         'background-color: #eee;' +
+                                        'box-shadow: 0 0 10px 2px black;' +
                                     '}' +
                                     'menu.refPointer.design + div + div > div {' +
                                         'margin-left: -400px;' +
-                                        'margin-top: -200px;' +
+                                        'margin-top: -250px;' +
                                         'width: 800px;' +
-                                        'height: 400px;' +
+                                        'height: 500px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div a:first-of-type,' +
                                     'menu.refPointer.design + div + div > div a:first-of-type {' +
@@ -450,8 +451,11 @@
                                     'menu.refPointer.design + div + div > div a:first-of-type:hover {' +
                                         'color: red;' +
                                     '}' +
-                                    'menu.refPointer.design + div > div a:first-of-type + hr,' +
-                                    'menu.refPointer.design + div + div > div a:first-of-type + hr {' +
+                                    'menu.refPointer.design + div > div header,' +
+                                    'menu.refPointer.design + div + div > div header:first-of-type {' +
+                                        'cursor: move;' +
+                                    '}' +
+                                    'menu.refPointer.design + div > div header + hr {' +
                                         'margin-bottom: 25px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div > aside {' +
@@ -600,6 +604,12 @@
                                         'font-size: 14px;' +
                                         'margin-left: 10px;' +
                                     '}' +
+                                    'menu.refPointer.design + div + div header:first-of-type {' +
+                                        'margin-left: auto;' +
+                                    '}' +
+                                    'menu.refPointer.design + div + div header:first-of-type + hr {' +
+                                        'margin-bottom: 25px;' +
+                                    '}' +
                                     'menu.refPointer.design + div + div ul {' +
                                         'line-height: 20px;' +
                                         'list-style: none;' +
@@ -645,7 +655,7 @@
                                         'border-radius: 3px;' +
                                         'padding: 5px 10px;' +
                                         'margin: 10px;' +
-                                        'height: 210px;' +
+                                        'height: 305px;' +
                                         'overflow: auto;' +
                                     '}' +
                                     'menu.refPointer.design + div + div > div > button {' +
@@ -657,7 +667,7 @@
                             $('body').append(this.$menu).append(this.$popupProperties).append(this.$generatedCode);
                             var finishMenuDragging = function (e) {
                                     designMode.UI.menu.dragInfo.dragging = false;
-                                    var pos = designMode.UI.menu.$menu.position();
+                                    var pos = $(this).parent().position();
                                     designMode.UI.menu.positionX = pos.left;
                                     designMode.UI.menu.positionY = pos.top;
                                 },
@@ -758,19 +768,20 @@
                                     circle: $('#rsRefPfMarkerCircle'),
                                     square: $('#rsRefPfMarkerRect')
                                 };
-                            $('header', designMode.UI.menu.$menu).mousedown(function (e) {
+                            $('header', designMode.UI.menu.$menu).
+                                add($('header', designMode.UI.menu.$popupProperties)).
+                                add($('> div > header:first-of-type', designMode.UI.menu.$generatedCode)).mousedown(function (e) {
                                 designMode.UI.menu.dragInfo.dragging = true;
                                 designMode.UI.menu.dragInfo.startX = e.pageX;
                                 designMode.UI.menu.dragInfo.startY = e.pageY;
-                                var pos = designMode.UI.menu.$menu.position();
+                                var pos = $(this).parent().position();
                                 designMode.UI.menu.positionX = pos.left;
                                 designMode.UI.menu.positionY = pos.top;
                             }).mousemove(function (e) {
                                 if (designMode.UI.menu.dragInfo.dragging) {
-                                    designMode.UI.menu.$menu.css({
-                                        'left': (e.pageX - designMode.UI.menu.dragInfo.startX + designMode.UI.menu.positionX) + 'px',
-                                        'top': (e.pageY - designMode.UI.menu.dragInfo.startY + designMode.UI.menu.positionY) + 'px'
-                                    });
+                                    var parentStyle = this.parentElement.style;
+                                    parentStyle.left = (e.pageX - designMode.UI.menu.dragInfo.startX + designMode.UI.menu.positionX) + 'px';
+                                    parentStyle.top = (e.pageY - designMode.UI.menu.dragInfo.startY + designMode.UI.menu.positionY) + 'px';
                                 }
                             }).mouseup(finishMenuDragging).mouseleave(finishMenuDragging);
                             $('a.disabled', designMode.UI.menu.$menu).click(function (e) {
@@ -803,7 +814,7 @@
                                 e.preventDefault();
                                 generateCode.show();
                             });
-                            $('> div > a', designMode.UI.menu.$popupProperties).click(function (e) {
+                            $('> div > header > a', designMode.UI.menu.$popupProperties).click(function (e) {
                                 e.preventDefault();
                                 designMode.UI.menu.$popupProperties.hide();
                                 $.extend(opts, data.currentOpts);
@@ -817,7 +828,7 @@
                                 e.preventDefault();
                                 generateCode.selectAll();
                             });
-                            $('> div > a, > div > button', designMode.UI.menu.$generatedCode).click(function (e) {
+                            $('> div > header > a, > div > button', designMode.UI.menu.$generatedCode).click(function (e) {
                                 e.preventDefault();
                                 designMode.UI.menu.$generatedCode.hide();
                             });
@@ -1458,11 +1469,28 @@
                                 data.points.layout.size[index].height
                             ]
                         };
-                        if (data.arrowTypes[index] !== 'line') {
-                            arrowOpts.mid = [];
-                            data.points.mid[index].forEach(function (pnt) {
-                                arrowOpts.mid.push(pnt.x, pnt.y);
-                            });
+                        switch (data.arrowTypes[index]) {
+                            case 'polyline':
+                                arrowOpts.mid = [];
+                                data.points.mid[index].forEach(function (pnt) {
+                                    arrowOpts.mid.push(pnt.x, pnt.y);
+                                });
+                                break;
+                            case 'bezierQ':
+                                arrowOpts.mid = [];
+                                data.points.mid[index].forEach(function (pnt, index) {
+                                    if (index < 2 || index % 2 === 1) {
+                                        arrowOpts.mid.push(pnt.x, pnt.y);
+                                    }
+                                });
+                                break;
+                            case 'bezierC':
+                                arrowOpts.mid = [];
+                                data.points.mid[index].forEach(function (pnt, index) {
+                                    if (index < 3 || index % 3 !== 0) {
+                                        arrowOpts.mid.push(pnt.x, pnt.y);
+                                    }
+                                });
                         }
                         allOpts.arrows.push(arrowOpts);
                     }
