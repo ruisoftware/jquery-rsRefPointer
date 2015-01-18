@@ -112,7 +112,6 @@
                         }
                     },
                     init: function () {
-
                         data.$targets = opts.targetSelector ? $(opts.targetSelector) : $();
                         $elem.add(data.$targets).each(function (index, e) {
                             var $e = $(e);
@@ -121,69 +120,155 @@
                             }
                         });
 
-                        var fromOffset = this.getElementCenterPos($elem),
-                            pts = this;
-
                         this.start = this.getElementOffset();
                         this.mid = [];
                         this.end = [];
                         this.allTargetPos = this.getTargetOffsets();
-                        //TODO 
-                        data.$targets.each(function (index, e) {
-                            switch (data.arrowTypes.length) {
-                                case 1: data.arrowTypes.push('polyline'); break;
-                                case 2: data.arrowTypes.push('bezierQ'); break;
-                                case 3: data.arrowTypes.push('bezierC'); break;
-                                default: data.arrowTypes.push('line');
+
+                        var pts = this,
+                            lastTarget = this.allTargetPos.length - 1;
+
+                        // TODO test behaviour for no targets (when lastTarget is -1)
+
+                        if (lastTarget > -1) {
+                            if (opts.arrows && opts.arrows instanceof Array && opts.arrows.length > 0) {
+                                opts.arrows.forEach(function (arrow, index) {
+                                    if (!arrow) {
+                                        util.error('Parameter arrows[' + index + '] is undefined! Skipping it.');
+                                        return;
+                                    }
+                                    if (!arrow.type) {
+                                        util.error('Parameter arrows[' + index + '].type is undefined! Skipping it.');
+                                        return;
+                                    }
+                                    if (arrow.type !== 'line' && arrow.type !== 'polyline' && arrow.type !== 'bezierQ' && arrow.type !== 'bezierC') {
+                                        util.error('Invalid arrows[' + index + '].type! Only "line", "polyline", "bezierQ" and "bezierC" are allowed.');
+                                        return;
+                                    }
+
+                                    if (arrow.target === undefined || arrow.target === null) {
+                                        arrow.target = 0;
+                                    }
+                                    if (arrow.target < 0 || arrow.target > lastTarget) {
+                                        if (lastTarget === 0) {
+                                            util.warn('Invalid arrows[' + index + '].target! Target should be 0. Setting it to zero.');
+                                            arrow.target = 0;
+                                        } else {
+                                            util.error('Invalid arrows[' + index + '].target! Target should be between 0 and ' + lastTarget + '.');
+                                            return;
+                                        }
+                                    }
+
+                                    if (arrow.offset === undefined || arrow.offset === null) {
+                                        arrow.offset = [0, 0, 0, 0];
+                                    }
+                                    if (!arrow.offset instanceof Array || arrow.offset.length !== 4) {
+                                        util.error('Invalid arrows[' + index + '].offset! Should be an Array with 4 integers.');
+                                        return;
+                                    }
+
+                                    if (arrow.bounds === undefined || arrow.bounds === null) {
+                                        util.error('Missing arrows[' + index + '].bounds! Bounds should be an Array with 4 integers.');
+                                        return;
+                                    }
+                                    if (!arrow.bounds instanceof Array || arrow.bounds.length !== 4) {
+                                        util.error('Invalid arrows[' + index + '].bounds! Bounds should be an Array with 4 integers.');
+                                        return;
+                                    }
+
+                                    if (arrow.type !== 'line') {
+                                        if (!arrow.mid) {
+                                            util.error('Missing arrows[' + index + '].mid! Mid should be an Array with middle points.');
+                                            return;
+                                        }
+                                        if (!arrow.mid instanceof Array) {
+                                            util.error('Invalid arrows[' + index + '].mid! Mid hould be an Array with middle points.');
+                                            return;
+                                        }
+                                        if (arrow.type !== 'bezierC' && (!arrow.mid.length || arrow.mid.length % 2 !== 0)) {
+                                            util.error('Invalid arrows[' + index + '].mid! Mid should be an Array with an even number elements, greater than zero. E.g. 2, 4, 6, 8, etc.');
+                                            return;
+                                        }
+                                        if (arrow.type === 'bezierC' && (!arrow.mid.length || arrow.mid.length % 4 !== 0)) {
+                                            util.error('Invalid arrows[' + index + '].mid! Mid should be an Array with a quantity of multiples of 4, greater than zero. E.g. 4, 8, 12, 16, etc.');
+                                            return;
+                                        }
+                                    }
+
+                                    data.arrowTypes.push(arrow.type);
+                                    pts.layout.fromOffset.push({
+                                        dx: arrow.offset[0],
+                                        dy: arrow.offset[1]
+                                    });
+                                    pts.layout.toOffset.push({
+                                        dx: arrow.offset[2],
+                                        dy: arrow.offset[3]
+                                    });
+
+                                    if (arrow.type === 'line') {
+                                        pts.mid.push([]);
+                                    } else {
+                                        var midPoints = [];
+                                        for (var i = 0, qt = arrow.mid.length; i < qt; i += 2) {
+                                            // middle points are relative to the width and height, e.g., a point(.2, .5) means that is located 20% (of size.width) to the right of topLeft.x,
+                                            // and 50% (of size.height) below topLeft.y. Using relative middle points allows an efficient and simple way to repositionate these points,
+                                            // when the start and end points change (when size and topLeft changes)
+                                            midPoints.push({
+                                                x: util.areTheSame(arrow.bounds[2], 0) ? 0 : (arrow.mid[i] - arrow.bounds[0])/arrow.bounds[2],
+                                                y: util.areTheSame(arrow.bounds[3], 0) ? 0 : (arrow.mid[i + 1] - arrow.bounds[1])/arrow.bounds[3]
+                                            });
+                                        }
+                                        if (opts.processMidPoints) {
+                                            opts.processMidPoints(arrow.type, midPoints);
+                                        }
+                                        pts.mid.push(midPoints);
+                                    }
+                                    pts.end.push(arrow.target);
+                                    pts.layout.topLeft.push({
+                                        x: arrow.bounds[0],
+                                        y: arrow.bounds[1]
+                                    });
+                                    pts.layout.size.push({
+                                        width: arrow.bounds[2],
+                                        height: arrow.bounds[3]
+                                    });
+                                });
+                            } else {
+                                var fromOffset = this.getElementCenterPos($elem),
+                                    topLeft;
+                                data.$targets.each(function (index, e) {
+                                    data.arrowTypes.push('line');
+                                    pts.layout.fromOffset.push({
+                                        dx: fromOffset.dx,
+                                        dy: fromOffset.dy
+                                    });
+                                    pts.layout.toOffset.push(pts.getElementCenterPos($(e)));
+                                    pts.mid.push([]);
+                                    pts.end.push(index);
+                                    topLeft = {
+                                        x: Math.min(pts.start.x + fromOffset.dx,
+                                                    pts.allTargetPos[index].x + pts.layout.toOffset[index].dx),
+                                        y: Math.min(pts.start.y + fromOffset.dy,
+                                                    pts.allTargetPos[index].y + pts.layout.toOffset[index].dy)
+                                    };
+                                    pts.layout.topLeft.push(topLeft);
+                                    pts.layout.size.push({
+                                        width: Math.max(pts.start.x + fromOffset.dx,
+                                                        pts.allTargetPos[index].x + pts.layout.toOffset[index].dx) - topLeft.x,
+                                        height: Math.max(pts.start.y + fromOffset.dy,
+                                                         pts.allTargetPos[index].y + pts.layout.toOffset[index].dy) - topLeft.y
+                                    });
+                                });
                             }
-
-                            pts.layout.fromOffset.push({
-                                dx: fromOffset.dx,
-                                dy: fromOffset.dy
-                            });
-
-                            // TODO
-                            switch (data.arrowTypes.length) {
-                                case 2: pts.mid.push([{x: 100, y: 30}, {x: 150, y: 10}]); break;
-                                case 3: pts.mid.push([{x: 400, y: 230}]); break;
-                                case 4: pts.mid.push([{x: 300, y: 330}, {x: 500, y: 320}]); break;
-                                default: pts.mid.push([]);
-                            }
-
-                            var $target = $(e),
-                                toOffset = pts.getElementCenterPos($target);
-
-                            pts.layout.toOffset.push(toOffset);
-                            pts.end.push(index);
-
-                            var topLeft = {
-                                    x: Math.min(pts.start.x + pts.layout.fromOffset[index].dx,
-                                                pts.allTargetPos[index].x + pts.layout.toOffset[index].dx),
-                                    y: Math.min(pts.start.y + pts.layout.fromOffset[index].dy,
-                                                pts.allTargetPos[index].y + pts.layout.toOffset[index].dy)
-                                },
-                                size = {
-                                    width: Math.max(pts.start.x + pts.layout.fromOffset[index].dx,
-                                                    pts.allTargetPos[index].x + pts.layout.toOffset[index].dx) - topLeft.x,
-                                    height: Math.max(pts.start.y + pts.layout.fromOffset[index].dy,
-                                                     pts.allTargetPos[index].y + pts.layout.toOffset[index].dy) - topLeft.y
-                                };
-
-                            // middle points are relative to the width and height, e.g., a point(.2, .5) means that is located 20% (of size.width) to the right of topLeft.x,
-                            // and 50% (of size.height) below topLeft.y. Using relative middle points allows an efficient and simple way to repositionate these points,
-                            // when the start and end points change (when size and topLeft changes)
-                            pts.mid[index].forEach(function (e) {
-                                e.x = util.areTheSame(size.width, 0) ? 0 : (e.x - topLeft.x)/size.width;
-                                e.y = util.areTheSame(size.height, 0) ? 0 : (e.y - topLeft.y)/size.height;
-                            });
-                            pts.layout.topLeft.push(topLeft);
-                            pts.layout.size.push(size);
-                        });
+                        }
                     },
                     getMidPoint: function (relativePnt, index) {
+                        var layout = this.layout,
+                            topLeft = layout.topLeft[index],
+                            size = layout.size[index];
                         return {
-                            x: this.layout.topLeft[index].x + relativePnt.x*this.layout.size[index].width,
-                            y: this.layout.topLeft[index].y + relativePnt.y*this.layout.size[index].height
+                            x: topLeft.x + relativePnt.x*size.width,
+                            y: topLeft.y + relativePnt.y*size.height
                         };
                     }
                 },
@@ -199,14 +284,13 @@
                             bounds.right = Math.max(bounds.right === undefined ? x : bounds.right, x);
                         },
                         maxSize = Math.max(data.shapeRelSize.circle, Math.max(data.shapeRelSize.square, data.shapeRelSize.pointer)),
-                        pts = this;
+                        pts = this.points;
                     this.points.mid.forEach(function (pnts, index) {
                         for(var pnt in pnts) {
                             setBounds(pts.getMidPoint(pnts[pnt], index));
                         }
                     });
                     this.points.end.forEach(function (targetIdx, index) {
-                        
                         setBounds(pts.start, index, pts.layout.fromOffset);
                         setBounds(pts.allTargetPos[targetIdx], index, pts.layout.toOffset);
                     });
@@ -436,61 +520,58 @@
                         return this.$defs;
                     }
                 },
-                getShapeAttrs : function (index, shadeOffset) {
-                    var getX = function (pnt, offset) {
-                            return Math.round(pnt.x + (offset ? offset.dx : 0) - data.svgPos.x) + .5;
-                        },
-                        getY = function (pnt, offset) {
-                            return Math.round(pnt.y + (offset ? offset.dy : 0) - data.svgPos.y) + .5;
-                        },
-                        pointToStr = function (pnt, offset) {
-                            return getX(pnt, offset) + ',' + getY(pnt, offset);
-                        },
-                        pts = data.points;
+                getShapeAttrsMidPointsBezierQ: opts.overrideShapeAttrsBezierQ || function (pts, index, util, shadeOffset) {
+                    return pts.mid[index].map(function (e, i) {
+                        var point = pts.getMidPoint(e, index),
+                            pointStr = util.pointToStr(point, shadeOffset);
+                        switch (i) {
+                            case 0: return 'Q' + pointStr + ' ';
+                            case 1: return pointStr + ' ';
+                            default: return 'T' + pointStr + ' ';
+                        } 
+                    }).join('');
+                },
+                getShapeAttrsMidPointsBezierC: opts.overrideShapeAttrsBezierC || function (pts, index, util, shadeOffset) {
+                    return pts.mid[index].map(function (e, i) {
+                        var point = pts.getMidPoint(e, index),
+                            pointStr = util.pointToStr(point, shadeOffset);
+                        switch (i) {
+                            case 0: return 'C' + pointStr + ' ';
+                            case 1:
+                            case 2: return pointStr + ' ';
+                            default: return (i % 3 === 0 ? 'S' : '') + pointStr + ' ';
+                        } 
+                    }).join('');
+                },
+                getShapeAttrs: function (index, shadeOffset) {
+                    var pts = data.points;
                     switch (data.arrowTypes[index]) {
                         case 'line':
                             return {
-                                x1: getX(pts.start, pts.layout.fromOffset[index]),
-                                y1: getY(pts.start, pts.layout.fromOffset[index]),
-                                x2: getX(pts.allTargetPos[pts.end[index]], pts.layout.toOffset[index]),
-                                y2: getY(pts.allTargetPos[pts.end[index]], pts.layout.toOffset[index])
+                                x1: util.getX(pts.start, pts.layout.fromOffset[index]),
+                                y1: util.getY(pts.start, pts.layout.fromOffset[index]),
+                                x2: util.getX(pts.allTargetPos[pts.end[index]], pts.layout.toOffset[index]),
+                                y2: util.getY(pts.allTargetPos[pts.end[index]], pts.layout.toOffset[index])
                             };
                         case 'bezierQ':
                             return {
-                                d:  'M' + pointToStr(pts.start, pts.layout.fromOffset[index]) + ' ' +
-                                    pts.mid[index].map(function (e, i) {
-                                        var point = pts.getMidPoint(e, index),
-                                            pointStr = pointToStr(point, shadeOffset);
-                                        switch (i) {
-                                            case 0: return 'Q' + pointStr + ' ';
-                                            case 1: return pointStr + ' ';
-                                            default: return i % 2 === 1 ? 'T' + pointStr + ' ': '';
-                                        } 
-                                    }).join('') +
-                                    (pts.mid[index].length === 1 ? '' : 'T') + pointToStr(pts.allTargetPos[pts.end[index]], pts.layout.toOffset[index])
+                                d:  'M' + util.pointToStr(pts.start, pts.layout.fromOffset[index]) + ' ' +
+                                    this.getShapeAttrsMidPointsBezierQ(pts, index, util, shadeOffset) +
+                                    (pts.mid[index].length === 1 ? '' : 'T') + util.pointToStr(pts.allTargetPos[pts.end[index]], pts.layout.toOffset[index])
                             };
                         case 'bezierC':
                             return {
-                                d:  'M' + pointToStr(pts.start, pts.layout.fromOffset[index]) + ' ' +
-                                    pts.mid[index].map(function (e, i) {
-                                        var point = pts.getMidPoint(e, index),
-                                            pointStr = pointToStr(point, shadeOffset);
-                                        switch (i) {
-                                            case 0: return 'C' + pointStr + ' ';
-                                            case 1:
-                                            case 2: return pointStr + ' ';
-                                            default: return i % 3 === 0 ? '': (((i - 1) % 3 === 0 ? 'S' : '') + pointStr + ' ');
-                                        } 
-                                    }).join('') + pointToStr(pts.allTargetPos[pts.end[index]], pts.layout.toOffset[index])
+                                d:  'M' + util.pointToStr(pts.start, pts.layout.fromOffset[index]) + ' ' +
+                                    this.getShapeAttrsMidPointsBezierC(pts, index, util, shadeOffset) +
+                                    util.pointToStr(pts.allTargetPos[pts.end[index]], pts.layout.toOffset[index])
                             };
                         case 'polyline':
                             return {
-                                points: pointToStr(pts.start, pts.layout.fromOffset[index]) + ', ' + 
+                                points: util.pointToStr(pts.start, pts.layout.fromOffset[index]) + ', ' + 
                                         pts.mid[index].map(function (e) {
-                                            return pointToStr(pts.getMidPoint(e, index), shadeOffset);
-                                        }).join(',') +
-                                        ', ' +
-                                        pointToStr(pts.allTargetPos[pts.end[index]], pts.layout.toOffset[index])
+                                            return util.pointToStr(pts.getMidPoint(e, index), shadeOffset);
+                                        }).join(',') + ', ' +
+                                        util.pointToStr(pts.allTargetPos[pts.end[index]], pts.layout.toOffset[index])
                             };
                     }
                 },
@@ -628,9 +709,24 @@
                 },
                 byteToHex: function (byte) {
                     return (byte > 15 ? '' : '0') + byte.toString(16);
+                },
+                getX: function (pnt, offset) {
+                    return Math.round(pnt.x + (offset ? offset.dx : 0) - data.svgPos.x) + .5;
+                },
+                getY: function (pnt, offset) {
+                    return Math.round(pnt.y + (offset ? offset.dy : 0) - data.svgPos.y) + .5;
+                },
+                pointToStr: function (pnt, offset) {
+                    return this.getX(pnt, offset) + ',' + this.getY(pnt, offset);
+                },
+                init: function () {
+                    this.log = console && console.log ? function (msg, noPrefix) { console.log((noPrefix ? '' : 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { alert((noPrefix ? '' : 'rsRefPointer Log:\n\n') + msg); };
+                    this.warn = console && console.warn ? function (msg, noPrefix) { console.warn((noPrefix ? '' : 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { alert((noPrefix ? '' : 'rsRefPointer Warning:\n\n') + msg); };
+                    this.error = console && console.error ? function (msg, noPrefix) { console.error((noPrefix ? '': 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { alert((noPrefix ? '' : 'rsRefPointer Error:\n\n') + msg); };
                 }
             };
 
+        util.init();
         data.init();
         return {
             data: data,

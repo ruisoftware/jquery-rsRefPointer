@@ -10,14 +10,14 @@
 * For info, please scroll to the bottom.
 */
 (function ($, undefined) {
-    var runtime = $.fn.rsRefPointer,
-        defaults = $.fn.rsRefPointer.defaults;
-
+    var runtime = $.fn.rsRefPointer;
     if (!runtime) {
-        console.error('jquery.rsRefPointer.js not loaded! Please, include jquery.rsRefPointer.js before the jquery.rsRefPointer-design.js.');
+        (function (msg) {
+            console && console.error ? console.error(msg) : alert('Error:\n\n' + msg);
+        })('jquery.rsRefPointer.js not loaded!\nPlease, include jquery.rsRefPointer.js before jquery.rsRefPointer-design.js.');
         return;
     }
-
+    var defaults = runtime.defaults;
     $.fn.rsRefPointer = function (options) {
         if (typeof options === 'string') {
             alert('Not allowed in design-time mode.');
@@ -46,6 +46,49 @@
                 right: $document.width(),
                 bottom: $document.height()
             };
+        };
+        options.overrideShapeAttrsBezierQ = function (pts, index, util, shadeOffset) {
+            return pts.mid[index].map(function (e, i) {
+                var point = pts.getMidPoint(e, index),
+                    pointStr = util.pointToStr(point, shadeOffset);
+                switch (i) {
+                    case 0: return 'Q' + pointStr + ' ';
+                    case 1: return pointStr + ' ';
+                    default: return i % 2 === 1 ? 'T' + pointStr + ' ': '';
+                } 
+            }).join('');
+        };
+        options.overrideShapeAttrsBezierC = function (pts, index, util, shadeOffset) {
+            return pts.mid[index].map(function (e, i) {
+                var point = pts.getMidPoint(e, index),
+                    pointStr = util.pointToStr(point, shadeOffset);
+                switch (i) {
+                    case 0: return 'C' + pointStr + ' ';
+                    case 1:
+                    case 2: return pointStr + ' ';
+                    default: return i % 3 === 0 ? '': (((i - 1) % 3 === 0 ? 'S' : '') + pointStr + ' ');
+                } 
+            }).join('');
+        };
+
+        options.processMidPoints = function (arrowType, midPoints) {
+            switch (arrowType) {
+                case 'bezierQ':
+                    for(var i = 2, len = midPoints.length; i < ++len; i += 2) {
+                        midPoints.splice(i, 0, {
+                            x: 2*midPoints[i -  1].x - midPoints[i -  2].x,
+                            y: 2*midPoints[i -  1].y - midPoints[i -  2].y
+                        });
+                    }
+                    break;
+                case 'bezierC':
+                    for(var i = 3, len = midPoints.length; i < ++len; i += 3) {
+                        midPoints.splice(i, 0, {
+                            x: 2*midPoints[i -  1].x - midPoints[i -  2].x,
+                            y: 2*midPoints[i -  1].y - midPoints[i -  2].y
+                        });
+                    }
+            }
         };
         runtime.call(this, options);
         var allData = $.fn.rsRefPointer.designData,

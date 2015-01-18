@@ -24,7 +24,31 @@
                   visible: true,
                   color: 'rgba(95,95,95,.7)',
                   blur: 1
-              }
+              },
+              arrows: [{
+      type: "line",
+      target: 0,
+      offset: [41,9,34,9],
+      bounds: [374,17,513,0]
+    }, {
+      type: "polyline",
+      target: 1,
+      offset: [41,9,71,9],
+      bounds: [411,17,476,55],
+      mid: [100,30,150,10]
+    }, {
+      type: "bezierQ",
+      target: 2,
+      offset: [41,9,6,28],
+      bounds: [201,17,686,164],
+      mid: [571,20,524,102,433,125,316.5,140]
+    }, {
+      type: "bezierC",
+      target: 3,
+      offset: [41,9,40,9],
+      bounds: [548,17,339,199],
+      mid: [300,330,697.25,145.25,646,244,500,320]
+  }]
             });
           }).click();
           
