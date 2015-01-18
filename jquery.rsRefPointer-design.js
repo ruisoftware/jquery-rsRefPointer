@@ -1241,9 +1241,12 @@
                                 DOM.$controlLinesSvgGroup = DOM.createSvgDom('g', { stroke: '#f7abab' }).insertAfter(designMode.UI.activeArrow.$backgroundArrowsRect);
                             }
                         }
-                        for(var $controlLine, pnt = 0, last = midPnts.length - 1; pnt <= last; ++pnt) {
+                        var pnt, last = midPnts.length - 1, $controlLine;
+                        for(pnt = 0; pnt <= last; ++pnt) {
                             // this assignment changes the data.points.mid values
                             midPnts[pnt] = pts.getMidPoint(midPnts[pnt], index);
+                        }
+                        for(pnt = 0; pnt <= last; ++pnt) {
                             designMode.UI.$points[index] = designMode.UI.$points[index].add(DOM.markers.getDesignModePoint(midPnts[pnt], index, index === 0));
                             $controlLine = null;
 
