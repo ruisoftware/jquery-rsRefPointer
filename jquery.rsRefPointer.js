@@ -57,18 +57,22 @@
                             return data.points.getElementOffset($(this));
                         });
                     },
-                    refreshPositions: function (onlyUpdateArrowBounds) {
+                    refreshPositions: function (onlyUpdateArrowBounds, resizeDesignTime) {
                         var newStartPos = this.getElementOffset(),
                             fromPositionChanged = !util.samePoint(this.start, newStartPos),
                             newTargetPositions = this.getTargetOffsets(),
-                            pts = this;
+                            pts = this,
+                            changesDone = false;
 
                         this.start = newStartPos;
                         this.end.forEach(function (targetIdx, index) {
                             var $target = data.$targets.eq(targetIdx),
-                                newTargetPos = newTargetPositions[targetIdx];
+                                newTargetPos = newTargetPositions[targetIdx],
+                                posChanged = fromPositionChanged || !util.samePoint(pts.allTargetPos[targetIdx], newTargetPos);
+                            
+                            changesDone = changesDone || posChanged;
 
-                            if (fromPositionChanged || onlyUpdateArrowBounds || !util.samePoint(pts.allTargetPos[targetIdx], newTargetPos)) {
+                            if (posChanged || onlyUpdateArrowBounds) {
                                 var newTopLeft = pts.layout.topLeft[index];
                                 newTopLeft.x = Math.min(newStartPos.x + pts.layout.fromOffset[index].dx,
                                                         newTargetPos.x + pts.layout.toOffset[index].dx);
@@ -82,22 +86,24 @@
                             }
                         });
                         this.allTargetPos = newTargetPositions;
-                        if (onlyUpdateArrowBounds === true) {
-                            return;
+                        if (onlyUpdateArrowBounds !== true && resizeDesignTime !== true) {
+                            var bounds = data.getBoundsRect();
+                            data.svgPos.x = bounds.left;
+                            data.svgPos.y = bounds.top;
+                            DOM.$svg.css({
+                                left: bounds.left + 'px',
+                                top: bounds.top + 'px'
+                            }).attr({
+                                width: (bounds.right - bounds.left) + 'px',
+                                height: (bounds.bottom - bounds.top) + 'px'
+                            });
                         }
-                        var bounds = data.getBoundsRect();
-                        data.svgPos.x = bounds.left;
-                        data.svgPos.y = bounds.top;
-                        DOM.$svg.css({
-                            left: bounds.left + 'px',
-                            top: bounds.top + 'px'
-                        }).attr({
-                            width: (bounds.right - bounds.left) + 'px',
-                            height: (bounds.bottom - bounds.top) + 'px'
-                        });
-                        this.end.forEach(function (targetIdx, index) {
-                            DOM.updateArrow(index);
-                        });
+                        if (onlyUpdateArrowBounds !== true || changesDone && resizeDesignTime === true) {
+                            this.end.forEach(function (targetIdx, index) {
+                                DOM.updateArrow(index);
+                            });
+                        }
+                        return changesDone;
                     },
                     getElementCenterPos: function ($element) {
                         // this is way to retrieve the content dimensions for blocked elements

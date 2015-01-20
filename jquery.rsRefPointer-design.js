@@ -393,6 +393,7 @@
                                         'max-height: 250px;' +
                                     '}' +
                                     'menu.refPointer.design > a:hover,' +
+                                    'menu.refPointer.design > a.selecting.thisone,' +
                                     'menu.refPointer.design menu a:hover {' +
                                         'background-color: grey;' +
                                         'color: white;' +
@@ -717,8 +718,9 @@
                                 addArrowMenuClick = function (e, type, $menuOption) {
                                     e.preventDefault();
                                     if (data.$targets.length > 1) {
+                                        $menuOption.addClass('selecting');
                                         designMode.UI.menu.multipleTargets.type = type;
-                                        designMode.UI.menu.multipleTargets.showMenu($menuOption.position().top);
+                                        designMode.UI.menu.multipleTargets.showMenu($menuOption.offset().top - 80);
                                     } else {
                                         designMode.UI.addArrow(type, 0);
                                     }
@@ -765,6 +767,7 @@
                                     }
                                 },
                                 $newLineLink = $('> a:first-of-type', designMode.UI.menu.$menu),
+                                $newLinks = $newLineLink.add($newLineLink.next()).add($newLineLink.next().next()),
                                 selector = {
                                     marker: {
                                         $size: $(".refPointer.design + div > div > aside:first-of-type input"),
@@ -845,7 +848,9 @@
                             });
                             $newLineLink.next().next().next().removeClass(data.arrowTypes.length > 0 ? 'disabled' : null).click(function (e) {
                                 e.preventDefault();
-                                designMode.UI.addPoint();
+                                if (!$(this).hasClass('disabled')) {
+                                    designMode.UI.addPoint();
+                                }
                             });
                             $newLineLink.siblings('ul').next().click(function (e) {
                                 e.preventDefault();
@@ -1022,10 +1027,13 @@
                                 $(this).next('var').text(opts.shadow.blur);
                             });
 
-                            this.multipleTargets.$subMenu = $('menu', this.$menu).mouseleave(function () {
+                            this.multipleTargets.$subMenu = $('menu', this.$menu).mouseenter(function () {
+                                $newLinks.filter('.selecting').addClass('thisone');
+                            }).mouseleave(function () {
                                 if (!designMode.UI.menu.multipleTargets.firstMouseover) {
                                     designMode.UI.cancelVirtualArrow();
                                 }
+                                $newLinks.removeClass('selecting thisone');
                                 designMode.UI.menu.multipleTargets.hideMenu();
                             });
                             data.$targets.each(function (index) {
@@ -1040,6 +1048,7 @@
                                     e.preventDefault();
                                     designMode.UI.menu.multipleTargets.firstMouseover = true;
                                     designMode.UI.saveVirtualArrow();
+                                    $newLinks.removeClass('selecting thisone');
                                     designMode.UI.menu.multipleTargets.hideMenu();
                                 });
                                 $('div', designMode.UI.menu.multipleTargets.$subMenu).append($a);
@@ -1424,6 +1433,16 @@
                                 'width': Math.max($window.width(), docWidth) + 'px',
                                 'height': Math.max($window.height(), docHeight) + 'px'
                             });
+                            var pts = data.points;
+                            if (pts.resizeTimeoutId) {
+                                clearTimeout(pts.resizeTimeoutId);
+                            }
+                            pts.resizeTimeoutId = setTimeout(function () {
+                                if (pts.refreshPositions(false, true)) {
+                                    // TODO update start/end anchor points and start/end control lines
+                                };
+                                pts.resizeTimeoutId = null;
+                            }, 500);
                         };
                     DOM.$svg.css('pointer-events', '');
                     designMode.UI.activeArrow.$backgroundArrowsRect = DOM.createSvgDom('rect', {
