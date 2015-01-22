@@ -370,6 +370,7 @@
                                     '}' +
                                     'menu.refPointer.design menu a {' +
                                         'display: block;' +
+                                        'font-size: 11px;' +
                                     '}' +
                                     'menu.refPointer.design header {' +
                                         'cursor: move;' +
@@ -383,6 +384,7 @@
                                         'text-decoration: none;' +
                                         'line-height: 12px;' +
                                         'border-radius: 2px;' +
+                                        'white-space: nowrap;' +
                                     '}' +
                                     'menu.refPointer.design > a:first-of-type {' +
                                         'margin-top: 13px;' +
@@ -1424,56 +1426,60 @@
                     }
                 },
                 init: function () {
-                    var $window = $(window),
-                        $document = $(document),
-                        docWidth = $document.width(),
-                        docHeight = $document.height(),
-                        doResize = function () {
-                            DOM.$svg.add(designMode.UI.activeArrow.$backgroundArrowsRect).attr({
-                                'width': Math.max($window.width(), docWidth) + 'px',
-                                'height': Math.max($window.height(), docHeight) + 'px'
-                            });
-                            var pts = data.points;
-                            if (pts.resizeTimeoutId) {
-                                clearTimeout(pts.resizeTimeoutId);
-                            }
-                            pts.resizeTimeoutId = setTimeout(function () {
-                                if (pts.refreshPositions(false, true)) {
-                                    pts.end.forEach(function (targetIdx, arrowIdx) {
-                                        designMode.UI.$points[arrowIdx].eq(0).attr({
-                                            'cx': pts.start.x + pts.layout.fromOffset[arrowIdx].dx,
-                                            'cy': pts.start.y + pts.layout.fromOffset[arrowIdx].dy
-                                        }).end().eq(1).attr({
-                                            'cx': pts.allTargetPos[targetIdx].x + pts.layout.toOffset[arrowIdx].dx,
-                                            'cy': pts.allTargetPos[targetIdx].y + pts.layout.toOffset[arrowIdx].dy
+                    if (data.$targets.length === 0) {
+                        alert('No targets found!\n\nThe jQuery call $("' + opts.targetSelector + '") returned zero objects.\nPlease change the targetSelector option.');
+                    } else {
+                        var $window = $(window),
+                            $document = $(document),
+                            docWidth = $document.width(),
+                            docHeight = $document.height(),
+                            doResize = function () {
+                                DOM.$svg.add(designMode.UI.activeArrow.$backgroundArrowsRect).attr({
+                                    'width': Math.max($window.width(), docWidth) + 'px',
+                                    'height': Math.max($window.height(), docHeight) + 'px'
+                                });
+                                var pts = data.points;
+                                if (pts.resizeTimeoutId) {
+                                    clearTimeout(pts.resizeTimeoutId);
+                                }
+                                pts.resizeTimeoutId = setTimeout(function () {
+                                    if (pts.refreshPositions(false, true)) {
+                                        pts.end.forEach(function (targetIdx, arrowIdx) {
+                                            designMode.UI.$points[arrowIdx].eq(0).attr({
+                                                'cx': pts.start.x + pts.layout.fromOffset[arrowIdx].dx,
+                                                'cy': pts.start.y + pts.layout.fromOffset[arrowIdx].dy
+                                            }).end().eq(1).attr({
+                                                'cx': pts.allTargetPos[targetIdx].x + pts.layout.toOffset[arrowIdx].dx,
+                                                'cy': pts.allTargetPos[targetIdx].y + pts.layout.toOffset[arrowIdx].dy
+                                            });
+                                            switch (data.arrowTypes[arrowIdx]) {
+                                                case 'bezierQ':
+                                                case 'bezierC':
+                                                    if (data.arrowTypes[arrowIdx] === 'bezierQ') {
+                                                        DOM.bezier.Q.updateBezierEndControlLine(pts, arrowIdx);
+                                                    } else {
+                                                        DOM.bezier.C.updateBezierEndControlLine(pts, arrowIdx);
+                                                    }
+                                                    DOM.bezier.updateBezierStartControlLine(pts, arrowIdx);
+                                            }
                                         });
-                                        switch (data.arrowTypes[arrowIdx]) {
-                                            case 'bezierQ':
-                                            case 'bezierC':
-                                                if (data.arrowTypes[arrowIdx] === 'bezierQ') {
-                                                    DOM.bezier.Q.updateBezierEndControlLine(pts, arrowIdx);
-                                                } else {
-                                                    DOM.bezier.C.updateBezierEndControlLine(pts, arrowIdx);
-                                                }
-                                                DOM.bezier.updateBezierStartControlLine(pts, arrowIdx);
-                                        }
-                                    });
-                                };
-                                pts.resizeTimeoutId = null;
-                            }, 500);
-                        };
-                    DOM.$svg.css('pointer-events', '');
-                    designMode.UI.activeArrow.$backgroundArrowsRect = DOM.createSvgDom('rect', {
-                        x: 0,
-                        y: 0
-                    }).css({
-                        fill: 'rgba(255,255,255,.65)',
-                        'pointer-events': 'none'
-                    }).appendTo(DOM.$svg);
-                    $window.resize(doResize);
-                    doResize();
-                    this.UI.init();
-                    events.onShow();
+                                    };
+                                    pts.resizeTimeoutId = null;
+                                }, 500);
+                            };
+                        DOM.$svg.css('pointer-events', '');
+                        designMode.UI.activeArrow.$backgroundArrowsRect = DOM.createSvgDom('rect', {
+                            x: 0,
+                            y: 0
+                        }).css({
+                            fill: 'rgba(255,255,255,.65)',
+                            'pointer-events': 'none'
+                        }).appendTo(DOM.$svg);
+                        $window.resize(doResize);
+                        doResize();
+                        this.UI.init();
+                        events.onShow();
+                    }
                 }
             },
             applyChanges = function () {

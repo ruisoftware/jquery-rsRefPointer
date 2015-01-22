@@ -119,24 +119,23 @@
                     },
                     init: function () {
                         data.$targets = opts.targetSelector ? $(opts.targetSelector) : $();
-                        $elem.add(data.$targets).each(function (index, e) {
-                            var $e = $(e);
-                            if ($e.css('white-space') !== 'nowrap') {
-                                $e.css('white-space', 'nowrap');
-                            }
-                        });
-
-                        this.start = this.getElementOffset();
-                        this.mid = [];
-                        this.end = [];
-                        this.allTargetPos = this.getTargetOffsets();
-
                         var pts = this,
-                            lastTarget = this.allTargetPos.length - 1;
-
-                        // TODO test behaviour for no targets (when lastTarget is -1)
+                            lastTarget = data.$targets.length - 1;
 
                         if (lastTarget > -1) {
+
+                            $elem.add(data.$targets).each(function (index, e) {
+                                var $e = $(e);
+                                if ($e.css('white-space') !== 'nowrap') {
+                                    $e.css('white-space', 'nowrap');
+                                }
+                            });
+
+                            this.start = this.getElementOffset();
+                            this.mid = [];
+                            this.end = [];
+                            this.allTargetPos = this.getTargetOffsets();
+
                             if (opts.arrows && opts.arrows instanceof Array && opts.arrows.length > 0) {
                                 opts.arrows.forEach(function (arrow, index) {
                                     if (!arrow) {
@@ -266,7 +265,9 @@
                                     });
                                 });
                             }
+                            return true;
                         }
+                        return false;
                     },
                     getMidPoint: function (relativePnt, index) {
                         var layout = this.layout,
@@ -317,36 +318,37 @@
                     return bounds;
                 },
                 init: function () {
-                    this.points.init();
-                    this.outline = opts.outline.size && opts.outline.color !== 'transparent';
-                    var bounds = this.getBoundsRect();
-                    data.svgPos.x = bounds.left;
-                    data.svgPos.y = bounds.top;
-                    DOM.$svg = DOM.createSvgDom('svg', {
-                        width: (bounds.right - bounds.left) + 'px',
-                        height: (bounds.bottom - bounds.top) + 'px',
-                        xmlns: this.ns,
-                        version: '1.1',
-                        class: this.svgClass
-                    }).css({
-                        position: 'absolute',
-                        left: bounds.left + 'px',
-                        top: bounds.top + 'px',
-                        'pointer-events': 'none'
+                    if (this.points.init()) {
+                        this.outline = opts.outline.size && opts.outline.color !== 'transparent';
+                        var bounds = this.getBoundsRect();
+                        data.svgPos.x = bounds.left;
+                        data.svgPos.y = bounds.top;
+                        DOM.$svg = DOM.createSvgDom('svg', {
+                            width: (bounds.right - bounds.left) + 'px',
+                            height: (bounds.bottom - bounds.top) + 'px',
+                            xmlns: this.ns,
+                            version: '1.1',
+                            class: this.svgClass
+                        }).css({
+                            position: 'absolute',
+                            left: bounds.left + 'px',
+                            top: bounds.top + 'px',
+                            'pointer-events': 'none'
 
 
-                        // for debuging purposes only
-                        ,'background-color': 'rgba(100,0,0,.1)'
-                    });
+                            // for debuging purposes only
+                            ,'background-color': 'rgba(100,0,0,.1)'
+                        });
 
-                    DOM.$svg.append(DOM.markers.init());
+                        DOM.$svg.append(DOM.markers.init());
 
-                    this.points.end.forEach(function (e, index) {
-                        DOM.createArrow(index);
-                    });
-                    DOM.$svg.hide();
-                    $('body').append(DOM.$svg);
-                    events.bindAll();
+                        this.points.end.forEach(function (e, index) {
+                            DOM.createArrow(index);
+                        });
+                        DOM.$svg.hide();
+                        $('body').append(DOM.$svg);
+                        events.bindAll();
+                    }
                 }
             },
             DOM = {
