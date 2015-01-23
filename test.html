@@ -4,7 +4,7 @@
     <title>Reference Pointer</title>
     <script src="jquery.2.0.0.min.js"></script>
     <script src="jquery.rsRefPointer.js"></script>
-    <script src="jquery.rsRefPointer-design.js"></script>
+    <!--script src="jquery.rsRefPointer-design.js"></script-->
     <script>
         $(document).ready(function () {
           $("#new").click(function () {
@@ -55,6 +55,12 @@
           $("#clean").click(function () {
             $("a").rsRefPointer('destroy');
           });
+          $("#show").click(function () {
+            $("a").rsRefPointer('show');
+          });
+          $("#hide").click(function () {
+            $("a").rsRefPointer('hide');
+          });
         });
     </script>
 
@@ -68,10 +74,17 @@
         height: 3px;
         background-color: red;
       }
+
+      @media print {
+        svg {
+          display: block !important;
+        }
+      }
     </style>
 
   </head>
   <body>
+    <button id="show">show</button><button id="hide">hide</button>
     <div id="p"></div>
     <span contenteditable>Type something here to change the target location...</span><span class="target">first target</span><button id="clean">CLEANtest bbbbbcccccccccccccccbbbb click</button><button id="new">NEW</button>
     This is a diagram with <a tabindex="0" href="#">2 references.</a>thisoiasdio asjdap ojdspoj asd jpo<br><br><br>

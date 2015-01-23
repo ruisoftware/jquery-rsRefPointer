@@ -334,10 +334,6 @@
                             left: bounds.left + 'px',
                             top: bounds.top + 'px',
                             'pointer-events': 'none'
-
-
-                            // for debuging purposes only
-                            ,'background-color': 'rgba(100,0,0,.1)'
                         });
 
                         DOM.$svg.append(DOM.markers.init());
@@ -684,27 +680,69 @@
                 }
             },
             events = {
+                showTimeoutId: null,
+                clearShowTimeout: function () {
+                    if (events.showTimeoutId) {
+                        clearTimeout(events.showTimeoutId);
+                        events.showTimeoutId = null;
+                    }
+                },
+                onShowByMouse: function () {
+                    var show = function () {
+                            events.showTimeoutId = null;
+                            data.points.refreshPositions();
+                            DOM.$svg.show();
+                        },
+                        delay = opts.delayShow || 0;
+                    if (delay) {
+                        events.clearShowTimeout();
+                        events.showTimeoutId = setTimeout(show, delay);
+                    } else {
+                        show();
+                    }
+                },
+                onHideByMouse: function () {
+                    events.clearShowTimeout();
+                    DOM.$svg.hide();
+                },
                 onShow: function () {
-                    data.points.refreshPositions();
-                    DOM.$svg.show();
+                    if (!DOM.$svg.is(':visible')) {
+                        events.unbindMouseFocusEvents();
+                        events.onShowByMouse();
+                    }
                 },
                 onHide: function () {
-                    DOM.$svg.hide();
+                    if (DOM.$svg.is(':visible')) {
+                        events.bindMouseFocusEvents();
+                        events.onHideByMouse();
+                    }
                 },
                 onDestroy: function () {
                     events.unbindAll();
                     DOM.$svg.remove();
                 },
-                bindAll: function () {
+                bindMouseFocusEvents: function () {
                     $elem.
-                        bind('mouseenter.rsRefPointer focus.rsRefPointer', this.onShow).
-                        bind('mouseleave.rsRefPointer blur.rsRefPointer', this.onHide).
+                        bind('mouseenter.rsRefPointer focus.rsRefPointer', this.onShowByMouse).
+                        bind('mouseleave.rsRefPointer blur.rsRefPointer', this.onHideByMouse);
+                },
+                bindAll: function () {
+                    events.bindMouseFocusEvents();
+                    $elem.
+                        bind('show.rsRefPointer', this.onShow).
+                        bind('hide.rsRefPointer', this.onHide).
                         bind('destroy.rsRefPointer', this.onDestroy);
                 },
-                unbindAll: function () {
+                unbindMouseFocusEvents: function () {
                     $elem.
-                        unbind('mouseenter.rsRefPointer focus.rsRefPointer', this.onShow).
-                        unbind('mouseleave.rsRefPointer blur.rsRefPointer', this.onHide).
+                        unbind('mouseenter.rsRefPointer focus.rsRefPointer show.rsRefPointer', this.onShowByMouse).
+                        unbind('mouseleave.rsRefPointer blur.rsRefPointer', this.onHideByMouse);
+                },
+                unbindAll: function () {
+                    events.unbindMouseFocusEvents();
+                    $elem.
+                        unbind('show.rsRefPointer', this.onShow).
+                        unbind('hide.rsRefPointer', this.onHide).
                         unbind('destroy.rsRefPointer', this.onDestroy);
                 }
             },
@@ -745,13 +783,11 @@
     };
 
     $.fn.rsRefPointer = function (options) {
-        var option = function (options) {
-                if (typeof arguments[0] === 'string') {
-                    var op = arguments.length == 1 ? 'getter' : (arguments.length == 2 ? 'setter' : null);
-                    if (op) {
-                        return this.eq(0).triggerHandler(op + '.rsRefPointer', arguments);
-                    }
-                }
+        var show = function () {
+                this.trigger('show.rsRefPointer');
+            },
+            hide = function () {
+                this.trigger('hide.rsRefPointer');
             },
             destroy = function () {
                 this.trigger('destroy.rsRefPointer');
@@ -760,7 +796,8 @@
         if (typeof options === 'string') {
             var otherArgs = Array.prototype.slice.call(arguments, 1);
             switch (options) {
-                case 'option': return option.apply(this, otherArgs);
+                case 'show': return show.call(this);
+                case 'hide': return hide.call(this);
                 case 'destroy': return destroy.call(this);
                 default: return this;
             }
@@ -783,6 +820,7 @@
     // public access to the default input parameters
     $.fn.rsRefPointer.defaults = {
         targetSelector: '.target',
+        delayShow: 50,
         marker: {
             start: 'circle',
             mid: 'square',
