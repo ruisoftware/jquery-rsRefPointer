@@ -215,7 +215,7 @@
                                         '<aside>' +
                                             '<div>Markers</div>' +
                                             '<span>Size</span>' +
-                                            '<input type="range" min="0.1" max="4" step="0.1"><var></var>' +
+                                            '<input type="range" min="0.1" max="5" step="0.1"><var></var>' +
                                             '<span>Shapes</span><label></label><label></label><label></label>' +
                                             '<svg width="340px" height="170px" xmlns="http://www.w3.org/2000/svg" version="1.1">' +
                                                 '<defs>' +
@@ -286,7 +286,7 @@
                                         '</aside>' +
                                         '<aside>' +
                                             '<div>Stroke</div>' +
-                                            '<span>Size</span><input type="range" min="1" max="4" step="0.25"><var></var>' +
+                                            '<span>Size</span><input type="range" min="0.5" max="4" step="0.25"><var></var>' +
                                             '<span>Color</span><input type="color"><br>' +
                                             '<span>Opacity</span><input type="range" min="0" max="1" step="0.025"><var></var>' +
                                         '</aside>' +
@@ -358,6 +358,7 @@
                                         'border-top-right-radius: 20px 15px;' +
                                         'border-bottom-right-radius: 20px 15px;' +
                                         'padding: 10px;' +
+                                        'margin: 0;' +
                                     '}' +
                                     'menu.refPointer.design:after {' +
                                         'content: "";' +
@@ -385,9 +386,6 @@
                                         'line-height: 12px;' +
                                         'border-radius: 2px;' +
                                         'white-space: nowrap;' +
-                                    '}' +
-                                    'menu.refPointer.design > a:first-of-type {' +
-                                        'margin-top: 13px;' +
                                     '}' +
                                     'menu.refPointer.design menu div {' +
                                         'margin-top: 8px;' +
@@ -480,9 +478,9 @@
                                     '}' +
                                     'menu.refPointer.design + div + div > div {' +
                                         'margin-left: -400px;' +
-                                        'margin-top: -250px;' +
+                                        'margin-top: -255px;' +
                                         'width: 800px;' +
-                                        'height: 500px;' +
+                                        'height: 510px;' +
                                     '}' +
                                     'menu.refPointer.design + div > div a:first-of-type,' +
                                     'menu.refPointer.design + div + div > div a:first-of-type {' +
@@ -533,6 +531,9 @@
                                     '}' +
                                     'menu.refPointer.design + div > div > aside input[type=range] {' +
                                         'width: 90px;' +
+                                        'margin: 2px;' +
+                                        'padding: 0;' +
+                                        'border: none;' +
                                     '}' +
                                     'menu.refPointer.design + div > div var {' +
                                         'width: 30px;' +
@@ -588,7 +589,7 @@
                                     'menu.refPointer.design + div > div > aside input[type=checkbox] + label {' +
                                         'font-style: normal;' +
                                         'width: auto;' +
-                                        'margin-right: 31.7%;' +
+                                        'margin-right: 30.8%;' +
                                         'line-height: 32px;' +
                                         'font-size: 9px;' +
                                     '}' +
@@ -711,7 +712,9 @@
                                 '</style>'
                             );
                             $('body').append(this.$menu).append(this.$popupProperties).append(this.$generatedCode);
-                            var finishMenuDragging = function (e) {
+                            var $newLineLink = $('> a:first-of-type', designMode.UI.menu.$menu),
+                                $newLinks = $newLineLink.add($newLineLink.next()).add($newLineLink.next().next()),
+                                finishMenuDragging = function (e) {
                                     designMode.UI.menu.dragInfo.dragging = false;
                                     var pos = $(this).parent().position();
                                     designMode.UI.menu.positionX = pos.left;
@@ -720,9 +723,10 @@
                                 addArrowMenuClick = function (e, type, $menuOption) {
                                     e.preventDefault();
                                     if (data.$targets.length > 1) {
+                                        $newLinks.removeClass('selecting');
                                         $menuOption.addClass('selecting');
                                         designMode.UI.menu.multipleTargets.type = type;
-                                        designMode.UI.menu.multipleTargets.showMenu($menuOption.offset().top - 80);
+                                        designMode.UI.menu.multipleTargets.showMenu($menuOption.position().top);
                                     } else {
                                         designMode.UI.addArrow(type, 0);
                                     }
@@ -768,8 +772,6 @@
                                         $colorPicker.remove();
                                     }
                                 },
-                                $newLineLink = $('> a:first-of-type', designMode.UI.menu.$menu),
-                                $newLinks = $newLineLink.add($newLineLink.next()).add($newLineLink.next().next()),
                                 selector = {
                                     marker: {
                                         $size: $(".refPointer.design + div > div > aside:first-of-type input"),
