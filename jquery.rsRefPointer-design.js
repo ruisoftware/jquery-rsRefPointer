@@ -1658,7 +1658,7 @@
                 $point = DOM.createSvgDom('circle', {
                     cx: pnt.x + (offsetArray === undefined ? 0 : offsetArray[arrowIdx].dx),
                     cy: pnt.y + (offsetArray === undefined ? 0 : offsetArray[arrowIdx].dy),
-                    r: ((opts.marker.size - 1)*0.25 + 1)*maxSize/1.5 + 1,
+                    r: 6,
                     style: 'fill:transparent; stroke:rgba(255,0,0,.3); stroke-width:' + (selected ? designMode.UI.activeArrow.strokeSelected : designMode.UI.activeArrow.strokeUnselected)
                 }).append(DOM.createSvgDom('title').append('Double-click to delete this point'));
             return $point.mouseover(function () {
