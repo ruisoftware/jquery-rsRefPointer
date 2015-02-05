@@ -706,13 +706,13 @@
                     DOM.$svg.hide();
                 },
                 onShow: function () {
-                    if (!DOM.$svg.is(':visible')) {
+                    if (DOM.$svg.css('display') === 'none') {
                         events.unbindMouseFocusEvents();
                         events.onShowByMouse();
                     }
                 },
                 onHide: function () {
-                    if (DOM.$svg.is(':visible')) {
+                    if (DOM.$svg.css('display') !== 'none') {
                         events.bindMouseFocusEvents();
                         events.onHideByMouse();
                     }
