@@ -1480,7 +1480,8 @@
                         $window.resize(doResize);
                         doResize();
                         this.UI.init();
-                        events.onShow();
+                        events.unbindMouseFocusEvents();
+                        DOM.$svg.css('opacity', 1).show();
                     }
                 }
             },

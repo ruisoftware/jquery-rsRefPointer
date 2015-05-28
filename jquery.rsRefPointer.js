@@ -106,16 +106,11 @@
                         return changesDone;
                     },
                     getElementCenterPos: function ($element) {
-                        // this is way to retrieve the content dimensions for blocked elements
-                        var $span = ($element || $elem).wrapInner('<span style="display: inline;">').children('span');
-                        try {
-                            return {
-                                dx: Math.round($span.width()/2),
-                                dy: Math.round($span.height()/2)
-                            };
-                        } finally {
-                            $span.contents().unwrap();
-                        }
+                        var $e = $element || $elem;
+                        return {
+                            dx: Math.round($e.width()/2),
+                            dy: Math.round($e.height()/2)
+                        };
                     },
                     init: function () {
                         data.$targets = opts.targetSelector ? $(opts.targetSelector) : $();
@@ -333,7 +328,8 @@
                             position: 'absolute',
                             left: bounds.left + 'px',
                             top: bounds.top + 'px',
-                            'pointer-events': 'none'
+                            'pointer-events': 'none',
+                            opacity: 0
                         });
 
                         DOM.$svg.append(DOM.markers.init());
@@ -677,6 +673,23 @@
                 },
                 replaceArrow: function (index) {
                     this.createOrReplaceArrow(index, opts.shadow.visible, data.outline, true, true);
+                },
+                show: function () {
+                    this.doShowHide(true);
+                },
+                hide: function () {
+                    this.doShowHide(false);
+                },
+                doShowHide: function (isShowing) {
+                    var opacityDelay = (isShowing ? opts.opacityTimeShowing : opts.opacityTimeHidding) || 0,
+                        done = function () {
+                            isShowing ? DOM.$svg.css('opacity', 1).show() : DOM.$svg.css('opacity', 0).hide();
+                        };
+                    if (opacityDelay > 0) {
+                        this.$svg.stop(true).show().animate(isShowing ? { opacity: 1 } : { opacity: 0 }, opacityDelay, done);
+                    } else {
+                        done();
+                    }
                 }
             },
             events = {
@@ -687,13 +700,21 @@
                         events.showTimeoutId = null;
                     }
                 },
+                hideTimeoutId: null,
+                clearHideTimeout: function () {
+                    if (events.hideTimeoutId) {
+                        clearTimeout(events.hideTimeoutId);
+                        events.hideTimeoutId = null;
+                    }
+                },
                 onShowByMouse: function () {
+                    events.clearHideTimeout();
                     var show = function () {
                             events.showTimeoutId = null;
                             data.points.refreshPositions();
-                            DOM.$svg.show();
+                            DOM.show();
                         },
-                        delay = opts.delayShow || 0;
+                        delay = opts.showAfter || 0;
                     if (delay) {
                         events.clearShowTimeout();
                         events.showTimeoutId = setTimeout(show, delay);
@@ -703,7 +724,17 @@
                 },
                 onHideByMouse: function () {
                     events.clearShowTimeout();
-                    DOM.$svg.hide();
+                    var hide = function () {
+                            events.hideTimeoutId = null;
+                            DOM.hide();
+                        },
+                        delay = opts.hideAfter || 0;
+                    if (delay) {
+                        events.clearHideTimeout();
+                        events.hideTimeoutId = setTimeout(hide, delay);
+                    } else {
+                        hide();
+                    }
                 },
                 onShow: function () {
                     if (DOM.$svg.css('display') === 'none') {
@@ -820,7 +851,10 @@
     // public access to the default input parameters
     $.fn.rsRefPointer.defaults = {
         targetSelector: '.target',
-        delayShow: 50,
+        showAfter: 50,              // Milliseconds it takes for the fadein animation to start
+        opacityTimeShowing: 50,     // Duration of the fadein animation
+        hideAfter: 150,             // Milliseconds it takes for the fadeout animation to start
+        opacityTimeHidding: 100,    // Duration of the fadeout animation
         marker: {
             start: 'circle',
             mid: 'square',
