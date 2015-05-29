@@ -871,7 +871,7 @@
         },
         shadow: {
             visible: true,
-            color: 'rgba(95,95,95,.7)',
+            color: 'rgba(95,95,95,0.7)',
             offsetX: 8,
             offsetY: 8,
             blur: 1

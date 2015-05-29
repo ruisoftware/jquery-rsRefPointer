@@ -1540,9 +1540,38 @@
                         }
                     }
                 },
+                isObj: function (obj) {
+                    return obj !== null && obj !== undefined && typeof obj === "object";
+                },
+                areTheSame: function (prop, value1, value2) {
+                    if (prop === 'color') {
+                        var normalizeColor = function (color) {
+                            return color === 'white' ? '#ffffff' : (color === 'black' ? '#000000' : color);
+                        };
+                        return normalizeColor(value1) === normalizeColor(value2);
+                    }
+                    return value1 === value2;
+                },
+                getObjDiff: function (s, obj, compareToObj) {
+                    for (var prop in obj) {
+                        if (this.isObj(obj[prop])) {
+                            if (this.isObj(compareToObj[prop]) && !(obj[prop] instanceof Array)) {
+                                this.getObjDiff(s + '  ', obj[prop], compareToObj[prop]);
+                                if (!Object.keys(obj[prop]).length) {
+                                    delete obj[prop];
+                                }
+                            }
+                        } else {
+                            if (this.areTheSame(prop, obj[prop], compareToObj[prop])) {
+                                delete obj[prop];
+                            }
+                        }
+                    }
+                },
                 getCode: function () {
                     data.points.refreshPositions(true);
                     var allOpts = $.extend(true, {}, opts);
+                    this.getObjDiff('', allOpts, $.fn.rsRefPointer.defaults);
                     allOpts.arrows = [];
                     for(var index in data.arrowTypes) {
                         var arrowOpts = {
