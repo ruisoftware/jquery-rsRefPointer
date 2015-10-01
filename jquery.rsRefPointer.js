@@ -50,7 +50,7 @@
                         return {
                             x: Math.round(pos.left),
                             y: Math.round(pos.top)
-                        }
+                        };
                     },
                     getTargetOffsets: function () {
                         return data.$targets.map(function () {
@@ -66,8 +66,7 @@
 
                         this.start = newStartPos;
                         this.end.forEach(function (targetIdx, index) {
-                            var $target = data.$targets.eq(targetIdx),
-                                newTargetPos = newTargetPositions[targetIdx],
+                            var newTargetPos = newTargetPositions[targetIdx],
                                 posChanged = fromPositionChanged || !util.samePoint(pts.allTargetPos[targetIdx], newTargetPos);
                             
                             changesDone = changesDone || posChanged;
@@ -404,10 +403,9 @@
                         if (type === null) {
                             return null;
                         }
-                        var $marker = null,
-                            ids = getIdsCallback(),
+                        var ids = getIdsCallback(),
                             getNewId = function () {
-                                return ids[id] = 'refP' + $('svg.' + data.svgClass).length + id.charAt(0) + (+ new Date());
+                                return 'refP' + $('svg.' + data.svgClass).length + id.charAt(0) + (+ new Date());
                             },
                             size = data.shapeRelSize.getSize(type),
                             attrs = this.getMarkerAttrs(type, size);
@@ -782,24 +780,24 @@
                     return Math.abs(a - b) < (precision ? precision : 0.000005);
                 },
                 samePoint: function (pnt1, pnt2) {
-                    return this.areTheSame(pnt1.x, pnt2.x, .5) && this.areTheSame(pnt1.y, pnt2.y, .5);
+                    return this.areTheSame(pnt1.x, pnt2.x, 0.5) && this.areTheSame(pnt1.y, pnt2.y, 0.5);
                 },
                 byteToHex: function (byte) {
                     return (byte > 15 ? '' : '0') + byte.toString(16);
                 },
                 getX: function (pnt, offset) {
-                    return Math.round(pnt.x + (offset ? offset.dx : 0) - data.svgPos.x) + .5;
+                    return Math.round(pnt.x + (offset ? offset.dx : 0) - data.svgPos.x) + 0.5;
                 },
                 getY: function (pnt, offset) {
-                    return Math.round(pnt.y + (offset ? offset.dy : 0) - data.svgPos.y) + .5;
+                    return Math.round(pnt.y + (offset ? offset.dy : 0) - data.svgPos.y) + 0.5;
                 },
                 pointToStr: function (pnt, offset) {
                     return this.getX(pnt, offset) + ',' + this.getY(pnt, offset);
                 },
                 init: function () {
-                    this.log = console && console.log ? function (msg, noPrefix) { console.log((noPrefix ? '' : 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { alert((noPrefix ? '' : 'rsRefPointer Log:\n\n') + msg); };
-                    this.warn = console && console.warn ? function (msg, noPrefix) { console.warn((noPrefix ? '' : 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { alert((noPrefix ? '' : 'rsRefPointer Warning:\n\n') + msg); };
-                    this.error = console && console.error ? function (msg, noPrefix) { console.error((noPrefix ? '': 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { alert((noPrefix ? '' : 'rsRefPointer Error:\n\n') + msg); };
+                    this.log = console && console.log ? function (msg, noPrefix) { console.log((noPrefix ? '' : 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { window.alert((noPrefix ? '' : 'rsRefPointer Log:\n\n') + msg); };
+                    this.warn = console && console.warn ? function (msg, noPrefix) { console.warn((noPrefix ? '' : 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { window.alert((noPrefix ? '' : 'rsRefPointer Warning:\n\n') + msg); };
+                    this.error = console && console.error ? function (msg, noPrefix) { console.error((noPrefix ? '': 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { window.alert((noPrefix ? '' : 'rsRefPointer Error:\n\n') + msg); };
                 }
             };
 
@@ -825,7 +823,6 @@
             };
 
         if (typeof options === 'string') {
-            var otherArgs = Array.prototype.slice.call(arguments, 1);
             switch (options) {
                 case 'show': return show.call(this);
                 case 'hide': return hide.call(this);

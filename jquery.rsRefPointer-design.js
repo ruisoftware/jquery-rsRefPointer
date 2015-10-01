@@ -13,20 +13,21 @@
     var runtime = $.fn.rsRefPointer;
     if (!runtime) {
         (function (msg) {
-            console && console.error ? console.error(msg) : alert('Error:\n\n' + msg);
+            console && console.error ? console.error(msg) : window.alert('Error:\n\n' + msg);
         })('jquery.rsRefPointer.js not loaded!\nPlease, include jquery.rsRefPointer.js before jquery.rsRefPointer-design.js.');
         return;
     }
     var defaults = runtime.defaults;
     $.fn.rsRefPointer = function (options) {
         if (typeof options === 'string') {
-            alert('Not allowed in design-time mode.');
+            window.alert('Not allowed in design-time mode.');
             return;
         }
         // Seems that this goes against all plug-in good practices, but in design mode, makes no sense at all to accept more than one element.
         // Design mode has a GUI. How could I display GUI for several instances simultaneously? I could implement some kind of tab control, but let's keep it simple.
         if (this.length > 1) {
-            alert('Design-time mode cannot run for ' + this.length + ' plug-in instances!\n' +
+            window.alert(
+                  'Design-time mode cannot run for ' + this.length + ' plug-in instances!\n' +
                   'Make sure you invoke design mode for one instance only.\n\nE.g. if you have 2 anchors on your page, then this fails:\n' + 
                   '   $("a").rsRefPointer();\n' + 
                   'What you need is to run for the first instance:\n' +
@@ -72,9 +73,10 @@
         };
 
         options.processMidPoints = function (arrowType, midPoints) {
+            var i, len;
             switch (arrowType) {
                 case 'bezierQ':
-                    for(var i = 2, len = midPoints.length; i < ++len; i += 2) {
+                    for(i = 2, len = midPoints.length; i < ++len; i += 2) {
                         midPoints.splice(i, 0, {
                             x: 2*midPoints[i -  1].x - midPoints[i -  2].x,
                             y: 2*midPoints[i -  1].y - midPoints[i -  2].y
@@ -82,7 +84,7 @@
                     }
                     break;
                 case 'bezierC':
-                    for(var i = 3, len = midPoints.length; i < ++len; i += 3) {
+                    for(i = 3, len = midPoints.length; i < ++len; i += 3) {
                         midPoints.splice(i, 0, {
                             x: 2*midPoints[i -  1].x - midPoints[i -  2].x,
                             y: 2*midPoints[i -  1].y - midPoints[i -  2].y
@@ -189,7 +191,7 @@
                                 },
                                 getPolylinePoints = function (shadow) {
                                     return '180,32, ' + (shadow ? getShadowPointsPolyline() : getMidPointsPolyline().join(',')) + ', 290,60';
-                                };
+                                },
                                 getBezierPoints = function (shadow) {
                                     return 'M170,90 Q' + (shadow ? getShadowPointsBezier() : getMidPointsBezier(true).join(',').replace(/,-/g, ' ')) + ' T270,130';
                                 };
@@ -714,7 +716,7 @@
                             $('body').append(this.$menu).append(this.$popupProperties).append(this.$generatedCode);
                             var $newLineLink = $('> a:first-of-type', designMode.UI.menu.$menu),
                                 $newLinks = $newLineLink.add($newLineLink.next()).add($newLineLink.next().next()),
-                                finishMenuDragging = function (e) {
+                                finishMenuDragging = function () {
                                     designMode.UI.menu.dragInfo.dragging = false;
                                     var pos = $(this).parent().position();
                                     designMode.UI.menu.positionX = pos.left;
@@ -885,15 +887,15 @@
                                 designMode.UI.menu.$generatedCode.hide();
                             });
                             // marker size
-                            selector.marker.$size.on('input', function (e) {
+                            selector.marker.$size.on('input', function () {
                                 opts.marker.size = + this.value;
                                 var size, key;
-                                for(key in $markers) {
+                                for (key in $markers) {
                                     size = data.shapeRelSize.getSize(key);
                                     DOM.updateSvgAttrs($markers[key][0], DOM.markers.getMarkerAttrs(key, size));
                                     DOM.updateSvgAttrs($markers[key].children()[0], DOM.markers.getMarkerShapeData(key, size));
                                 }
-                                for(key in $markersShadow) {
+                                for (key in $markersShadow) {
                                     size = data.shapeRelSize.getSize(key);
                                     DOM.updateSvgAttrs($markersShadow[key][0], DOM.markers.getMarkerAttrs(key, size, true));
                                     DOM.updateSvgAttrs($markersShadow[key].children()[0], DOM.markers.getMarkerShapeData(key, size, true));
@@ -902,7 +904,7 @@
                             });
 
                             // shapes click
-                            selector.marker.shapes.$all.click(function (e) {
+                            selector.marker.shapes.$all.click(function () {
                                 // index is used to select the shape (0 for start, 1 for mid, 2 for end)
                                 var $this = $(this),
                                     index = $this.index() % 3,
@@ -938,7 +940,7 @@
                             });
 
                             // stroke size
-                            selector.stroke.$size.on('input', function (e) {
+                            selector.stroke.$size.on('input', function () {
                                 opts.stroke.size = + this.value;
                                 var $outlines = $previewPolyline.eq(1).add($previewBezier.eq(1));
                                 $previewPolyline.add($previewBezier).not($outlines).attr('stroke-width', opts.stroke.size);
@@ -957,7 +959,7 @@
                             });
 
                             // outline size
-                            selector.outline.$size.on('input', function (e) {
+                            selector.outline.$size.on('input', function () {
                                 opts.outline.size = + this.value;
                                 var $outlines = $previewPolyline.eq(1).add($previewBezier.eq(1));
                                 $outlines.attr('stroke-width', DOM.getStrokeWidthForOutlineArrow());
@@ -1188,7 +1190,7 @@
                                         designMode.UI.activeArrow.idx = null;
                                     }
                                 } else {
-                                    designMode.UI.activeArrow.select(arrowIdx - 1)
+                                    designMode.UI.activeArrow.select(arrowIdx - 1);
                                 }
                             }
                             if (designMode.UI.activeArrow.idx > arrowIdx) {
@@ -1324,14 +1326,15 @@
                     movePoint: function (e) {
                         if (designMode.UI.dragInfo.$point) {
                             var dragInfo = designMode.UI.dragInfo,
-                                pts = data.points;
+                                pts = data.points,
+                                offset;
                             dragInfo.$point.attr({
                                 'cx': e.pageX,
                                 'cy': e.pageY
                             });
                             switch (dragInfo.pointType) {
                                 case 'start':
-                                    var offset = pts.layout.fromOffset[designMode.UI.activeArrow.idx];
+                                    offset = pts.layout.fromOffset[designMode.UI.activeArrow.idx];
                                     offset.dx = e.pageX - pts.start.x;
                                     offset.dy = e.pageY - pts.start.y; 
                                     switch (data.arrowTypes[designMode.UI.activeArrow.idx]) {
@@ -1388,7 +1391,7 @@
                                     }
                                     break;
                                 case 'end':
-                                    var offset = pts.layout.toOffset[designMode.UI.activeArrow.idx];
+                                    offset = pts.layout.toOffset[designMode.UI.activeArrow.idx];
                                     offset.dx = e.pageX - pts.allTargetPos[pts.end[designMode.UI.activeArrow.idx]].x;
                                     offset.dy = e.pageY - pts.allTargetPos[pts.end[designMode.UI.activeArrow.idx]].y; 
                                     switch (data.arrowTypes[designMode.UI.activeArrow.idx]) {
@@ -1409,7 +1412,7 @@
                             designMode.UI.dragInfo.bezierAnchorPointDelta = {
                                 dx: dragInfo.midRef.x - nextControlPoint.x,
                                 dy: dragInfo.midRef.y - nextControlPoint.y
-                            }
+                            };
                         } else {
                             nextControlPoint.x = dragInfo.midRef.x - designMode.UI.dragInfo.bezierAnchorPointDelta.dx;
                             nextControlPoint.y = dragInfo.midRef.y - designMode.UI.dragInfo.bezierAnchorPointDelta.dy;
@@ -1429,7 +1432,7 @@
                 },
                 init: function () {
                     if (data.$targets.length === 0) {
-                        alert('No targets found!\n\nThe jQuery call $("' + opts.targetSelector + '") returned zero objects.\nPlease change the targetSelector option.');
+                        window.alert('No targets found!\n\nThe jQuery call $("' + opts.targetSelector + '") returned zero objects.\nPlease change the targetSelector option.');
                     } else {
                         var $window = $(window),
                             $document = $(document),
@@ -1465,7 +1468,7 @@
                                                     DOM.bezier.updateBezierStartControlLine(pts, arrowIdx);
                                             }
                                         });
-                                    };
+                                    }
                                     pts.resizeTimeoutId = null;
                                 }, 500);
                             };
@@ -1490,11 +1493,12 @@
                 var hadOutline = data.outline;
                 data.outline = opts.outline.size && opts.outline.color !== 'transparent';
                 var fromNoOutline_ToOutline = !hadOutline && data.outline,
-                    attrs = {};
+                    attrs = {},
+                    index;
                 DOM.$svg.prepend(DOM.markers.init());
                 
                 if (fromNoOutline_ToOutline || opts.shadow.visible) {
-                    for(var index in DOM.arrows) {
+                    for(index in DOM.arrows) {
                         DOM.createOrReplaceArrow(index, opts.shadow.visible, fromNoOutline_ToOutline, false);
                     }
                 }
@@ -1506,7 +1510,7 @@
                 });
                 attrs.stroke = opts.stroke.color;
                 attrs['stroke-width'] = opts.stroke.size;
-                for(var index in DOM.arrows) {
+                for(index in DOM.arrows) {
                     // had outline before. Now it hasn't
                     if (hadOutline && !data.outline) {
                         DOM.arrows[index].prev().remove();
@@ -1678,14 +1682,13 @@
                     return {
                         arrow: idx,
                         point: indexPoint
-                    }
+                    };
                 }
             }
             return null;
         };
         DOM.markers.getDesignModePoint = function (pnt, arrowIdx, selected, offsetArray) {
-            var maxSize = Math.max(data.shapeRelSize.circle, Math.max(data.shapeRelSize.square, data.shapeRelSize.pointer)),
-                $point = DOM.createSvgDom('circle', {
+            var $point = DOM.createSvgDom('circle', {
                     cx: pnt.x + (offsetArray === undefined ? 0 : offsetArray[arrowIdx].dx),
                     cy: pnt.y + (offsetArray === undefined ? 0 : offsetArray[arrowIdx].dy),
                     r: 6,
@@ -1723,7 +1726,7 @@
                 }
             }).dblclick(function () {
                 designMode.UI.deletePoint($point);
-            })
+            });
         };
         DOM.line = {
             addPoint: function (arrowIdx, midPoints, sets) {
@@ -2129,7 +2132,7 @@
                             case 2: this.deleteStartPoint(arrowIdx); break;
                             case 1:
                             case lastMid + 2: this.deleteEndPoint(arrowIdx, lastMid); break;
-                            default: this.deleteMidPoint(arrowIdx, pntIndex - 2, lastMid);
+                            default: this.deleteMidPoint(arrowIdx, pntIndex - 2);
                         }
                         DOM.updateArrow(arrowIdx);
                     }
@@ -2165,7 +2168,7 @@
                     DOM.bezier.controlLines[arrowIdx][controlLineIdx].remove();
                     DOM.bezier.controlLines[arrowIdx].splice(controlLineIdx - 1, 2);
                 },
-                deleteMidPoint: function (arrowIdx, midIndex, lastMid) {
+                deleteMidPoint: function (arrowIdx, midIndex) {
                     var midPoints = data.points.mid[arrowIdx],
                         deletePointsAndControlLines = function (index) {
                             midPoints.splice(index - 1, 3);
