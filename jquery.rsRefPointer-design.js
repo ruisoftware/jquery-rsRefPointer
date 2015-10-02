@@ -1,4 +1,4 @@
-/**
+﻿/**
 * jQuery RefPointer (design more)
 * ===============================================================
 *
@@ -76,7 +76,7 @@
             var i, len;
             switch (arrowType) {
                 case 'bezierQ':
-                    for(i = 2, len = midPoints.length; i < ++len; i += 2) {
+                    for (i = 2, len = midPoints.length; i < ++len; i += 2) {
                         midPoints.splice(i, 0, {
                             x: 2*midPoints[i -  1].x - midPoints[i -  2].x,
                             y: 2*midPoints[i -  1].y - midPoints[i -  2].y
@@ -84,7 +84,7 @@
                     }
                     break;
                 case 'bezierC':
-                    for(i = 3, len = midPoints.length; i < ++len; i += 3) {
+                    for (i = 3, len = midPoints.length; i < ++len; i += 3) {
                         midPoints.splice(i, 0, {
                             x: 2*midPoints[i -  1].x - midPoints[i -  2].x,
                             y: 2*midPoints[i -  1].y - midPoints[i -  2].y
@@ -891,14 +891,18 @@
                                 opts.marker.size = + this.value;
                                 var size, key;
                                 for (key in $markers) {
-                                    size = data.shapeRelSize.getSize(key);
-                                    DOM.updateSvgAttrs($markers[key][0], DOM.markers.getMarkerAttrs(key, size));
-                                    DOM.updateSvgAttrs($markers[key].children()[0], DOM.markers.getMarkerShapeData(key, size));
+                                    if ($markers.hasOwnProperty(key)) {
+                                        size = data.shapeRelSize.getSize(key);
+                                        DOM.updateSvgAttrs($markers[key][0], DOM.markers.getMarkerAttrs(key, size));
+                                        DOM.updateSvgAttrs($markers[key].children()[0], DOM.markers.getMarkerShapeData(key, size));
+                                    }
                                 }
                                 for (key in $markersShadow) {
-                                    size = data.shapeRelSize.getSize(key);
-                                    DOM.updateSvgAttrs($markersShadow[key][0], DOM.markers.getMarkerAttrs(key, size, true));
-                                    DOM.updateSvgAttrs($markersShadow[key].children()[0], DOM.markers.getMarkerShapeData(key, size, true));
+                                    if ($markersShadow.hasOwnProperty(key)) {
+                                        size = data.shapeRelSize.getSize(key);
+                                        DOM.updateSvgAttrs($markersShadow[key][0], DOM.markers.getMarkerAttrs(key, size, true));
+                                        DOM.updateSvgAttrs($markersShadow[key].children()[0], DOM.markers.getMarkerShapeData(key, size, true));
+                                    }
                                 }
                                 $(this).next('var').text(opts.marker.size);
                             });
@@ -1257,11 +1261,11 @@
                             }
                         }
                         var pnt, last = midPnts.length - 1, $controlLine;
-                        for(pnt = 0; pnt <= last; ++pnt) {
+                        for (pnt = 0; pnt <= last; ++pnt) {
                             // this assignment changes the data.points.mid values
                             midPnts[pnt] = pts.getMidPoint(midPnts[pnt], index);
                         }
-                        for(pnt = 0; pnt <= last; ++pnt) {
+                        for (pnt = 0; pnt <= last; ++pnt) {
                             designMode.UI.$points[index] = designMode.UI.$points[index].add(DOM.markers.getDesignModePoint(midPnts[pnt], index, index === 0));
                             $controlLine = null;
 
@@ -1498,8 +1502,10 @@
                 DOM.$svg.prepend(DOM.markers.init());
                 
                 if (fromNoOutline_ToOutline || opts.shadow.visible) {
-                    for(index in DOM.arrows) {
-                        DOM.createOrReplaceArrow(index, opts.shadow.visible, fromNoOutline_ToOutline, false);
+                    for (index in DOM.arrows) {
+                        if (DOM.arrows.hasOwnProperty(index)) {
+                            DOM.createOrReplaceArrow(index, opts.shadow.visible, fromNoOutline_ToOutline, false);
+                        }
                     }
                 }
 
@@ -1510,20 +1516,22 @@
                 });
                 attrs.stroke = opts.stroke.color;
                 attrs['stroke-width'] = opts.stroke.size;
-                for(index in DOM.arrows) {
-                    // had outline before. Now it hasn't
-                    if (hadOutline && !data.outline) {
-                        DOM.arrows[index].prev().remove();
-                    } else {
-                        // had outline before and still has
-                        if (hadOutline && data.outline) {
-                            DOM.arrows[index].prev().attr({
-                                stroke: opts.outline.color,
-                                'stroke-width': DOM.getStrokeWidthForOutlineArrow()
-                            });
+                for (index in DOM.arrows) {
+                    if (DOM.arrows.hasOwnProperty(index)) {
+                        // had outline before. Now it hasn't
+                        if (hadOutline && !data.outline) {
+                            DOM.arrows[index].prev().remove();
+                        } else {
+                            // had outline before and still has
+                            if (hadOutline && data.outline) {
+                                DOM.arrows[index].prev().attr({
+                                    stroke: opts.outline.color,
+                                    'stroke-width': DOM.getStrokeWidthForOutlineArrow()
+                                });
+                            }
                         }
+                        DOM.arrows[index].removeAttr('marker-start marker-mid marker-end').attr(attrs);
                     }
-                    DOM.arrows[index].removeAttr('marker-start marker-mid marker-end').attr(attrs);
                 }
             },
             generateCode = {
@@ -1558,16 +1566,18 @@
                 },
                 getObjDiff: function (s, obj, compareToObj) {
                     for (var prop in obj) {
-                        if (this.isObj(obj[prop])) {
-                            if (this.isObj(compareToObj[prop]) && !(obj[prop] instanceof Array)) {
-                                this.getObjDiff(s + '  ', obj[prop], compareToObj[prop]);
-                                if (!Object.keys(obj[prop]).length) {
+                        if (obj.hasOwnProperty(prop)) {
+                            if (this.isObj(obj[prop])) {
+                                if (this.isObj(compareToObj[prop]) && !(obj[prop] instanceof Array)) {
+                                    this.getObjDiff(s + '  ', obj[prop], compareToObj[prop]);
+                                    if (!Object.keys(obj[prop]).length) {
+                                        delete obj[prop];
+                                    }
+                                }
+                            } else {
+                                if (this.areTheSame(prop, obj[prop], compareToObj[prop])) {
                                     delete obj[prop];
                                 }
-                            }
-                        } else {
-                            if (this.areTheSame(prop, obj[prop], compareToObj[prop])) {
-                                delete obj[prop];
                             }
                         }
                     }
@@ -1577,47 +1587,46 @@
                     var allOpts = $.extend(true, {}, opts);
                     this.getObjDiff('', allOpts, $.fn.rsRefPointer.defaults);
                     allOpts.arrows = [];
-                    for(var index in data.arrowTypes) {
-                        var arrowOpts = {
-                            type: data.arrowTypes[index],
-                            target: data.points.end[index],
-                            offset: [
-                                data.points.layout.fromOffset[index].dx,
-                                data.points.layout.fromOffset[index].dy,
-                                data.points.layout.toOffset[index].dx,
-                                data.points.layout.toOffset[index].dy
-                            ],
-                            bounds: [
-                                data.points.layout.topLeft[index].x,
-                                data.points.layout.topLeft[index].y,
-                                data.points.layout.size[index].width,
-                                data.points.layout.size[index].height
-                            ]
-                        };
-                        switch (data.arrowTypes[index]) {
-                            case 'polyline':
-                                arrowOpts.mid = [];
-                                data.points.mid[index].forEach(function (pnt) {
-                                    arrowOpts.mid.push(pnt.x, pnt.y);
-                                });
-                                break;
-                            case 'bezierQ':
-                                arrowOpts.mid = [];
-                                data.points.mid[index].forEach(function (pnt, index) {
-                                    if (index < 2 || index % 2 === 1) {
+                    for (var index in data.arrowTypes) {
+                        if (data.arrowTypes.hasOwnProperty(index)) {
+                            var arrowOpts = {
+                                    type: data.arrowTypes[index],
+                                    target: data.points.end[index],
+                                    offset: [
+                                        data.points.layout.fromOffset[index].dx,
+                                        data.points.layout.fromOffset[index].dy,
+                                        data.points.layout.toOffset[index].dx,
+                                        data.points.layout.toOffset[index].dy
+                                    ],
+                                    bounds: [
+                                        data.points.layout.topLeft[index].x,
+                                        data.points.layout.topLeft[index].y,
+                                        data.points.layout.size[index].width,
+                                        data.points.layout.size[index].height
+                                    ]
+                                },
+                                pushPointFunc = {
+                                    polyline: function (pnt) {
                                         arrowOpts.mid.push(pnt.x, pnt.y);
+                                    },
+                                    bezierQ: function (pnt, index) {
+                                        if (index < 2 || index % 2 === 1) {
+                                            arrowOpts.mid.push(pnt.x, pnt.y);
+                                        }
+                                    },
+                                    bezierC: function (pnt, index) {
+                                        if (index < 3 || index % 3 !== 0) {
+                                            arrowOpts.mid.push(pnt.x, pnt.y);
+                                        }
                                     }
-                                });
-                                break;
-                            case 'bezierC':
+                                },
+                                func = pushPointFunc[data.arrowTypes[index]];
+                            if (func) {
                                 arrowOpts.mid = [];
-                                data.points.mid[index].forEach(function (pnt, index) {
-                                    if (index < 3 || index % 3 !== 0) {
-                                        arrowOpts.mid.push(pnt.x, pnt.y);
-                                    }
-                                });
+                                data.points.mid[index].forEach(func);
+                            }
+                            allOpts.arrows.push(arrowOpts);
                         }
-                        allOpts.arrows.push(arrowOpts);
                     }
                     return JSON.stringify(allOpts, null, '\t').
                         // remove double quotes from keys

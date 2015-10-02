@@ -287,8 +287,10 @@
                         maxSize = Math.max(data.shapeRelSize.circle, Math.max(data.shapeRelSize.square, data.shapeRelSize.pointer)),
                         pts = this.points;
                     this.points.mid.forEach(function (pnts, index) {
-                        for(var pnt in pnts) {
-                            setBounds(pts.getMidPoint(pnts[pnt], index));
+                        for (var pnt in pnts) {
+                            if (pnts.hasOwnProperty(pnt)) {
+                                setBounds(pts.getMidPoint(pnts[pnt], index));
+                            }
                         }
                     });
                     this.points.end.forEach(function (targetIdx, index) {
@@ -350,13 +352,17 @@
                 createSvgDom: function (tag, attrs) {
                     var el = document.createElementNS(data.ns, tag);
                     for (var k in attrs) {
-                        el.setAttribute(k, attrs[k]);
+                        if (attrs.hasOwnProperty(k)) {
+                            el.setAttribute(k, attrs[k]);
+                        }
                     }
                     return $(el);
                 },
                 updateSvgAttrs: function (svgElem, attrs) {
                     for (var k in attrs) {
-                        svgElem.setAttribute(k, attrs[k]);
+                        if (attrs.hasOwnProperty(k)) {
+                            svgElem.setAttribute(k, attrs[k]);
+                        }
                     }
                 },
                 getStrokeWidthForOutlineArrow: function () {
