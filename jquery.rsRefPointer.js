@@ -10,6 +10,7 @@
 * For info, please scroll to the bottom.
 */
 (function ($, undefined) {
+    'use strict';
     var RefPointerClass = function ($elem, opts) {
         var data = {
                 ns: 'http://www.w3.org/2000/svg',
@@ -23,7 +24,7 @@
                     circle: 4,
                     square: 4,
                     getSize: function (type) {
-                        return ((opts.marker.size - 1)*0.25 + 1)*this[type];
+                        return ((opts.marker.size - 1) * 0.25 + 1) * this[type];
                     }
                 },
                 svgPos: {},
@@ -46,7 +47,7 @@
                         size: []          // Array of {width, height}
                     },
                     getElementOffset: function ($e) {
-                        var pos = ($e ? $e : $elem).offset();
+                        var pos = ($e || $elem).offset();
                         return {
                             x: Math.round(pos.left),
                             y: Math.round(pos.top)
@@ -68,9 +69,7 @@
                         this.end.forEach(function (targetIdx, index) {
                             var newTargetPos = newTargetPositions[targetIdx],
                                 posChanged = fromPositionChanged || !util.samePoint(pts.allTargetPos[targetIdx], newTargetPos);
-                            
                             changesDone = changesDone || posChanged;
-
                             if (posChanged || onlyUpdateArrowBounds) {
                                 var newTopLeft = pts.layout.topLeft[index];
                                 newTopLeft.x = Math.min(newStartPos.x + pts.layout.fromOffset[index].dx,
@@ -97,7 +96,8 @@
                                 height: (bounds.bottom - bounds.top) + 'px'
                             });
                         }
-                        if (onlyUpdateArrowBounds !== true || changesDone && resizeDesignTime === true) {
+                        if (onlyUpdateArrowBounds !== true || (changesDone && resizeDesignTime === true)) {
+                            // targetIdx is not used in the function below, but is required by the forEach signature
                             this.end.forEach(function (targetIdx, index) {
                                 DOM.updateArrow(index);
                             });
@@ -107,8 +107,8 @@
                     getElementCenterPos: function ($element) {
                         var $e = $element || $elem;
                         return {
-                            dx: Math.round($e.width()/2),
-                            dy: Math.round($e.height()/2)
+                            dx: Math.round($e.width() / 2),
+                            dy: Math.round($e.height() / 2)
                         };
                     },
                     init: function () {
@@ -117,7 +117,7 @@
                             lastTarget = data.$targets.length - 1;
 
                         if (lastTarget > -1) {
-
+                            // index is not used in the function below, but is required by the each signature
                             $elem.add(data.$targets).each(function (index, e) {
                                 var $e = $(e);
                                 if ($e.css('white-space') !== 'nowrap') {
@@ -207,14 +207,14 @@
                                     if (arrow.type === 'line') {
                                         pts.mid.push([]);
                                     } else {
-                                        var midPoints = [];
-                                        for (var i = 0, qt = arrow.mid.length; i < qt; i += 2) {
+                                        var midPoints = [], i, qt;
+                                        for (i = 0, qt = arrow.mid.length; i < qt; i += 2) {
                                             // middle points are relative to the width and height, e.g., a point(.2, .5) means that is located 20% (of size.width) to the right of topLeft.x,
                                             // and 50% (of size.height) below topLeft.y. Using relative middle points allows an efficient and simple way to repositionate these points,
                                             // when the start and end points change (when size and topLeft changes)
                                             midPoints.push({
-                                                x: util.areTheSame(arrow.bounds[2], 0) ? 0 : (arrow.mid[i] - arrow.bounds[0])/arrow.bounds[2],
-                                                y: util.areTheSame(arrow.bounds[3], 0) ? 0 : (arrow.mid[i + 1] - arrow.bounds[1])/arrow.bounds[3]
+                                                x: util.areTheSame(arrow.bounds[2], 0) ? 0 : (arrow.mid[i] - arrow.bounds[0]) / arrow.bounds[2],
+                                                y: util.areTheSame(arrow.bounds[3], 0) ? 0 : (arrow.mid[i + 1] - arrow.bounds[1]) / arrow.bounds[3]
                                             });
                                         }
                                         if (opts.processMidPoints) {
@@ -268,8 +268,8 @@
                             topLeft = layout.topLeft[index],
                             size = layout.size[index];
                         return {
-                            x: topLeft.x + relativePnt.x*size.width,
-                            y: topLeft.y + relativePnt.y*size.height
+                            x: topLeft.x + relativePnt.x * size.width,
+                            y: topLeft.y + relativePnt.y * size.height
                         };
                     }
                 },
@@ -287,7 +287,8 @@
                         maxSize = Math.max(data.shapeRelSize.circle, Math.max(data.shapeRelSize.square, data.shapeRelSize.pointer)),
                         pts = this.points;
                     this.points.mid.forEach(function (pnts, index) {
-                        for (var pnt in pnts) {
+                        var pnt;
+                        for (pnt in pnts) {
                             if (pnts.hasOwnProperty(pnt)) {
                                 setBounds(pts.getMidPoint(pnts[pnt], index));
                             }
@@ -297,15 +298,15 @@
                         setBounds(pts.start, index, pts.layout.fromOffset);
                         setBounds(pts.allTargetPos[targetIdx], index, pts.layout.toOffset);
                     });
-                    bounds.top -= opts.marker.size*maxSize;
-                    bounds.left -= opts.marker.size*maxSize;
-                    bounds.right += opts.marker.size*maxSize;
-                    bounds.bottom += opts.marker.size*maxSize;
+                    bounds.top -= opts.marker.size * maxSize;
+                    bounds.left -= opts.marker.size * maxSize;
+                    bounds.right += opts.marker.size * maxSize;
+                    bounds.bottom += opts.marker.size * maxSize;
                     if (opts.shadow.visible) {
-                        bounds.top -= opts.shadow.offsetY > 0 ? 0 : - opts.shadow.offsetY - opts.shadow.blur;
-                        bounds.left -= opts.shadow.offsetX > 0 ? 0: - opts.shadow.offsetX - opts.shadow.blur;
+                        bounds.top -= opts.shadow.offsetY > 0 ? 0 : -opts.shadow.offsetY - opts.shadow.blur;
+                        bounds.left -= opts.shadow.offsetX > 0 ? 0 : -opts.shadow.offsetX - opts.shadow.blur;
                         bounds.right += opts.shadow.offsetX > 0 ? opts.shadow.offsetX + opts.shadow.blur : 0;
-                        bounds.bottom += opts.shadow.offsetY > 0 ? opts.shadow.offsetY + opts.shadow.blur: 0;
+                        bounds.bottom += opts.shadow.offsetY > 0 ? opts.shadow.offsetY + opts.shadow.blur : 0;
                     }
                     bounds.top = Math.floor(bounds.top);
                     bounds.left = Math.floor(bounds.left);
@@ -334,7 +335,7 @@
                         });
 
                         DOM.$svg.append(DOM.markers.init());
-
+                        // e is not used in the function below, but is required by the forEach signature
                         this.points.end.forEach(function (e, index) {
                             DOM.createArrow(index);
                         });
@@ -350,8 +351,8 @@
                 arrowsShadow: [],
                 $shadowGroup: null,
                 createSvgDom: function (tag, attrs) {
-                    var el = document.createElementNS(data.ns, tag);
-                    for (var k in attrs) {
+                    var el = document.createElementNS(data.ns, tag), k;
+                    for (k in attrs) {
                         if (attrs.hasOwnProperty(k)) {
                             el.setAttribute(k, attrs[k]);
                         }
@@ -359,17 +360,18 @@
                     return $(el);
                 },
                 updateSvgAttrs: function (svgElem, attrs) {
-                    for (var k in attrs) {
+                    var k;
+                    for (k in attrs) {
                         if (attrs.hasOwnProperty(k)) {
                             svgElem.setAttribute(k, attrs[k]);
                         }
                     }
                 },
                 getStrokeWidthForOutlineArrow: function () {
-                    return opts.outline.size*opts.stroke.size + opts.stroke.size;
+                    return opts.outline.size * opts.stroke.size + opts.stroke.size;
                 },
                 getStrokeWidthForShape: function () {
-                    return opts.outline.size/2;
+                    return opts.outline.size / 2;
                 },
                 markers: {
                     $defs: null,
@@ -411,7 +413,7 @@
                         }
                         var ids = getIdsCallback(),
                             getNewId = function () {
-                                return 'refP' + $('svg.' + data.svgClass).length + id.charAt(0) + (+ new Date());
+                                return 'refP' + $('svg.' + data.svgClass).length + id.charAt(0) + (+new Date());
                             },
                             size = data.shapeRelSize.getSize(type),
                             attrs = this.getMarkerAttrs(type, size);
@@ -492,7 +494,7 @@
                         }
                     },
                     getFilter: function () {
-                        this.ids.filter.shadow = 'refP' + $('svg.' + data.svgClass).length + 'f' + (+ new Date());
+                        this.ids.filter.shadow = 'refP' + $('svg.' + data.svgClass).length + 'f' + (+new Date());
                         return DOM.createSvgDom('filter', {
                             id: this.ids.filter.shadow
                         }).append(DOM.createSvgDom('feGaussianBlur', {
@@ -604,17 +606,17 @@
                             dy: opts.shadow.offsetY
                         }),
                         $arrowElement;
-
                     switch (data.arrowTypes[index]) {
                         case 'polyline':
                             attrs['stroke-linejoin'] = 'round';
                             attrsShade['stroke-linejoin'] = 'round';
-                            // yes, no break here
+                            /* falls through */
                         case 'bezierQ':
+                            /* falls through */
                         case 'bezierC':
                             attrs.fill = 'none';
                             attrsShade.fill = 'none';
-                            // yes, no break here
+                            /* falls through */
                         case 'line':
                             attrs['stroke-linecap'] = 'round';
                             attrsShade['stroke-linecap'] = 'round';
@@ -685,8 +687,9 @@
                     this.doShowHide(false);
                 },
                 doShowHide: function (isShowing) {
-                    var opacityDelay = (isShowing ? opts.opacityTimeShowing : opts.opacityTimeHidding) || 0,
+                    var opacityDelay = isShowing ? opts.opacityTimeShowing : opts.opacityTimeHidding,
                         done = function () {
+                            /*jshint -W030 */
                             isShowing ? DOM.$svg.css('opacity', 1).show() : DOM.$svg.css('opacity', 0).hide();
                         };
                     if (opacityDelay > 0) {
@@ -801,9 +804,9 @@
                     return this.getX(pnt, offset) + ',' + this.getY(pnt, offset);
                 },
                 init: function () {
-                    this.log = console && console.log ? function (msg, noPrefix) { console.log((noPrefix ? '' : 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { window.alert((noPrefix ? '' : 'rsRefPointer Log:\n\n') + msg); };
-                    this.warn = console && console.warn ? function (msg, noPrefix) { console.warn((noPrefix ? '' : 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { window.alert((noPrefix ? '' : 'rsRefPointer Warning:\n\n') + msg); };
-                    this.error = console && console.error ? function (msg, noPrefix) { console.error((noPrefix ? '': 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { window.alert((noPrefix ? '' : 'rsRefPointer Error:\n\n') + msg); };
+                    this.log = window.console && window.console.log ? function (msg, noPrefix) { window.console.log((noPrefix ? '' : 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { window.alert((noPrefix ? '' : 'rsRefPointer Log:\n\n') + msg); };
+                    this.warn = window.console && window.console.warn ? function (msg, noPrefix) { window.console.warn((noPrefix ? '' : 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { window.alert((noPrefix ? '' : 'rsRefPointer Warning:\n\n') + msg); };
+                    this.error = window.console && window.console.error ? function (msg, noPrefix) { window.console.error((noPrefix ? '': 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { window.alert((noPrefix ? '' : 'rsRefPointer Error:\n\n') + msg); };
                 }
             };
 

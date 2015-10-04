@@ -13,7 +13,8 @@
     var runtime = $.fn.rsRefPointer;
     if (!runtime) {
         (function (msg) {
-            console && console.error ? console.error(msg) : window.alert('Error:\n\n' + msg);
+            /*jshint -W030 */
+            window.console && window.console.error ? window.console.error(msg) : window.alert('Error:\n\n' + msg);
         })('jquery.rsRefPointer.js not loaded!\nPlease, include jquery.rsRefPointer.js before jquery.rsRefPointer-design.js.');
         return;
     }
@@ -179,12 +180,12 @@
                                 },
                                 getShadowPointsPolyline = function () {
                                     return getMidPointsPolyline().map(function (value, index) {
-                                        return getShadowPoints(value, !(index % 2), opts.shadow);
+                                        return getShadowPoints(value, (index % 2 === 0), opts.shadow);
                                     }).join(',');
                                 },
                                 getShadowPointsBezier = function () {
                                     return getMidPointsBezier().map(function (value, index) {
-                                        var isX = !(index % 2);
+                                        var isX = (index % 2 === 0);
                                         value = getShadowPoints(value, isX, opts.shadow);
                                         return isX && index ? - value : value;  // use the minus as a place for whitespace, not comma
                                     }).join(',').replace(/,-/g, ' '); 
@@ -776,7 +777,7 @@
                                 },
                                 selector = {
                                     marker: {
-                                        $size: $(".refPointer.design + div > div > aside:first-of-type input"),
+                                        $size: $('.refPointer.design + div > div > aside:first-of-type input'),
                                         shapes: {
                                             $start: $('> div svg > g > text:eq(0), > div svg > g > path:eq(0), > div svg > g > path:eq(3), > div svg > g > circle:eq(0), > div svg > g > rect:eq(0)', designMode.UI.menu.$popupProperties),
                                             $mid: $('> div svg > g > text:eq(1), > div svg > g > path:eq(1), > div svg > g > path:eq(4), > div svg > g > circle:eq(1), > div svg > g > rect:eq(1)', designMode.UI.menu.$popupProperties),
@@ -785,24 +786,24 @@
                                         }
                                     },
                                     stroke: {
-                                        $size: $(".refPointer.design + div > div > aside:first-of-type + aside + aside input:first-of-type"),
-                                        $color: $(".refPointer.design + div > div > aside:first-of-type + aside + aside input[type=color]"),
-                                        $opacity: $(".refPointer.design + div > div > aside:first-of-type + aside + aside input[type=color] ~ input")
+                                        $size: $('.refPointer.design + div > div > aside:first-of-type + aside + aside input:first-of-type'),
+                                        $color: $('.refPointer.design + div > div > aside:first-of-type + aside + aside input[type=color]'),
+                                        $opacity: $('.refPointer.design + div > div > aside:first-of-type + aside + aside input[type=color] ~ input')
                                     },
                                     outline: {
-                                        $size: $(".refPointer.design + div > div > aside:first-of-type + aside + aside + aside input:first-of-type"),
-                                        $color: $(".refPointer.design + div > div > aside:first-of-type + aside + aside + aside input[type=color]"),
-                                        $opacity: $(".refPointer.design + div > div > aside:first-of-type + aside + aside + aside input[type=color] ~ input")
+                                        $size: $('.refPointer.design + div > div > aside:first-of-type + aside + aside + aside input:first-of-type'),
+                                        $color: $('.refPointer.design + div > div > aside:first-of-type + aside + aside + aside input[type=color]'),
+                                        $opacity: $('.refPointer.design + div > div > aside:first-of-type + aside + aside + aside input[type=color] ~ input')
                                     },
                                     shadow: {
                                         $visible: $('#rsRefPointerChk3020-201f0'),
-                                        $color: $(".refPointer.design + div > div > aside:last-of-type input[type=color]"),
-                                        $ranges: $(".refPointer.design + div > div > aside:last-of-type input[type=range]"),
-                                        $opacity: $(".refPointer.design + div > div > aside:last-of-type input[type=range]").eq(1)
+                                        $color: $('.refPointer.design + div > div > aside:last-of-type input[type=color]'),
+                                        $ranges: $('.refPointer.design + div > div > aside:last-of-type input[type=range]'),
+                                        $opacity: $('.refPointer.design + div > div > aside:last-of-type input[type=range]').eq(1)
                                     },
                                     defs: {
-                                        $normal: $("#rsRefPMarkerPointer path, #rsRefPMarkerPointer2 path, #rsRefPMarkerCircle circle, #rsRefPMarkerRect rect"),
-                                        $shadow: $("#rsRefPfMarkerPointer path, #rsRefPfMarkerPointer2 path, #rsRefPfMarkerCircle circle, #rsRefPfMarkerRect rect")
+                                        $normal: $('#rsRefPMarkerPointer path, #rsRefPMarkerPointer2 path, #rsRefPMarkerCircle circle, #rsRefPMarkerRect rect'),
+                                        $shadow: $('#rsRefPfMarkerPointer path, #rsRefPfMarkerPointer2 path, #rsRefPfMarkerCircle circle, #rsRefPfMarkerRect rect')
                                     }
                                 },
                                 $previewPolyline = $('polyline', designMode.UI.menu.$popupProperties),
@@ -1553,7 +1554,7 @@
                     }
                 },
                 isObj: function (obj) {
-                    return obj !== null && obj !== undefined && typeof obj === "object";
+                    return obj !== null && obj !== undefined && typeof obj === 'object';
                 },
                 areTheSame: function (prop, value1, value2) {
                     if (prop === 'color') {
@@ -1584,7 +1585,22 @@
                 },
                 getCode: function () {
                     data.points.refreshPositions(true);
-                    var allOpts = $.extend(true, {}, opts);
+                    var allOpts = $.extend(true, {}, opts),
+                        pushPointFunc = {
+                            polyline: function (pnt) {
+                                arrowOpts.mid.push(pnt.x, pnt.y);
+                            },
+                            bezierQ: function (pnt, index) {
+                                if (index < 2 || index % 2 === 1) {
+                                    arrowOpts.mid.push(pnt.x, pnt.y);
+                                }
+                            },
+                            bezierC: function (pnt, index) {
+                                if (index < 3 || index % 3 !== 0) {
+                                    arrowOpts.mid.push(pnt.x, pnt.y);
+                                }
+                            }
+                        };
                     this.getObjDiff('', allOpts, $.fn.rsRefPointer.defaults);
                     allOpts.arrows = [];
                     for (var index in data.arrowTypes) {
@@ -1604,21 +1620,6 @@
                                         data.points.layout.size[index].width,
                                         data.points.layout.size[index].height
                                     ]
-                                },
-                                pushPointFunc = {
-                                    polyline: function (pnt) {
-                                        arrowOpts.mid.push(pnt.x, pnt.y);
-                                    },
-                                    bezierQ: function (pnt, index) {
-                                        if (index < 2 || index % 2 === 1) {
-                                            arrowOpts.mid.push(pnt.x, pnt.y);
-                                        }
-                                    },
-                                    bezierC: function (pnt, index) {
-                                        if (index < 3 || index % 3 !== 0) {
-                                            arrowOpts.mid.push(pnt.x, pnt.y);
-                                        }
-                                    }
                                 },
                                 func = pushPointFunc[data.arrowTypes[index]];
                             if (func) {
@@ -1754,7 +1755,7 @@
                 // This is no more a line, since a mid point was added. So, change the arrow from line to polyline
                 DOM.replaceArrow(arrowIdx);
             }
-        },
+        };
         DOM.polyline = {
             addPoint: function (arrowIdx, midPoints, sets) {
                 var pts = data.points,
@@ -1819,7 +1820,7 @@
                     DOM.replaceArrow(arrowIdx);
                 }
             }
-        },
+        };
         DOM.bezier = {
             controlLines: [],
             createControlLine: function (attrs, active) {
