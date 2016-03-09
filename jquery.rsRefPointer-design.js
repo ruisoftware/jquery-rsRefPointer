@@ -352,6 +352,7 @@
                                         '-ms-user-select: none;' +
                                         '-webkit-user-select: none;' +
                                         'user-select: none;' +
+                                        'z-index: 9999;' +
                                     '}' +
                                     'menu.refPointer.design menu {' +
                                         'display: none;' +
@@ -478,6 +479,7 @@
                                         'padding: 10px;' +
                                         'background-color: #eee;' +
                                         'box-shadow: 0 0 10px 2px black;' +
+                                        'z-index: 9999;' +
                                     '}' +
                                     'menu.refPointer.design + div + div > div {' +
                                         'margin-left: -400px;' +

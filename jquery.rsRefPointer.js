@@ -680,14 +680,14 @@
                 replaceArrow: function (index) {
                     this.createOrReplaceArrow(index, opts.shadow.visible, data.outline, true, true);
                 },
-                show: function () {
-                    this.doShowHide(true);
+                show: function (noDelay) {
+                    this.doShowHide(true, noDelay);
                 },
-                hide: function () {
-                    this.doShowHide(false);
+                hide: function (noDelay) {
+                    this.doShowHide(false, noDelay);
                 },
-                doShowHide: function (isShowing) {
-                    var opacityDelay = isShowing ? opts.opacityTimeShowing : opts.opacityTimeHidding,
+                doShowHide: function (isShowing, noDelay) {
+                    var opacityDelay = noDelay === true ? 0 : (isShowing ? opts.opacityTimeShowing : opts.opacityTimeHidding),
                         done = function () {
                             /*jshint -W030 */
                             isShowing ? DOM.$svg.css('opacity', 1).show() : DOM.$svg.css('opacity', 0).hide();
@@ -714,14 +714,14 @@
                         events.hideTimeoutId = null;
                     }
                 },
-                onShowByMouse: function () {
+                onShowByMouse: function (noDelay) {
                     events.clearHideTimeout();
                     var show = function () {
                             events.showTimeoutId = null;
                             data.points.refreshPositions();
-                            DOM.show();
+                            DOM.show(noDelay);
                         },
-                        delay = opts.showAfter || 0;
+                        delay = noDelay === true ? 0 : (opts.showAfter || 0);
                     if (delay) {
                         events.clearShowTimeout();
                         events.showTimeoutId = setTimeout(show, delay);
@@ -729,13 +729,13 @@
                         show();
                     }
                 },
-                onHideByMouse: function () {
+                onHideByMouse: function (noDelay) {
                     events.clearShowTimeout();
                     var hide = function () {
                             events.hideTimeoutId = null;
-                            DOM.hide();
+                            DOM.hide(noDelay);
                         },
-                        delay = opts.hideAfter || 0;
+                        delay = noDelay === true ? 0 : (opts.hideAfter || 0);
                     if (delay) {
                         events.clearHideTimeout();
                         events.hideTimeoutId = setTimeout(hide, delay);
@@ -746,13 +746,13 @@
                 onShow: function () {
                     if (DOM.$svg.css('display') === 'none') {
                         events.unbindMouseFocusEvents();
-                        events.onShowByMouse();
+                        events.onShowByMouse(true);
                     }
                 },
                 onHide: function () {
                     if (DOM.$svg.css('display') !== 'none') {
                         events.bindMouseFocusEvents();
-                        events.onHideByMouse();
+                        events.onHideByMouse(true);
                     }
                 },
                 onDestroy: function () {
@@ -822,13 +822,13 @@
 
     $.fn.rsRefPointer = function (options) {
         var show = function () {
-                this.trigger('show.rsRefPointer');
+                return this.trigger('show.rsRefPointer');
             },
             hide = function () {
-                this.trigger('hide.rsRefPointer');
+                return this.trigger('hide.rsRefPointer');
             },
             destroy = function () {
-                this.trigger('destroy.rsRefPointer');
+                return this.trigger('destroy.rsRefPointer');
             };
 
         if (typeof options === 'string') {
