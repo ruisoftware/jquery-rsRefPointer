@@ -33,79 +33,110 @@
                                    //   {x, y}. The following is an example for 3 arrows: one bezier, a straight line and a polyline.
                     mid: null,     // Array of arrays of middle points, if any. The inner array represents the middle points for each arrow,
                                    //   [ [{x, y}, {x, y}], [], [{x, y}] ]
-                    end: null,     // Array of indexes pointing to the allTargetPos positions. Each row ends in a point that is points.allTargetPos[points.end[i]] + points.layout.toOffset[i].
+                    end: null,     // Array of indexes pointing to the allTargetPos positions. Each arrow ends in a point that is points.allTargetPos[points.end[i]] + points.layout.toOffset[i].
                                    //   [targetIdx, targetIdx, targetIdx]
                     allTargetPos: null, // Position of all targets
-                                   //   [{x, y}, {x, y}, {x, y}]
-                    // The length of arrowTypes, mid, end, allTargetPos, layout.fromOffset, layout.toOffset, layout.topLeft, layout.bottomRight are always the same.
+                                        //   [{x, y}, {x, y}, {x, y}]
+                    
+                    // The length of arrowTypes, mid, end, layout.fromOffset, layout.toOffset, layout.topLeft, layout.size are always the same. They match the number of arrows.
+                    // The length of allTargetPos and endSize are always the same. They match the number of targets.
 
-                    initialFromSize: null, // {with, height} representing the dimensions of the start element.
+                    startSize: null,  // {with, height} representing the dimension of the start element.
+                    endSize: [],      // Array of to size {with, height}. Each element represents each target dimension.
 
                     // The below data structure is used to compute layout changes, i.e. if the from/to location changes, the arrows should follow these elements.
                     layout: {
-                        fromOffset: [],   // Array of offsets {dx, dy}. Each arrow starting point is points.start + points.layout.fromOffset[i]
-                        toOffset: [],     // Array of offsets {dx, dy}. Each arrow ending point is points.allTargetPos[points.end[i]] + points.layout.toOffset[i]
+                        fromOffset: [[], []], // Array with two elements. Represents the start point for each arrow.
+                                              // The first element is an Array of absolute offsets {dx, dy}.
+                                              // The second element is an Array of relative offsets {dx, dy}.
+                        toOffset: [[], []],   // Array with two elements.  Represents the end point for each arrow.
+                                              // The first element is an Array of absolute offsets {dx, dy}.
+                                              // The second element is an Array of relative offsets {dx, dy}.
 
                         topLeft: [],      // Array of {x, y}. Top left of the box that contains both start and end points
                         size: [],         // Array of {width, height}. Dimension of the box that contains both start and end points
 
-                        fromRelativeOffset: [], // Array of boolean. false: The fromOffset is in absolute pixels; true: The fromOffset is in relative pixels, relatively to the initialFromSize
-                        toRelativeOffset: [],   // Array of boolean. false: The fromOffset is in absolute pixels; true: The fromOffset is in relative pixels, relatively to the initialFromSize
-                        initialToSize: []       // Array of to size {with, height}. This size is readonly and is set at initialization time.
+                        fromRelativeOffset: [], // Array of boolean. false: The fromOffset is in absolute pixels; true: The fromOffset is in relative pixels
+                        toRelativeOffset: [],   // Array of boolean. false: The fromOffset is in absolute pixels; true: The fromOffset is in relative pixels
+                        getFromOffsetX: function (idx, size) {
+                            return this.fromRelativeOffset[idx] ? this.fromOffset[1][idx].dx*size.width : this.fromOffset[0][idx].dx;
+                        },
+                        getFromOffsetY: function (idx, size) {
+                            return this.fromRelativeOffset[idx] ? this.fromOffset[1][idx].dy*size.height : this.fromOffset[0][idx].dy;
+                        },
+                        getToOffsetX: function (idx, size) {
+                            return this.toRelativeOffset[idx] ? this.toOffset[1][idx].dx*size.width : this.toOffset[0][idx].dx;
+                        },
+                        getToOffsetY: function (idx, size) {
+                            return this.toRelativeOffset[idx] ? this.toOffset[1][idx].dy*size.height : this.toOffset[0][idx].dy;
+                        }
                     },
-                    getElementOffset: function ($element) {
-                        var pos = ($element || $elem).offset();
+                    getElementRect: function ($element) {
+                        var clientRect = ($element || $elem)[0].getBoundingClientRect();
                         return {
-                            x: Math.round(pos.left),
-                            y: Math.round(pos.top)
+                            x: clientRect.left,
+                            y: clientRect.top,
+                            width: clientRect.width,
+                            height: clientRect.height
+                        }
+                    },
+                    getElementPos: function ($element) {
+                        var rect = this.getElementRect($element);
+                        return {
+                            x: Math.round(rect.x),
+                            y: Math.round(rect.y)
                         };
                     },
                     getElementSize: function ($element) {
-                        var $e = $element || $elem;
+                        var rect = this.getElementRect($element);
                         return {
-                            width: $e.width(),
-                            height: $e.height()
+                            width: rect.width,
+                            height: rect.height
                         };
                     },
-                    getElementCenterPos: function ($element) {
-                        var $e = $element || $elem;
+                    getElementCenterPos: function ($element, size) {
+                        var rect = size || this.getElementRect($element);
                         return {
-                            dx: Math.round($e.width()/2),
-                            dy: Math.round($e.height()/2)
+                            dx: Math.round(rect.width/2*100)/100,
+                            dy: Math.round(rect.height/2*100)/100
                         };
                     },
                     getTargetOffsets: function () {
                         return data.$targets.map(function () {
-                            return data.points.getElementOffset($(this));
+                            return data.points.getElementPos($(this));
                         });
                     },
                     refreshPositions: function (onlyUpdateArrowBounds, resizeDesignTime) {
-                        var newStartPos = this.getElementOffset(),
-                            newStartSize = this.getElementSize(),
-                            startPosChanged = !util.samePoint(this.start, newStartPos),
-                            startSizeChanged = !util.sameDimension(this.initialFromSize, newStartSize),
+                        var newStartRect = this.getElementRect(),
+                            startPosChanged = !util.samePoint(this.start, newStartRect),
+                            startSizeChanged = !util.sameDimension(this.startSize, newStartRect),
                             newTargetPositions = this.getTargetOffsets(),
                             pts = this,
                             changesDone = false;
 
-                        this.start = newStartPos;
+                        this.start.x = newStartRect.x;
+                        this.start.y = newStartRect.y;
+                        this.startSize.width = newStartRect.width;
+                        this.startSize.height = newStartRect.height;
+
                         this.end.forEach(function (targetIdx, index) {
                             var newTargetPos = newTargetPositions[targetIdx],
                                 newTargetSize = pts.getElementSize(data.$targets.eq(targetIdx)),
                                 posOrSizeChanged = startPosChanged ||
                                     startSizeChanged && pts.layout.fromRelativeOffset[index] ||
                                     !util.samePoint(pts.allTargetPos[targetIdx], newTargetPos) ||
-                                    pts.layout.toRelativeOffset[index] && !util.sameDimension(pts.layout.initialToSize[targetIdx], newTargetSize);
+                                    pts.layout.toRelativeOffset[index] && !util.sameDimension(pts.endSize[targetIdx], newTargetSize);
                             changesDone = changesDone || posOrSizeChanged;
                             if (posOrSizeChanged || onlyUpdateArrowBounds) {
-                                var newStartPnt = pts.getStartPoint(index, newStartSize),
+                                pts.endSize[targetIdx] = newTargetSize;
+                                var newStartPnt = pts.getStartPoint(index, newStartRect),
                                     newEndPnt = pts.getEndPoint(newTargetPos, index, newTargetSize),
                                     newTopLeft = pts.layout.topLeft[index],
                                     newSize = pts.layout.size[index];
-                                newTopLeft.x = Math.min(newStartPnt.x, newEndPnt.x);
-                                newTopLeft.y = Math.min(newStartPnt.y, newEndPnt.y);
-                                newSize.width = Math.max(newStartPnt.x, newEndPnt.x) - newTopLeft.x;
-                                newSize.height = Math.max(newStartPnt.y, newEndPnt.y) - newTopLeft.y;
+                                newTopLeft.x = Math.round(Math.min(newStartRect.x, newEndPnt.x)*100)/100;
+                                newTopLeft.y = Math.round(Math.min(newStartRect.y, newEndPnt.y)*100)/100;
+                                newSize.width = Math.round((Math.max(newStartRect.x, newEndPnt.x) - newTopLeft.x)*100)/100;
+                                newSize.height = Math.round((Math.max(newStartRect.y, newEndPnt.y) - newTopLeft.y)*100)/100;
                             }
                         });
                         this.allTargetPos = newTargetPositions;
@@ -136,22 +167,21 @@
 
                         if (lastTarget > -1) {
                             // index is not used in the function below, but is required by the each signature
-                            $elem.add(data.$targets).each(function (index, e) {
-                                var $e = $(e);
+                            $elem.add(data.$targets).each(function () {
+                                var $e = $(this);
                                 if ($e.css('white-space') !== 'nowrap') {
                                     $e.css('white-space', 'nowrap');
                                 }
                             });
 
-                            this.start = this.getElementOffset();
+                            this.start = this.getElementPos();
                             this.mid = [];
                             this.end = [];
                             this.allTargetPos = this.getTargetOffsets();
-
-                            this.initialFromSize = opts.fromSize instanceof Array && opts.fromSize.length === 2 ? {
-                                width: opts.fromSize[0],
-                                height: opts.fromSize[1]
-                            } : this.getElementSize();
+                            this.startSize = this.getElementSize();
+                            data.$targets.each(function (index) {
+                                pts.endSize.push(pts.getElementSize($(this)));
+                            });
 
                             if (opts.arrows && opts.arrows instanceof Array && opts.arrows.length > 0) {
                                 opts.arrows.forEach(function (arrow, index) {
@@ -182,10 +212,20 @@
                                     }
 
                                     if (arrow.offset === undefined || arrow.offset === null) {
-                                        arrow.offset = [0, 0, 0, 0];
+                                        arrow.offset = [[0, 0, 0, 0], [0, 0, 0, 0]];
                                     }
-                                    if (!(arrow.offset instanceof Array) || arrow.offset.length !== 4) {
-                                        util.error('Invalid arrows[' + index + '].offset! Should be an Array with 4 integers.');
+                                    if (!(arrow.offset instanceof Array) || arrow.offset.length !== 2) {
+                                        util.error('Invalid arrows[' + index + '].offset! Should be an Array with 2 Arrays.');
+                                        return;
+                                    }
+
+                                    if (!(arrow.offset[0] instanceof Array) || arrow.offset[0].length !== 4) {
+                                        util.error('Invalid arrows[' + index + '].offset[0]! Should be an Array with 4 numbers.');
+                                        return;
+                                    }
+
+                                    if (!(arrow.offset[1] instanceof Array) || arrow.offset[1].length !== 4) {
+                                        util.error('Invalid arrows[' + index + '].offset[1]! Should be an Array with 4 numbers.');
                                         return;
                                     }
 
@@ -218,20 +258,28 @@
                                     }
 
                                     data.arrowTypes.push(arrow.type);
-                                    pts.layout.fromOffset.push({
-                                        dx: arrow.offset[0],
-                                        dy: arrow.offset[1]
+                                    // absolute fromOffset
+                                    pts.layout.fromOffset[0].push({
+                                        dx: arrow.offset[0][0],
+                                        dy: arrow.offset[0][1]
                                     });
-                                    pts.layout.toOffset.push({
-                                        dx: arrow.offset[2],
-                                        dy: arrow.offset[3]
+                                    // absolute toOffset
+                                    pts.layout.toOffset[0].push({
+                                        dx: arrow.offset[0][2],
+                                        dy: arrow.offset[0][3]
                                     });
-                                    pts.layout.fromRelativeOffset.push(arrow.fromRelativeOffset === true);
-                                    pts.layout.toRelativeOffset.push(arrow.toRelativeOffset === true);
-                                    pts.layout.initialToSize.push({
-                                        width: arrow.size[2],
-                                        height: arrow.size[3]
+                                    // relative fromOffset
+                                    pts.layout.fromOffset[1].push({
+                                        dx: arrow.offset[1][0],
+                                        dy: arrow.offset[1][1]
                                     });
+                                    // relative toOffset
+                                    pts.layout.toOffset[1].push({
+                                        dx: arrow.offset[1][2],
+                                        dy: arrow.offset[1][3]
+                                    });
+                                    pts.layout.fromRelativeOffset.push(arrow.sourceRelativeOffset === true);
+                                    pts.layout.toRelativeOffset.push(arrow.targetRelativeOffset === true);
 
                                     if (arrow.type === 'line') {
                                         pts.mid.push([]);
@@ -242,8 +290,8 @@
                                             // and 50% (of size.height) below topLeft.y. Using relative middle points allows an efficient and simple way to repositionate these points,
                                             // when the start and end points change (when size and topLeft changes)
                                             midPoints.push({
-                                                x: util.isZero(arrow.bounds[2]) ? 0 : (arrow.mid[i] - arrow.bounds[0]) / arrow.bounds[2],
-                                                y: util.isZero(arrow.bounds[3]) ? 0 : (arrow.mid[i + 1] - arrow.bounds[1]) / arrow.bounds[3]
+                                                x: util.isZero(arrow.bounds[2]) ? 0 : (arrow.mid[i] - arrow.bounds[0])/arrow.bounds[2],
+                                                y: util.isZero(arrow.bounds[3]) ? 0 : (arrow.mid[i + 1] - arrow.bounds[1])/arrow.bounds[3]
                                             });
                                         }
                                         if (opts.processMidPoints) {
@@ -262,58 +310,50 @@
                                     });
                                 });
                             } else {
-                                var fromOffset = this.getElementCenterPos(),
-                                    topLeft;
+                                var fromOffset = this.getElementCenterPos();
                                 data.$targets.each(function (index) {
                                     data.arrowTypes.push('line');
-                                    pts.layout.fromOffset.push({
-                                        dx: fromOffset.dx,
-                                        dy: fromOffset.dy
-                                    });
-                                    var $target = $(this);
-                                    pts.layout.toOffset.push(pts.getElementCenterPos($target));
+                                    pts.layout.fromOffset[0].push({ dx: fromOffset.dx, dy: fromOffset.dy });
+                                    pts.layout.fromOffset[1].push({ dx: 0.5, dy: 0.5 });
+                                    var $target = $(this),
+                                        destSize = pts.getElementSize($target),
+                                        from, to;
+                                    pts.layout.toOffset[0].push(pts.getElementCenterPos($target, destSize));
+                                    pts.layout.toOffset[1].push({ dx: 0.5, dy: 0.5 });
+                                    from = {
+                                        x: pts.start.x + fromOffset.dx,
+                                        y: pts.start.y + fromOffset.dy
+                                    };
+                                    to = {
+                                        x: pts.allTargetPos[index].x + pts.layout.getToOffsetX(index, destSize),
+                                        y: pts.allTargetPos[index].y + pts.layout.getToOffsetY(index, destSize)
+                                    };
                                     pts.mid.push([]);
                                     pts.end.push(index);
-                                    topLeft = {
-                                        x: Math.min(pts.start.x + fromOffset.dx,
-                                                    pts.allTargetPos[index].x + pts.layout.toOffset[index].dx),
-                                        y: Math.min(pts.start.y + fromOffset.dy,
-                                                    pts.allTargetPos[index].y + pts.layout.toOffset[index].dy)
-                                    };
-                                    pts.layout.topLeft.push(topLeft);
+                                    pts.layout.topLeft.push({
+                                        x: Math.min(from.x, to.x),
+                                        y: Math.min(from.y, to.y)
+                                    });
                                     pts.layout.size.push({
-                                        width: Math.max(pts.start.x + fromOffset.dx,
-                                                        pts.allTargetPos[index].x + pts.layout.toOffset[index].dx) - topLeft.x,
-                                        height: Math.max(pts.start.y + fromOffset.dy,
-                                                         pts.allTargetPos[index].y + pts.layout.toOffset[index].dy) - topLeft.y
+                                        width: Math.max(from.x, to.x) - Math.min(from.x, to.x),
+                                        height: Math.max(from.y, to.y) - Math.min(from.y, to.y)
                                     });
                                     pts.layout.fromRelativeOffset.push(false);
                                     pts.layout.toRelativeOffset.push(false);
-                                    pts.layout.initialToSize.push(pts.getElementSize($target));
                                 });
                             }
                             return true;
                         }
                         return false;
                     },
-                    getPoint: function (pos, index, currSize, originalSize, offset, isRelative) {
-                        if (isRelative) {
-                            return {
-                                x: pos.x + (util.isZero(originalSize.width) ? 0 : currSize.width/originalSize.width)*offset.dx,
-                                y: pos.y + (util.isZero(originalSize.height) ? 0 : currSize.height/originalSize.height)*offset.dy
-                            }
-                        }
-                        return {
-                            x: pos.x + offset.dx,
-                            y: pos.y + offset.dy
-                        };
-                    },
                     getStartPoint: function (index, currSize) {
-                        var isRelative = this.layout.fromRelativeOffset[index];
-                        if (isRelative && !currSize) {
+                        if (this.layout.fromRelativeOffset[index] && !currSize) {
                             currSize = this.getElementSize();
                         }
-                        return this.getPoint(this.start, index, currSize, this.initialFromSize, this.layout.fromOffset[index], isRelative);
+                        return {
+                            x: this.start.x + this.layout.getFromOffsetX(index, currSize),
+                            y: this.start.y + this.layout.getFromOffsetY(index, currSize)
+                        };
                     },
                     getMidPoint: function (relativePnt, index) {
                         var topLeft = this.layout.topLeft[index],
@@ -324,12 +364,13 @@
                         };
                     },
                     getEndPoint: function (endPos, index, currSize) {
-                        var isRelative = this.layout.toRelativeOffset[index],
-                            targetIdx = this.end[index];
-                        if (isRelative && !currSize) {
-                            currSize = this.getElementSize(data.$targets.eq(targetIdx));
+                        if (this.layout.toRelativeOffset[index] && !currSize) {
+                            currSize = this.getElementSize(data.$targets.eq(this.end[index]));
                         }
-                        return this.getPoint(endPos, index, currSize, this.layout.initialToSize[targetIdx], this.layout.toOffset[index], isRelative);
+                        return {
+                            x: endPos.x + this.layout.getToOffsetX(index, currSize),
+                            y: endPos.y + this.layout.getToOffsetY(index, currSize)
+                        };
                     }
                 },
                 getBoundsRect: opts.overrideGetBoundsRect || function () {
@@ -744,19 +785,38 @@
                     this.doShowHide(false, noDelay);
                 },
                 doShowHide: function (isShowing, noDelay) {
-                    var opacityDelay = noDelay === true ? 0 : (isShowing ? opts.opacityTimeShowing : opts.opacityTimeHidding),
+                    var opacityDelay = noDelay === true ? 0 : (isShowing ? opts.mouseHover.opacityTimeShowing : opts.mouseHover.opacityTimeHidding),
                         done = function () {
                             /*jshint -W030 */
                             isShowing ? DOM.$svg.css('opacity', 1).show() : DOM.$svg.css('opacity', 0).hide();
+                            if (isShowing) {
+                                $elem.addClass(opts.sourceClassVisible);
+                                data.$targets.addClass(opts.targetClassVisible);
+                            }
                         };
+                    this.$svg.stop(true);
+                    if (!isShowing) {
+                        $elem.removeClass(opts.sourceClassVisible);
+                        data.$targets.removeClass(opts.targetClassVisible);
+                    }
                     if (opacityDelay > 0) {
-                        this.$svg.stop(true).show().animate(isShowing ? { opacity: 1 } : { opacity: 0 }, opacityDelay, done);
+                        this.$svg.show().animate(isShowing ? { opacity: 1 } : { opacity: 0 }, opacityDelay, done);
                     } else {
                         done();
                     }
                 }
             },
             events = {
+                resizeTimeoutId: null,
+                resize: function () {
+                    if (events.resizeTimeoutId) {
+                        clearTimeout(events.resizeTimeoutId);
+                    }
+                    events.resizeTimeoutId = setTimeout(function () {
+                        data.points.refreshPositions();
+                        events.resizeTimeoutId = null;
+                    }, 150);
+                },
                 showTimeoutId: null,
                 clearShowTimeout: function () {
                     if (events.showTimeoutId) {
@@ -778,7 +838,7 @@
                             data.points.refreshPositions();
                             DOM.show(noDelay);
                         },
-                        delay = noDelay === true ? 0 : (opts.showAfter || 0);
+                        delay = noDelay === true ? 0 : (opts.mouseHover.showAfter || 0);
                     if (delay) {
                         events.clearShowTimeout();
                         events.showTimeoutId = setTimeout(show, delay);
@@ -792,7 +852,7 @@
                             events.hideTimeoutId = null;
                             DOM.hide(noDelay);
                         },
-                        delay = noDelay === true ? 0 : (opts.hideAfter || 0);
+                        delay = noDelay === true ? 0 : (opts.mouseHover.hideAfter || 0);
                     if (delay) {
                         events.clearHideTimeout();
                         events.hideTimeoutId = setTimeout(hide, delay);
@@ -804,12 +864,14 @@
                     if (DOM.$svg.css('display') === 'none') {
                         events.unbindMouseFocusEvents();
                         events.onShowByMouse(true);
+                        $(window).bind("resize", events.resize);
                     }
                 },
                 onHide: function () {
                     if (DOM.$svg.css('display') !== 'none') {
                         events.bindMouseFocusEvents();
                         events.onHideByMouse(true);
+                        $(window).unbind("resize", events.resize);
                     }
                 },
                 onDestroy: function () {
@@ -817,9 +879,11 @@
                     DOM.$svg.remove();
                 },
                 bindMouseFocusEvents: function () {
-                    $elem.
-                        bind('mouseenter.rsRefPointer focus.rsRefPointer', this.onShowByMouse).
-                        bind('mouseleave.rsRefPointer blur.rsRefPointer', this.onHideByMouse);
+                    if (opts.mouseHover.show) {
+                        $elem.
+                            bind('mouseenter.rsRefPointer focus.rsRefPointer', this.onShowByMouse).
+                            bind('mouseleave.rsRefPointer blur.rsRefPointer', this.onHideByMouse);
+                    }
                 },
                 bindAll: function () {
                     events.bindMouseFocusEvents();
@@ -829,9 +893,11 @@
                         bind('destroy.rsRefPointer', this.onDestroy);
                 },
                 unbindMouseFocusEvents: function () {
-                    $elem.
-                        unbind('mouseenter.rsRefPointer focus.rsRefPointer show.rsRefPointer', this.onShowByMouse).
-                        unbind('mouseleave.rsRefPointer blur.rsRefPointer', this.onHideByMouse);
+                    if (opts.mouseHover.show) {
+                        $elem.
+                            unbind('mouseenter.rsRefPointer focus.rsRefPointer show.rsRefPointer', this.onShowByMouse).
+                            unbind('mouseleave.rsRefPointer blur.rsRefPointer', this.onHideByMouse);
+                    }
                 },
                 unbindAll: function () {
                     events.unbindMouseFocusEvents();
@@ -915,6 +981,7 @@
             }
         }
         var opts = $.extend({}, $.fn.rsRefPointer.defaults, options);
+        opts.mouseHover = $.extend({}, $.fn.rsRefPointer.defaults.mouseHover, options ? options.mouseHover : options);
         opts.marker = $.extend({}, $.fn.rsRefPointer.defaults.marker, options ? options.marker : options);
         opts.stroke = $.extend({}, $.fn.rsRefPointer.defaults.stroke, options ? options.stroke : options);
         opts.outline = $.extend({}, $.fn.rsRefPointer.defaults.outline, options ? options.outline : options);
@@ -931,11 +998,19 @@
 
     // public access to the default input parameters
     $.fn.rsRefPointer.defaults = {
-        targetSelector: '.target',
-        showAfter: 50,              // Milliseconds it takes for the fadein animation to start
-        opacityTimeShowing: 50,     // Duration of the fadein animation
-        hideAfter: 150,             // Milliseconds it takes for the fadeout animation to start
-        opacityTimeHidding: 100,    // Duration of the fadeout animation
+        targetSelector: '.target',  // Selector for the target selector.
+        sourceClassVisible: 'refPointerSource',   // Class(es) added to the source elements, when the arrow becomes visible. They are removed once the arrow is hidden. Multiple classes are separated by a space. They are not prefixed by a dot.
+        targetClassVisible: 'refPointerTarget',   // Class(es) added to the target elements, when the arrow becomes visible. They are removed once the arrow is hidden. Multiple classes are separated by a space. They are not prefixed by a dot.
+        mouseHover: {
+            show: true,     // Whether arrows appear when the mouse overs the source element. Type: boolean.
+                            // true: The arrows appear when mouse overs the source element.
+                            // false: Nothing happens. The arrows do not appear when mouse overs the source element.
+                            //        The arrows only appear if the method 'show' is called: $refPointerObj.rsRefPointer('show');
+            showAfter: 50,              // Milliseconds it takes for the fadein animation to start. Use 0 for no delay. N/A if show is false.
+            opacityTimeShowing: 50,     // Duration of the fadein animation. Use 0 for no animation. N/A if show is false.
+            hideAfter: 100,             // Milliseconds it takes for the fadeout animation to start. Use 0 for no delay. N/A if show is false.
+            opacityTimeHidding: 100     // Duration of the fadeout animation. Use 0 for no animation. N/A if show is false.
+        },
         marker: {
             start: 'circle',
             mid: 'square',

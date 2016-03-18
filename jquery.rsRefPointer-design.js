@@ -16,13 +16,12 @@
             /*jshint -W030 */
             window.console && window.console.error ? window.console.error(msg) : window.alert('Error:\n\n' + msg);
         })('jquery.rsRefPointer.js not loaded!\nPlease, include jquery.rsRefPointer.js before jquery.rsRefPointer-design.js.');
-        return;
+        return this;
     }
     var defaults = runtime.defaults;
     $.fn.rsRefPointer = function (options) {
         if (typeof options === 'string') {
-            window.alert('Not allowed in design-time mode.');
-            return;
+            return this;
         }
         // Seems that this goes against all plug-in good practices, but in design mode, makes no sense at all to accept more than one element.
         // Design mode has a GUI. How could I display GUI for several instances simultaneously? I could implement some kind of tab control, but let's keep it simple.
@@ -36,7 +35,9 @@
                   'then edit previous line and re-run for the second instance:\n' +
                   '   $("a").eq(1).rsRefPointer();\n\n' +
                   'This restriction only applies in design-time mode.\nAt run-time mode, you can run multiple instances at once.');
-            return;
+        }
+        if (this.length !== 1) {
+            return this;
         }
 
         options = options || {};
@@ -52,7 +53,7 @@
         options.overrideShapeAttrsBezierQ = function (pts, index, util, shadeOffset) {
             return pts.mid[index].map(function (e, i) {
                 var point = pts.getMidPoint(e, index),
-                    pointStr = util.pointToStr(point, shadeOffset);
+                    pointStr = util.pointToStrMid(point, shadeOffset);
                 switch (i) {
                     case 0: return 'Q' + pointStr + ' ';
                     case 1: return pointStr + ' ';
@@ -63,7 +64,7 @@
         options.overrideShapeAttrsBezierC = function (pts, index, util, shadeOffset) {
             return pts.mid[index].map(function (e, i) {
                 var point = pts.getMidPoint(e, index),
-                    pointStr = util.pointToStr(point, shadeOffset);
+                    pointStr = util.pointToStrMid(point, shadeOffset);
                 switch (i) {
                     case 0: return 'C' + pointStr + ' ';
                     case 1:
@@ -72,23 +73,22 @@
                 } 
             }).join('');
         };
-
         options.processMidPoints = function (arrowType, midPoints) {
             var i, len;
             switch (arrowType) {
                 case 'bezierQ':
                     for (i = 2, len = midPoints.length; i < ++len; i += 2) {
                         midPoints.splice(i, 0, {
-                            x: 2*midPoints[i -  1].x - midPoints[i -  2].x,
-                            y: 2*midPoints[i -  1].y - midPoints[i -  2].y
+                            x: 2*midPoints[i - 1].x - midPoints[i - 2].x,
+                            y: 2*midPoints[i - 1].y - midPoints[i - 2].y
                         });
                     }
                     break;
                 case 'bezierC':
                     for (i = 3, len = midPoints.length; i < ++len; i += 3) {
                         midPoints.splice(i, 0, {
-                            x: 2*midPoints[i -  1].x - midPoints[i -  2].x,
-                            y: 2*midPoints[i -  1].y - midPoints[i -  2].y
+                            x: 2*midPoints[i - 1].x - midPoints[i - 2].x,
+                            y: 2*midPoints[i - 1].y - midPoints[i - 2].y
                         });
                     }
             }
@@ -117,6 +117,26 @@
                                         $e.attr('stroke-dasharray', designMode.UI.activeArrow.dasharray);
                                     });
                                     DOM.getArrow(this.idx).detach().insertBefore(this.$backgroundArrowsRect);
+
+                                    // flash destination target
+                                    var key = 'box-shadow',
+                                        value1 = '0 0 4px 2px black',
+                                        value2 = '0 0 4px 2px white',
+                                        $flashElem = data.$targets.eq(data.points.end[newIndex]),
+                                        oldValue = $flashElem.css(key);
+                                    $flashElem.css(key, value1),
+                                    setTimeout(function() {
+                                        $flashElem.css(key, value2);
+                                        setTimeout(function() {
+                                            $flashElem.css(key, value1);
+                                            setTimeout(function() {
+                                                $flashElem.css(key, value2);
+                                                setTimeout(function() {
+                                                    $flashElem.css(key, oldValue === 'none' ? '' : oldValue);
+                                                }, 50);
+                                            }, 100);
+                                        }, 50);
+                                    }, 100);
                                 }
                                 DOM.getArrow(newIndex).detach().insertAfter(this.$backgroundArrowsRect);
                                 designMode.UI.$points[newIndex].css('stroke-width', this.strokeSelected);
@@ -207,6 +227,14 @@
                                     '<a href="#">New Cubic Bezier</a>' +
                                     '<a href="#" class="disabled">Add Middle Point</a>' +
                                     '<ul></ul>' +
+                                    '<div>Snap to Grid' + 
+                                        '<select name="refPointerSnap">' +
+                                            '<option value="">None</option>' +
+                                            '<option value="5">5x5</option>' +
+                                            '<option value="10">10x10</option>' +
+                                            '<option value="20">20x20</option>' +
+                                        '</select>' +
+                                    '</div>' +
                                     '<a href="#">Arrow Properties</a>' +
                                     '<hr>' +
                                     '<a href="#">Generate Code</a>' +
@@ -363,6 +391,7 @@
                                         'border-bottom-right-radius: 20px 15px;' +
                                         'padding: 10px;' +
                                         'margin: 0;' +
+                                        'z-index: 0;' +
                                     '}' +
                                     'menu.refPointer.design:after {' +
                                         'content: "";' +
@@ -455,15 +484,26 @@
                                         'background-color: inherit;' +
                                         'cursor: default;' +
                                     '}' +
+                                    'menu.refPointer.design ul + div {' +
+                                        'font-size: 11px;' +
+                                        'padding: 5px 5px 10px;' +
+                                    '}' +
+                                    'menu.refPointer.design ul + div > select {' +
+                                        'background-color: #eee;' +
+                                        'font-size: 11px;' +
+                                        'position: relative;' +
+                                        'margin-left: 15px;' +
+                                    '}' +
                                     'menu.refPointer.design + div,' +
                                     'menu.refPointer.design + div + div {' +
                                         'display: none;' +
-                                        'position: absolute;' +
+                                        'position: fixed;' +
                                         'top: 0;' +
                                         'right: 0;' +
                                         'bottom: 0;' +
                                         'left: 0;' +
                                         'background-color: rgba(0, 0, 0, .5);' +
+                                        'z-index: 10000;' +
                                     '}' +
                                     'menu.refPointer.design + div > div,' +
                                     'menu.refPointer.design + div + div > div {' +
@@ -709,10 +749,13 @@
                                         'margin: 10px;' +
                                         'height: 305px;' +
                                         'overflow: auto;' +
+                                        'line-height: 1.2em;' +
+                                        'font-family: monospace;' +
                                     '}' +
                                     'menu.refPointer.design + div + div > div > button {' +
                                         'position: absolute;' +
                                         'right: 18px;' +
+                                        'bottom: 20px;' +
                                     '}' +
                                 '</style>'
                             );
@@ -861,13 +904,13 @@
                                     designMode.UI.addPoint();
                                 }
                             });
-                            $newLineLink.siblings('ul').next().click(function (e) {
+                            $newLineLink.siblings('ul').next().next().click(function (e) {
                                 e.preventDefault();
                                 initModel();
                                 data.currentOpts = $.extend(true, {}, opts);
                                 designMode.UI.menu.$popupProperties.show();
                             });
-                            $newLineLink.siblings('ul').next().next().next().click(function (e) {
+                            $newLineLink.siblings('ul').next().next().next().next().click(function (e) {
                                 e.preventDefault();
                                 generateCode.show();
                             });
@@ -1167,10 +1210,14 @@
                                 data.points.mid.push([]);
                         }
                         data.points.end.push(targetIdx);
-                        data.points.layout.fromOffset.push(data.points.getElementCenterPos());
-                        data.points.layout.toOffset.push(data.points.getElementCenterPos(data.$targets.eq(targetIdx)));
+                        data.points.layout.fromOffset[0].push(data.points.getElementCenterPos());
+                        data.points.layout.fromOffset[1].push({ dx: 0.5, dy: 0.5 });
+                        data.points.layout.toOffset[0].push(data.points.getElementCenterPos(data.$targets.eq(targetIdx)));
+                        data.points.layout.toOffset[1].push({ dx: 0.5, dy: 0.5 });
                         data.points.layout.topLeft.push({ x: 0, y: 0 });
                         data.points.layout.size.push({ width: 0, height: 0 });
+                        data.points.layout.fromRelativeOffset.push(false);
+                        data.points.layout.toRelativeOffset.push(false);
                         var lastArrowIdx = data.arrowTypes.length - 1;
                         DOM.createArrow(lastArrowIdx);
                         if (!virtual) {
@@ -1218,10 +1265,14 @@
                         data.arrowTypes.splice(arrowIdx, 1);
                         data.points.mid.splice(arrowIdx, 1);
                         data.points.end.splice(arrowIdx, 1);
-                        data.points.layout.fromOffset.splice(arrowIdx, 1);
-                        data.points.layout.toOffset.splice(arrowIdx, 1);
+                        data.points.layout.fromOffset[0].splice(arrowIdx, 1);
+                        data.points.layout.fromOffset[1].splice(arrowIdx, 1);
+                        data.points.layout.toOffset[0].splice(arrowIdx, 1);
+                        data.points.layout.toOffset[1].splice(arrowIdx, 1);
                         data.points.layout.topLeft.splice(arrowIdx, 1);
                         data.points.layout.size.splice(arrowIdx, 1);
+                        data.points.layout.fromRelativeOffset.splice(arrowIdx, 1);
+                        data.points.layout.toRelativeOffset.splice(arrowIdx, 1);
                         DOM.getArrow(arrowIdx).remove();
                         DOM.arrows.splice(arrowIdx, 1);
                         if (opts.shadow.visible) {
@@ -1240,8 +1291,10 @@
                             lastArrowIdx = data.arrowTypes.length - 1,
                             centerArrow = pts.getElementCenterPos(data.$targets.eq(targetIdx));
                         pts.end[lastArrowIdx] = targetIdx;
-                        pts.layout.toOffset[lastArrowIdx].dx = centerArrow.dx;
-                        pts.layout.toOffset[lastArrowIdx].dy = centerArrow.dy;
+                        pts.layout.toOffset[0][lastArrowIdx].dx = centerArrow.dx;
+                        pts.layout.toOffset[0][lastArrowIdx].dy = centerArrow.dy;
+                        pts.layout.toOffset[1][lastArrowIdx].dx = 0.5;
+                        pts.layout.toOffset[1][lastArrowIdx].dy = 0.5;
                         DOM.updateArrow(lastArrowIdx);
                     },
                     saveVirtualArrow: function () {
@@ -1251,8 +1304,8 @@
                         this.deleteArrow(data.arrowTypes.length - 1, true);
                     },
                     addStartEndControlPoints: function (pts, index) {
-                        var $startEndPoints = DOM.markers.getDesignModePoint(pts.start, index, index === 0, pts.layout.fromOffset).
-                                                add(DOM.markers.getDesignModePoint(pts.allTargetPos[pts.end[index]], index, index === 0, pts.layout.toOffset));
+                        var $startEndPoints = DOM.markers.getDesignModePoint(pts.start, index, index === 0, pts.layout.fromOffset[0]).
+                                                add(DOM.markers.getDesignModePoint(pts.allTargetPos[pts.end[index]], index, index === 0, pts.layout.toOffset[0]));
                         designMode.UI.$points.push($startEndPoints);
                         DOM.$svg.append($startEndPoints);
                         DOM.bezier.controlLines.push([]);
@@ -1275,8 +1328,8 @@
                             switch (data.arrowTypes[index]) {
                                 case 'bezierQ':
                                     $controlLine = DOM.bezier.createControlLine({
-                                        x1: (pnt === 0 ? pts.start.x + pts.layout.fromOffset[index].dx : midPnts[pnt - 1].x),
-                                        y1: (pnt === 0 ? pts.start.y + pts.layout.fromOffset[index].dy : midPnts[pnt - 1].y),
+                                        x1: (pnt === 0 ? pts.start.x + pts.layout.fromOffset[0][index].dx : midPnts[pnt - 1].x),
+                                        y1: (pnt === 0 ? pts.start.y + pts.layout.fromOffset[0][index].dy : midPnts[pnt - 1].y),
                                         x2: midPnts[pnt].x,
                                         y2: midPnts[pnt].y
                                     });
@@ -1285,10 +1338,10 @@
                                     if (pnt === 0 || (pnt + 1) % 3 !== 0) {
                                         var isPrev = (pnt + 2) % 3 === 0;
                                         $controlLine = DOM.bezier.createControlLine({
-                                            x1: (pnt === 0 ? pts.start.x + pts.layout.fromOffset[index].dx : midPnts[pnt].x),
-                                            y1: (pnt === 0 ? pts.start.y + pts.layout.fromOffset[index].dy : midPnts[pnt].y),
-                                            x2: pnt === last ? pts.allTargetPos[pts.end[index]].x + pts.layout.toOffset[index].dx : midPnts[pnt === 0 ? 0 : (isPrev ? pnt + 1 : pnt - 1)].x,
-                                            y2: pnt === last ? pts.allTargetPos[pts.end[index]].y + pts.layout.toOffset[index].dy : midPnts[pnt === 0 ? 0 : (isPrev ? pnt + 1 : pnt - 1)].y
+                                            x1: (pnt === 0 ? pts.start.x + pts.layout.fromOffset[0][index].dx : midPnts[pnt].x),
+                                            y1: (pnt === 0 ? pts.start.y + pts.layout.fromOffset[0][index].dy : midPnts[pnt].y),
+                                            x2: pnt === last ? pts.allTargetPos[pts.end[index]].x + pts.layout.toOffset[0][index].dx : midPnts[pnt === 0 ? 0 : (isPrev ? pnt + 1 : pnt - 1)].x,
+                                            y2: pnt === last ? pts.allTargetPos[pts.end[index]].y + pts.layout.toOffset[0][index].dy : midPnts[pnt === 0 ? 0 : (isPrev ? pnt + 1 : pnt - 1)].y
                                         });
                                     }
                             }
@@ -1301,8 +1354,8 @@
                             $controlLine = DOM.bezier.createControlLine({
                                 x1: pts.mid[index][last].x,
                                 y1: pts.mid[index][last].y,
-                                x2: pts.allTargetPos[pts.end[index]].x + pts.layout.toOffset[index].dx,
-                                y2: pts.allTargetPos[pts.end[index]].y + pts.layout.toOffset[index].dy
+                                x2: pts.allTargetPos[pts.end[index]].x + pts.layout.toOffset[0][index].dx,
+                                y2: pts.allTargetPos[pts.end[index]].y + pts.layout.toOffset[0][index].dy
                             });
                             DOM.bezier.controlLines[index].push($controlLine);
                             DOM.$controlLinesSvgGroup.append($controlLine);
@@ -1335,15 +1388,20 @@
                             var dragInfo = designMode.UI.dragInfo,
                                 pts = data.points,
                                 offset;
+                            if (dragInfo.snap) {
+                                e.pageX = Math.round(e.pageX/dragInfo.snap)*dragInfo.snap;
+                                e.pageY = Math.round(e.pageY/dragInfo.snap)*dragInfo.snap;
+                            }
                             dragInfo.$point.attr({
                                 'cx': e.pageX,
                                 'cy': e.pageY
                             });
                             switch (dragInfo.pointType) {
                                 case 'start':
-                                    offset = pts.layout.fromOffset[designMode.UI.activeArrow.idx];
+                                    offset = pts.layout.fromOffset[0][designMode.UI.activeArrow.idx];
                                     offset.dx = e.pageX - pts.start.x;
-                                    offset.dy = e.pageY - pts.start.y; 
+                                    offset.dy = e.pageY - pts.start.y;
+                                    designMode.UI.updateRelativeFromOffset(designMode.UI.activeArrow.idx, offset);
                                     switch (data.arrowTypes[designMode.UI.activeArrow.idx]) {
                                         case 'bezierQ':
                                             DOM.bezier.Q.updateControlLines(designMode.UI.activeArrow.idx, 'start');
@@ -1398,9 +1456,10 @@
                                     }
                                     break;
                                 case 'end':
-                                    offset = pts.layout.toOffset[designMode.UI.activeArrow.idx];
+                                    offset = pts.layout.toOffset[0][designMode.UI.activeArrow.idx];
                                     offset.dx = e.pageX - pts.allTargetPos[pts.end[designMode.UI.activeArrow.idx]].x;
                                     offset.dy = e.pageY - pts.allTargetPos[pts.end[designMode.UI.activeArrow.idx]].y; 
+                                    designMode.UI.updateRelativeToOffset(designMode.UI.activeArrow.idx, offset);
                                     switch (data.arrowTypes[designMode.UI.activeArrow.idx]) {
                                         case 'bezierQ':
                                             DOM.bezier.Q.updateControlLines(designMode.UI.activeArrow.idx, 'end');
@@ -1435,6 +1494,19 @@
                             nextControlPoint.x,
                             nextControlPoint.y
                         );
+                    },
+                    updateRelativeFromOffset: function (index, absOffset) {
+                        var pts = data.points,
+                            relOffset = pts.layout.fromOffset[1][index];
+                        relOffset.dx = util.isZero(pts.startSize.width) ? 0 : Math.round(absOffset.dx/pts.startSize.width*100)/100;
+                        relOffset.dy = util.isZero(pts.startSize.height) ? 0 : Math.round(absOffset.dy/pts.startSize.height*100)/100;
+                    },
+                    updateRelativeToOffset: function (index, absOffset) {
+                        var pts = data.points,
+                            relOffset = pts.layout.toOffset[1][index],
+                            endSize = pts.endSize[pts.end[index]];
+                        relOffset.dx = util.isZero(endSize.width) ? 0 : Math.round(absOffset.dx/endSize.width*100)/100;
+                        relOffset.dy = util.isZero(endSize.height) ? 0 : Math.round(absOffset.dy/endSize.height*100)/100;
                     }
                 },
                 init: function () {
@@ -1458,11 +1530,11 @@
                                     if (pts.refreshPositions(false, true)) {
                                         pts.end.forEach(function (targetIdx, arrowIdx) {
                                             designMode.UI.$points[arrowIdx].eq(0).attr({
-                                                'cx': pts.start.x + pts.layout.fromOffset[arrowIdx].dx,
-                                                'cy': pts.start.y + pts.layout.fromOffset[arrowIdx].dy
+                                                'cx': pts.start.x + pts.layout.fromOffset[0][arrowIdx].dx,
+                                                'cy': pts.start.y + pts.layout.fromOffset[0][arrowIdx].dy
                                             }).end().eq(1).attr({
-                                                'cx': pts.allTargetPos[targetIdx].x + pts.layout.toOffset[arrowIdx].dx,
-                                                'cy': pts.allTargetPos[targetIdx].y + pts.layout.toOffset[arrowIdx].dy
+                                                'cx': pts.allTargetPos[targetIdx].x + pts.layout.toOffset[0][arrowIdx].dx,
+                                                'cy': pts.allTargetPos[targetIdx].y + pts.layout.toOffset[0][arrowIdx].dy
                                             });
                                             switch (data.arrowTypes[arrowIdx]) {
                                                 case 'bezierQ':
@@ -1477,7 +1549,7 @@
                                         });
                                     }
                                     pts.resizeTimeoutId = null;
-                                }, 500);
+                                }, 150);
                             };
                         DOM.$svg.css('pointer-events', '');
                         designMode.UI.activeArrow.$backgroundArrowsRect = DOM.createSvgDom('rect', {
@@ -1586,7 +1658,6 @@
                     }
                 },
                 getCode: function () {
-                    data.points.refreshPositions(true);
                     var allOpts = $.extend(true, {}, opts),
                         pushPointFunc = {
                             polyline: function (pnt) {
@@ -1602,31 +1673,47 @@
                                     arrowOpts.mid.push(pnt.x, pnt.y);
                                 }
                             }
-                        };
+                        },
+                        index,
+                        pts = data.points;
+                    pts.refreshPositions(true);
                     this.getObjDiff('', allOpts, $.fn.rsRefPointer.defaults);
+                    pts.startSize = pts.getElementSize();
+                    data.$targets.each(function (index) {
+                        pts.endSize[index] = pts.getElementSize($(this));
+                    });
                     allOpts.arrows = [];
-                    for (var index in data.arrowTypes) {
+                    for (index in data.arrowTypes) {
                         if (data.arrowTypes.hasOwnProperty(index)) {
+                            designMode.UI.updateRelativeFromOffset(index, pts.layout.fromOffset[0][index]);
+                            designMode.UI.updateRelativeToOffset(index, pts.layout.toOffset[0][index]);
                             var arrowOpts = {
                                     type: data.arrowTypes[index],
-                                    target: data.points.end[index],
-                                    offset: [
-                                        data.points.layout.fromOffset[index].dx,
-                                        data.points.layout.fromOffset[index].dy,
-                                        data.points.layout.toOffset[index].dx,
-                                        data.points.layout.toOffset[index].dy
-                                    ],
+                                    target: pts.end[index],
+                                    sourceRelativeOffset: pts.layout.fromRelativeOffset[index],
+                                    targetRelativeOffset: pts.layout.toRelativeOffset[index],
+                                    offset: [[
+                                        pts.layout.fromOffset[0][index].dx,
+                                        pts.layout.fromOffset[0][index].dy,
+                                        pts.layout.toOffset[0][index].dx,
+                                        pts.layout.toOffset[0][index].dy
+                                    ], [
+                                        pts.layout.fromOffset[1][index].dx,
+                                        pts.layout.fromOffset[1][index].dy,
+                                        pts.layout.toOffset[1][index].dx,
+                                        pts.layout.toOffset[1][index].dy
+                                    ]],
                                     bounds: [
-                                        data.points.layout.topLeft[index].x,
-                                        data.points.layout.topLeft[index].y,
-                                        data.points.layout.size[index].width,
-                                        data.points.layout.size[index].height
+                                        pts.layout.topLeft[index].x,
+                                        pts.layout.topLeft[index].y,
+                                        pts.layout.size[index].width,
+                                        pts.layout.size[index].height
                                     ]
                                 },
                                 func = pushPointFunc[data.arrowTypes[index]];
                             if (func) {
                                 arrowOpts.mid = [];
-                                data.points.mid[index].forEach(func);
+                                pts.mid[index].forEach(func);
                             }
                             allOpts.arrows.push(arrowOpts);
                         }
@@ -1637,7 +1724,7 @@
 
                         // remove the new line between [ and {
                         replace(/\[\s*{/gm, '[{').
-                        
+
                         // remove the new line between } and ] and also remove one indentation tab
                         replace(/^(\t*)\t}\s*\]/gm, '$1}]').
                         
@@ -1646,7 +1733,7 @@
 
                         // removes new lines after each array element. This causes all the array to be on a single line
                         replace(/\[((\s|\w|\.|-|,|\n)*)\]/g, function(match, g1) { return '[' + g1.replace(/\s*/g, '') + ']'; } ).
-                        
+
                         // insert the <pre> markup to emulate new lines inside the <code> element
                         replace(/{$/gm, '{</pre><pre>').
                         replace(/,$/gm, ',</pre><pre>').
@@ -1720,6 +1807,12 @@
                 if (arrowInfo) {
                     dragInfo.$point = $point;
                     dragInfo.pointType = arrowInfo.point === 0 ? 'start' : (arrowInfo.point === 1 ? 'end' : 'mid');
+                    dragInfo.snap = $("menu.refPointer.design ul + div > select").val();
+                    if (dragInfo.snap === "") {
+                        delete dragInfo.snap;
+                    } else {
+                        dragInfo.snap = + dragInfo.snap;
+                    }
                     designMode.UI.activeArrow.select(arrowInfo.arrow);
                     $point.css('cursor', 'none');
                     if (dragInfo.pointType === 'mid') {
@@ -1744,10 +1837,10 @@
             addPoint: function (arrowIdx, midPoints, sets) {
                 var pts = data.points,
                     newPnt = { // new point is the average of the first and last points
-                        x: (pts.start.x + pts.layout.fromOffset[arrowIdx].dx +
-                            pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[arrowIdx].dx)/2,
-                        y: (pts.start.y + pts.layout.fromOffset[arrowIdx].dy +
-                            pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[arrowIdx].dy)/2
+                        x: (pts.start.x + pts.layout.fromOffset[0][arrowIdx].dx +
+                            pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[0][arrowIdx].dx)/2,
+                        y: (pts.start.y + pts.layout.fromOffset[0][arrowIdx].dy +
+                            pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[0][arrowIdx].dy)/2
                     },
                     $controlPoint = DOM.markers.getDesignModePoint(newPnt, arrowIdx, true);
                 pts.mid[arrowIdx].push(newPnt);
@@ -1763,8 +1856,8 @@
                 var pts = data.points,
                     lastPntIdx = midPoints.length - 1,
                     newPnt = { // new point is the average of the last mid point with the last point
-                        x: (midPoints[lastPntIdx].x + pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[arrowIdx].dx)/2,
-                        y: (midPoints[lastPntIdx].y + pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[arrowIdx].dy)/2
+                        x: (midPoints[lastPntIdx].x + pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[0][arrowIdx].dx)/2,
+                        y: (midPoints[lastPntIdx].y + pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[0][arrowIdx].dy)/2
                     },
                     $controlPoint = DOM.markers.getDesignModePoint(newPnt, arrowIdx, true);
                 pts.mid[arrowIdx].push(newPnt);
@@ -1781,8 +1874,9 @@
             },
             deleteStartPoint: function (arrowIdx) {
                 var pts = data.points;
-                pts.layout.fromOffset[arrowIdx].dx = pts.mid[arrowIdx][0].x - pts.start.x;
-                pts.layout.fromOffset[arrowIdx].dy = pts.mid[arrowIdx][0].y - pts.start.y;
+                pts.layout.fromOffset[0][arrowIdx].dx = pts.mid[arrowIdx][0].x - pts.start.x;
+                pts.layout.fromOffset[0][arrowIdx].dy = pts.mid[arrowIdx][0].y - pts.start.y;
+                designMode.UI.updateRelativeFromOffset(arrowIdx, pts.layout.fromOffset[0][arrowIdx]);
                 pts.mid[arrowIdx].splice(0, 1);
                 designMode.UI.$points[arrowIdx].eq(0).remove();
                 var $newStartPoint = designMode.UI.$points[arrowIdx].eq(2).detach();
@@ -1798,8 +1892,9 @@
             deleteEndPoint: function (arrowIdx) {
                 var pts = data.points,
                     lastMid = pts.mid[arrowIdx].length - 1;
-                pts.layout.toOffset[arrowIdx].dx = pts.mid[arrowIdx][lastMid].x - pts.allTargetPos[pts.end[arrowIdx]].x;
-                pts.layout.toOffset[arrowIdx].dy = pts.mid[arrowIdx][lastMid].y - pts.allTargetPos[pts.end[arrowIdx]].y;
+                pts.layout.toOffset[0][arrowIdx].dx = pts.mid[arrowIdx][lastMid].x - pts.allTargetPos[pts.end[arrowIdx]].x;
+                pts.layout.toOffset[0][arrowIdx].dy = pts.mid[arrowIdx][lastMid].y - pts.allTargetPos[pts.end[arrowIdx]].y;
+                designMode.UI.updateRelativeToOffset(arrowIdx, pts.layout.toOffset[0][arrowIdx]);
                 pts.mid[arrowIdx].splice(lastMid, 1);
                 designMode.UI.$points[arrowIdx].eq(1).remove();
                 var $newEndPoint = designMode.UI.$points[arrowIdx].eq(lastMid + 2).detach();
@@ -1836,8 +1931,8 @@
                     var lastPntIdx = midPoints.length - 1,
                         pts = data.points,
                         newBezierPoint = { // new bezier point is the average of the last mid point with the last point
-                            x: (midPoints[lastPntIdx].x + pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[arrowIdx].dx)/2,
-                            y: (midPoints[lastPntIdx].y + pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[arrowIdx].dy)/2
+                            x: (midPoints[lastPntIdx].x + pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[0][arrowIdx].dx)/2,
+                            y: (midPoints[lastPntIdx].y + pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[0][arrowIdx].dy)/2
                         },
                         newControlPoint = {
                             x: 2*newBezierPoint.x - midPoints[lastPntIdx].x,
@@ -1852,8 +1947,8 @@
                         $controlLine = DOM.bezier.createControlLine({
                             x1: newPnt.x,
                             y1: newPnt.y,
-                            x2: pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[arrowIdx].dx,
-                            y2: pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[arrowIdx].dy
+                            x2: pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[0][arrowIdx].dx,
+                            y2: pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[0][arrowIdx].dy
                         }, true);
                     pts.mid[arrowIdx].push(newPnt);
                     designMode.UI.$points[arrowIdx] = designMode.UI.$points[arrowIdx].add($controlPoint);
@@ -1943,8 +2038,8 @@
                     DOM.bezier.controlLines[arrowIdx][lastPointerIdx + 1].attr({
                         x1: pts.mid[arrowIdx][lastPointerIdx].x,
                         y1: pts.mid[arrowIdx][lastPointerIdx].y,
-                        x2: pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[arrowIdx].dx,
-                        y2: pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[arrowIdx].dy
+                        x2: pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[0][arrowIdx].dx,
+                        y2: pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[0][arrowIdx].dy
                     });
                 },
                 deletePoint: function (arrowIdx, pntIndex) {
@@ -1962,8 +2057,9 @@
                 },
                 deleteStartPoint: function (arrowIdx) {
                     var pts = data.points;
-                    pts.layout.fromOffset[arrowIdx].dx = pts.mid[arrowIdx][1].x - pts.start.x;
-                    pts.layout.fromOffset[arrowIdx].dy = pts.mid[arrowIdx][1].y - pts.start.y;
+                    pts.layout.fromOffset[0][arrowIdx].dx = pts.mid[arrowIdx][1].x - pts.start.x;
+                    pts.layout.fromOffset[0][arrowIdx].dy = pts.mid[arrowIdx][1].y - pts.start.y;
+                    designMode.UI.updateRelativeFromOffset(arrowIdx, pts.layout.fromOffset[0][arrowIdx]);
                     pts.mid[arrowIdx].splice(0, 2);
                     designMode.UI.$points[arrowIdx].eq(0).remove();
                     designMode.UI.$points[arrowIdx].eq(2).remove();
@@ -1977,8 +2073,9 @@
                 },
                 deleteEndPoint: function (arrowIdx, lastMid) {
                     var pts = data.points;
-                    pts.layout.toOffset[arrowIdx].dx = pts.mid[arrowIdx][lastMid - 1].x - pts.allTargetPos[pts.end[arrowIdx]].x;
-                    pts.layout.toOffset[arrowIdx].dy = pts.mid[arrowIdx][lastMid - 1].y - pts.allTargetPos[pts.end[arrowIdx]].y;
+                    pts.layout.toOffset[0][arrowIdx].dx = pts.mid[arrowIdx][lastMid - 1].x - pts.allTargetPos[pts.end[arrowIdx]].x;
+                    pts.layout.toOffset[0][arrowIdx].dy = pts.mid[arrowIdx][lastMid - 1].y - pts.allTargetPos[pts.end[arrowIdx]].y;
+                    designMode.UI.updateRelativeToOffset(arrowIdx, pts.layout.toOffset[0][arrowIdx]);
                     pts.mid[arrowIdx].splice(lastMid - 1, 2);
                     designMode.UI.$points[arrowIdx].eq(1).remove();
                     designMode.UI.$points[arrowIdx].eq(lastMid + 2).remove();
@@ -2022,19 +2119,19 @@
                     var lastPntIdx = midPoints.length - 1,
                         pts = data.points,
                         endPoint = {
-                            x: pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[arrowIdx].dx,
-                            y: pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[arrowIdx].dy
+                            x: pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[0][arrowIdx].dx,
+                            y: pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[0][arrowIdx].dy
                         },
                         newBezierPoint = { // new bezier point is the average of the last four points (two last control points + two last anchor points)
                             x: (midPoints[lastPntIdx].x +
                                 midPoints[lastPntIdx - 1].x +
                                 endPoint.x +
-                                (lastPntIdx > 1 ? midPoints[lastPntIdx - 2].x : pts.start.x + pts.layout.fromOffset[arrowIdx].dx)
+                                (lastPntIdx > 1 ? midPoints[lastPntIdx - 2].x : pts.start.x + pts.layout.fromOffset[0][arrowIdx].dx)
                                 )/4,
                             y: (midPoints[lastPntIdx].y +
                                 midPoints[lastPntIdx - 1].y +
                                 endPoint.y +
-                                (lastPntIdx > 1 ? midPoints[lastPntIdx - 2].y : pts.start.y + pts.layout.fromOffset[arrowIdx].dy)
+                                (lastPntIdx > 1 ? midPoints[lastPntIdx - 2].y : pts.start.y + pts.layout.fromOffset[0][arrowIdx].dy)
                                 )/4
                         },
                         delta = {
@@ -2069,8 +2166,8 @@
                         $controlLine = createLine ? DOM.bezier.createControlLine({
                             x1: newPnt.x,
                             y1: newPnt.y,
-                            x2: lastMidPntIdx === null ? pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[arrowIdx].dx : pts.mid[arrowIdx][lastMidPntIdx].x,
-                            y2: lastMidPntIdx === null ? pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[arrowIdx].dy : pts.mid[arrowIdx][lastMidPntIdx].y
+                            x2: lastMidPntIdx === null ? pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[0][arrowIdx].dx : pts.mid[arrowIdx][lastMidPntIdx].x,
+                            y2: lastMidPntIdx === null ? pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[0][arrowIdx].dy : pts.mid[arrowIdx][lastMidPntIdx].y
                         }, true) : null;
                     pts.mid[arrowIdx].push(newPnt);
                     designMode.UI.$points[arrowIdx] = designMode.UI.$points[arrowIdx].add($controlPoint);
@@ -2130,8 +2227,8 @@
                     DOM.bezier.controlLines[arrowIdx][(lastPointerIdx + 2)/1.5 - 1].attr({
                         x1: pts.mid[arrowIdx][lastPointerIdx].x,
                         y1: pts.mid[arrowIdx][lastPointerIdx].y,
-                        x2: pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[arrowIdx].dx,
-                        y2: pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[arrowIdx].dy
+                        x2: pts.allTargetPos[pts.end[arrowIdx]].x + pts.layout.toOffset[0][arrowIdx].dx,
+                        y2: pts.allTargetPos[pts.end[arrowIdx]].y + pts.layout.toOffset[0][arrowIdx].dy
                     });
                 },
                 deletePoint: function (arrowIdx, pntIndex) {
@@ -2151,8 +2248,9 @@
                 },
                 deleteStartPoint: function (arrowIdx) {
                     var pts = data.points;
-                    pts.layout.fromOffset[arrowIdx].dx = pts.mid[arrowIdx][2].x - pts.start.x;
-                    pts.layout.fromOffset[arrowIdx].dy = pts.mid[arrowIdx][2].y - pts.start.y;
+                    pts.layout.fromOffset[0][arrowIdx].dx = pts.mid[arrowIdx][2].x - pts.start.x;
+                    pts.layout.fromOffset[0][arrowIdx].dy = pts.mid[arrowIdx][2].y - pts.start.y;
+                    designMode.UI.updateRelativeFromOffset(arrowIdx, pts.layout.fromOffset[0][arrowIdx]);
                     pts.mid[arrowIdx].splice(0, 3);
                     designMode.UI.$points[arrowIdx].eq(0).remove();
                     designMode.UI.$points[arrowIdx].slice(2, 4).remove();
@@ -2166,8 +2264,9 @@
                 },
                 deleteEndPoint: function (arrowIdx, lastMid) {
                     var pts = data.points;
-                    pts.layout.toOffset[arrowIdx].dx = pts.mid[arrowIdx][lastMid - 2].x - pts.allTargetPos[pts.end[arrowIdx]].x;
-                    pts.layout.toOffset[arrowIdx].dy = pts.mid[arrowIdx][lastMid - 2].y - pts.allTargetPos[pts.end[arrowIdx]].y;
+                    pts.layout.toOffset[0][arrowIdx].dx = pts.mid[arrowIdx][lastMid - 2].x - pts.allTargetPos[pts.end[arrowIdx]].x;
+                    pts.layout.toOffset[0][arrowIdx].dy = pts.mid[arrowIdx][lastMid - 2].y - pts.allTargetPos[pts.end[arrowIdx]].y;
+                    designMode.UI.updateRelativeToOffset(arrowIdx, pts.layout.toOffset[0][arrowIdx]);
                     pts.mid[arrowIdx].splice(lastMid - 2, 3);
                     designMode.UI.$points[arrowIdx].eq(1).remove();
                     designMode.UI.$points[arrowIdx].slice(lastMid + 1, lastMid + 3).remove();
@@ -2204,8 +2303,8 @@
             },
             updateBezierStartControlLine: function (pts, arrowIdx) {
                 this.controlLines[arrowIdx][0].attr({
-                    x1: pts.start.x + pts.layout.fromOffset[arrowIdx].dx,
-                    y1: pts.start.y + pts.layout.fromOffset[arrowIdx].dy,
+                    x1: pts.start.x + pts.layout.fromOffset[0][arrowIdx].dx,
+                    y1: pts.start.y + pts.layout.fromOffset[0][arrowIdx].dy,
                     x2: pts.mid[arrowIdx][0].x,
                     y2: pts.mid[arrowIdx][0].y
                 });
