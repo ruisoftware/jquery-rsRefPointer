@@ -146,6 +146,90 @@
                                     $e.removeAttr('stroke-dasharray');
                                 });
                             }
+                        },
+                        getOffsetRectData: function (from, toX, toY) {
+                            return {
+                                x: Math.min(from.x, toX) + 0.5,
+                                y: Math.min(from.y, toY) + 0.5,
+                                width: Math.abs(toX - from.x) + 0.5,
+                                height: Math.abs(toY - from.y) + 0.5
+                            };
+                        },
+                        getTextX: function (pts, toX) {
+                            if (designMode.UI.dragInfo.pointType === 'start') {
+                                if (pts.layout.fromRelativeOffset[this.idx]) {
+                                    return Math.round(util.isZero(pts.startSize.width) ? 0 : (toX - pts.start.x)/pts.startSize.width*100) + '%';
+                                }
+                                return Math.round(toX - pts.start.x) + 'px';
+                            }
+                            var endIdx = pts.end[this.idx];
+                            if (pts.layout.toRelativeOffset[this.idx]) {
+                                return Math.round(util.isZero(pts.endSize[endIdx].width) ? 0 : (toX - pts.allTargetPos[endIdx].x)/pts.endSize[endIdx].width*100) + '%';
+                            }
+                            return Math.round(toX - pts.allTargetPos[endIdx].x) + 'px';
+                        },
+                        getTextY: function (pts, toY) {
+                            if (designMode.UI.dragInfo.pointType === 'start') {
+                                if (pts.layout.fromRelativeOffset[this.idx]) {
+                                    return Math.round(util.isZero(pts.startSize.height) ? 0 : (toY - pts.start.y)/pts.startSize.height*100) + '%';
+                                }
+                                return Math.round(toY - pts.start.y) + 'px';
+                            }
+                            var endIdx = pts.end[this.idx];
+                            if (pts.layout.toRelativeOffset[this.idx]) {
+                                return Math.round(util.isZero(pts.endSize[endIdx].height) ? 0 : (toY - pts.allTargetPos[endIdx].y)/pts.endSize[endIdx].height*100) + '%';
+                            }
+                            return Math.round(toY - pts.allTargetPos[endIdx].y) + 'px';
+                        },
+                        showOffsetBox: function (toX, toY) {
+                            var pts = data.points,
+                                from = designMode.UI.dragInfo.pointType === 'start' ? pts.start : pts.allTargetPos[pts.end[this.idx]],
+                                attrs = this.getOffsetRectData(from, toX, toY),
+                                textAttrs = {
+                                    fill: 'rgba(255,0,0,.8)',
+                                    'font-family': 'monospace',
+                                    'font-size': '10',
+                                    'text-anchor': 'middle'
+                                };
+                            attrs.fill = 'rgba(255,0,0,.1)';
+                            this.$offsetRect = DOM.createSvgDom('rect', attrs).appendTo(DOM.$svg);
+                            this.$offsetTextX = DOM.createSvgDom('text', textAttrs).
+                                attr({
+                                    x: attrs.x + attrs.width/2,
+                                    y: attrs.y - 5
+                                }).
+                                text(this.getTextX(pts, toX)).
+                                appendTo(DOM.$svg);
+                            this.$offsetTextY = DOM.createSvgDom('text', textAttrs).
+                                attr({
+                                    x: attrs.x - 5,
+                                    y: attrs.y + attrs.height/2,
+                                    'writing-mode': 'tb',
+                                    'glyph-orientation-vertical': '45'
+                                }).
+                                text(this.getTextY(pts, toY)).
+                                appendTo(DOM.$svg);
+                        },
+                        updateOffsetBox: function (toX, toY) {
+                            var pts = data.points,
+                                from = designMode.UI.dragInfo.pointType === 'start' ? pts.start : pts.allTargetPos[pts.end[this.idx]],
+                                attrs = this.getOffsetRectData(from, toX, toY);
+                            this.$offsetRect.attr(attrs);
+                            this.$offsetTextX.attr({
+                                    x: attrs.x + attrs.width/2,
+                                    y: attrs.y - 5
+                                }).text(this.getTextX(pts, toX));
+                            this.$offsetTextY.attr({
+                                    x: attrs.x - 5,
+                                    y: attrs.y + attrs.height/2
+                                }).text(this.getTextY(pts, toY));
+                        },
+                        hideOffsetBox: function (x, y) {
+                            if (this.$offsetRect) {
+                                this.$offsetRect.remove();
+                                this.$offsetTextX.remove();
+                                this.$offsetTextY.remove();
+                            }
                         }
                     },
                     dragInfo: {
@@ -375,7 +459,7 @@
                                         'left: 5px;' +
                                         'top: 50px;' +
                                         'padding: 8px;' +
-                                        'width: 140px;' +
+                                        'width: 190px;' +
                                         '-moz-user-select: none;' +
                                         '-ms-user-select: none;' +
                                         '-webkit-user-select: none;' +
@@ -385,7 +469,7 @@
                                     'menu.refPointer.design menu {' +
                                         'display: none;' +
                                         'width: 85px;' +
-                                        'left: 156px;' +
+                                        'left: 206px;' +
                                         'border-radius: 0;' +
                                         'border-top-right-radius: 20px 15px;' +
                                         'border-bottom-right-radius: 20px 15px;' +
@@ -448,14 +532,15 @@
                                         'border: 3px solid #ddd;' +
                                         'border-width: 3px 0;' +
                                         'font-size: 10px;' +
-                                        'line-height: 14px;' +
+                                        'line-height: 16px;' +
+                                        'position: relative;' +
                                     '}' +
                                     'menu.refPointer.design ul li.selected {' +
                                         'background-color: #f7abab;' +
                                     '}' +
                                     'menu.refPointer.design ul li > a {' +
-                                        'display: none;' +
-                                        'float: right;' +
+                                        'display: inline-block;' +
+                                        'position: absolute;' +
                                         'border-radius: 2px;' +
                                         'color: black;' +
                                         'text-decoration: none;' +
@@ -464,17 +549,23 @@
                                         'line-height: 16px;' +
                                         'height: 14px;' +
                                     '}' +
+                                    'menu.refPointer.design ul li > a:last-child {' +
+                                        'display: none;' +
+                                        'right: 3px;' +
+                                    '}' +
                                     'menu.refPointer.design ul li:hover {' +
                                         'background-color: white;' +
                                     '}' +
                                     'menu.refPointer.design ul li.selected:hover {' +
                                         'background-color: #ed9494;' +
                                     '}' +
-                                    'menu.refPointer.design ul li:hover > a {' +
-                                        'display: block;' +
+                                    'menu.refPointer.design ul li:hover > a:last-child {' +
+                                        'display: inline-block;' +
                                     '}' +
                                     'menu.refPointer.design ul li > a:hover {' +
                                         'background-color: #ddd;' +
+                                    '}' +
+                                    'menu.refPointer.design ul li > a:last-child:hover {' +
                                         'color: red;' +
                                     '}' +
                                     'menu.refPointer.design > a.disabled {' +
@@ -483,6 +574,35 @@
                                     'menu.refPointer.design > a.disabled:hover {' +
                                         'background-color: inherit;' +
                                         'cursor: default;' +
+                                    '}' +
+                                    'menu.refPointer.design ul li > a:first-child,' +
+                                    'menu.refPointer.design ul li > a:first-child + a {' +
+                                        'right: 60px;' +
+                                        'font-family: monospace;' +
+                                        'width: 22px;' +
+                                        'height: 20px;' +
+                                        'top: 1px;' +
+                                        'font-size: 12px;' +
+                                        'line-height: 26px;' +
+                                    '}' +
+                                    'menu.refPointer.design ul li > a:first-child + a {' +
+                                        'right: 30px;' +
+                                    '}' +
+                                    'menu.refPointer.design ul li > a:first-child:before,' +
+                                    'menu.refPointer.design ul li > a:first-child + a:before {' +
+                                        'position: absolute;' +
+                                        'top: 2px;' +
+                                        'line-height: 8px;' +
+                                        'font-size: 8px;' +
+                                        'left: 0;' +
+                                        'right: 0;' +
+                                        'color: grey;' +
+                                    '}' +
+                                    'menu.refPointer.design ul li > a:first-child:before {' +
+                                        'content: "FROM";' +
+                                    '}' +
+                                    'menu.refPointer.design ul li > a:first-child + a:before {' +
+                                        'content: "TO";' +
                                     '}' +
                                     'menu.refPointer.design ul + div {' +
                                         'font-size: 11px;' +
@@ -1120,16 +1240,34 @@
                             return 'Arrow';
                         },
                         addArrowLink: function (idx) {
-                            var $a = $('<a href="#" title="Delete arrow">&#x2715;</a>'),
-                                $li = $('<li>').text(this.getArrowName(idx)).append($a);
+                            var $anchorFromOffset = $('<a href="#" title="Toggle between absolute/relative start offset">' + (data.points.layout.fromRelativeOffset[idx] ? '%' : 'px') + '</a>'),
+                                $anchorToOffset = $('<a href="#" title="Toggle between absolute/relative end offset">' + (data.points.layout.toRelativeOffset[idx] ? '%' : 'px') + '</a>'),
+                                $anchorDel = $('<a href="#" title="Delete arrow">&#x2715;</a>'),
+                                $li = $('<li>').text(this.getArrowName(idx)).append($anchorFromOffset).append($anchorToOffset).append($anchorDel);
                             $('ul', designMode.UI.menu.$menu).append($li);
                             $li.click(function (e) {
                                 e.preventDefault();
                                 designMode.UI.activeArrow.select($(this).index());
                             });
-                            $a.click(function (e) {
+                            $anchorDel.click(function (e) {
                                 e.preventDefault();
                                 designMode.UI.deleteArrow($(this).parent().index());
+                            });
+                            $anchorFromOffset.click(function (e) {
+                                e.preventDefault();
+                                var $this = $(this),
+                                    idx = $(this).parent().index(),
+                                    relOffsets = data.points.layout.fromRelativeOffset;
+                                relOffsets[idx] = !relOffsets[idx];
+                                $this.text(relOffsets[idx] ? '%' : 'px');
+                            });
+                            $anchorToOffset.click(function (e) {
+                                e.preventDefault();
+                                var $this = $(this),
+                                    idx = $(this).parent().index(),
+                                    relOffsets = data.points.layout.toRelativeOffset;
+                                relOffsets[idx] = !relOffsets[idx];
+                                $this.text(relOffsets[idx] ? '%' : 'px');
                             });
                         }
                     },
@@ -1370,6 +1508,7 @@
                             mousemove(this.movePoint).
                             mouseup(function () {
                                 designMode.UI.dragInfo.$point = designMode.UI.dragInfo.pointType = designMode.UI.dragInfo.midRef = designMode.UI.dragInfo.bezierAnchorPointDelta = null;
+                                designMode.UI.activeArrow.hideOffsetBox();
                             });
 
                         // insert point anchors to the DOM
@@ -1409,6 +1548,7 @@
                                         case 'bezierC':
                                             DOM.bezier.C.updateControlLines(designMode.UI.activeArrow.idx, 'start');
                                     }
+                                    designMode.UI.activeArrow.updateOffsetBox(e.pageX, e.pageY);
                                     break;
                                 case 'mid':
                                     dragInfo.midRef.x = e.pageX;
@@ -1467,6 +1607,7 @@
                                         case 'bezierC':
                                             DOM.bezier.C.updateControlLines(designMode.UI.activeArrow.idx, 'end');
                                     }
+                                    designMode.UI.activeArrow.updateOffsetBox(e.pageX, e.pageY);
                             }
                             DOM.updateArrow(designMode.UI.activeArrow.idx);
                         }
@@ -1530,11 +1671,11 @@
                                     if (pts.refreshPositions(false, true)) {
                                         pts.end.forEach(function (targetIdx, arrowIdx) {
                                             designMode.UI.$points[arrowIdx].eq(0).attr({
-                                                'cx': pts.start.x + pts.layout.fromOffset[0][arrowIdx].dx,
-                                                'cy': pts.start.y + pts.layout.fromOffset[0][arrowIdx].dy
+                                                'cx': pts.start.x + pts.layout.getFromOffsetX(arrowIdx, pts.startSize),
+                                                'cy': pts.start.y + pts.layout.getFromOffsetY(arrowIdx, pts.startSize)
                                             }).end().eq(1).attr({
-                                                'cx': pts.allTargetPos[targetIdx].x + pts.layout.toOffset[0][arrowIdx].dx,
-                                                'cy': pts.allTargetPos[targetIdx].y + pts.layout.toOffset[0][arrowIdx].dy
+                                                'cx': pts.allTargetPos[targetIdx].x + pts.layout.getToOffsetX(arrowIdx, pts.endSize[targetIdx]),
+                                                'cy': pts.allTargetPos[targetIdx].y + pts.layout.getToOffsetY(arrowIdx, pts.endSize[targetIdx])
                                             });
                                             switch (data.arrowTypes[arrowIdx]) {
                                                 case 'bezierQ':
@@ -1556,7 +1697,7 @@
                             x: 0,
                             y: 0
                         }).css({
-                            fill: 'rgba(255,255,255,.65)',
+                            fill: 'rgba(255,255,255,.75)',
                             'pointer-events': 'none'
                         }).appendTo(DOM.$svg);
                         $window.resize(doResize);
@@ -1807,13 +1948,34 @@
                 if (arrowInfo) {
                     dragInfo.$point = $point;
                     dragInfo.pointType = arrowInfo.point === 0 ? 'start' : (arrowInfo.point === 1 ? 'end' : 'mid');
-                    dragInfo.snap = $("menu.refPointer.design ul + div > select").val();
-                    if (dragInfo.snap === "") {
+                    dragInfo.snap = $('menu.refPointer.design ul + div > select').val();
+                    if (dragInfo.snap === '') {
                         delete dragInfo.snap;
                     } else {
                         dragInfo.snap = + dragInfo.snap;
                     }
                     designMode.UI.activeArrow.select(arrowInfo.arrow);
+                    if (dragInfo.pointType !== 'mid') {
+                        var pts = data.points,
+                            endIdx = pts.end[designMode.UI.activeArrow.idx],
+                            rect;
+                        switch (dragInfo.pointType) {
+                            case 'start':
+                                rect = pts.getElementRect();
+                                pts.start.x = rect.x;
+                                pts.start.y = rect.y;
+                                pts.startSize.width = rect.width;
+                                pts.startSize.height = rect.height;
+                                break;
+                            case 'end':
+                                rect = pts.getElementRect(data.$targets.eq(endIdx));
+                                pts.allTargetPos[endIdx].x = rect.x;
+                                pts.allTargetPos[endIdx].y = rect.y;
+                                pts.endSize[endIdx].width = rect.width;
+                                pts.endSize[endIdx].height = rect.height;
+                        }
+                        designMode.UI.activeArrow.showOffsetBox(e.pageX, e.pageY);
+                    }
                     $point.css('cursor', 'none');
                     if (dragInfo.pointType === 'mid') {
                         dragInfo.midIndex = arrowInfo.point - 2;
