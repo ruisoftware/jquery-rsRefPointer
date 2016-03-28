@@ -125,7 +125,10 @@
                                 posOrSizeChanged = startPosChanged ||
                                     startSizeChanged && pts.layout.fromRelativeOffset[index] ||
                                     !util.samePoint(pts.allTargetPos[targetIdx], newTargetPos) ||
-                                    pts.layout.toRelativeOffset[index] && !util.sameDimension(pts.endSize[targetIdx], newTargetSize);
+                                    pts.layout.toRelativeOffset[index] && !util.sameDimension(pts.endSize[targetIdx], newTargetSize),
+                                oldTopLeft = { x: pts.layout.topLeft[index].x, y: pts.layout.topLeft[index].y },
+                                oldSize = { width: pts.layout.size[index].width, height: pts.layout.size[index].height };
+
                             changesDone = changesDone || posOrSizeChanged;
                             if (posOrSizeChanged || onlyUpdateArrowBounds) {
                                 pts.endSize[targetIdx] = newTargetSize;
@@ -133,10 +136,13 @@
                                     newEndPnt = pts.getEndPoint(newTargetPos, index, newTargetSize),
                                     newTopLeft = pts.layout.topLeft[index],
                                     newSize = pts.layout.size[index];
-                                newTopLeft.x = Math.round(Math.min(newStartRect.x, newEndPnt.x)*100)/100;
-                                newTopLeft.y = Math.round(Math.min(newStartRect.y, newEndPnt.y)*100)/100;
-                                newSize.width = Math.round((Math.max(newStartRect.x, newEndPnt.x) - newTopLeft.x)*100)/100;
-                                newSize.height = Math.round((Math.max(newStartRect.y, newEndPnt.y) - newTopLeft.y)*100)/100;
+                                newTopLeft.x = Math.round(Math.min(newStartPnt.x, newEndPnt.x)*100)/100;
+                                newTopLeft.y = Math.round(Math.min(newStartPnt.y, newEndPnt.y)*100)/100;
+                                newSize.width = Math.round((Math.max(newStartPnt.x, newEndPnt.x) - newTopLeft.x)*100)/100;
+                                newSize.height = Math.round((Math.max(newStartPnt.y, newEndPnt.y) - newTopLeft.y)*100)/100;
+                                if (posOrSizeChanged && resizeDesignTime && opts.resizeMidPoints) {
+                                    opts.resizeMidPoints(index, pts.mid[index], oldTopLeft, oldSize);
+                                }
                             }
                         });
                         this.allTargetPos = newTargetPositions;
@@ -229,15 +235,6 @@
                                         return;
                                     }
 
-                                    if (arrow.bounds === undefined || arrow.bounds === null) {
-                                        util.error('Missing arrows[' + index + '].bounds! Bounds should be an Array with 4 integers.');
-                                        return;
-                                    }
-                                    if (!(arrow.bounds instanceof Array) || arrow.bounds.length !== 4) {
-                                        util.error('Invalid arrows[' + index + '].bounds! Bounds should be an Array with 4 integers.');
-                                        return;
-                                    }
-
                                     if (arrow.type !== 'line') {
                                         if (!arrow.mid) {
                                             util.error('Missing arrows[' + index + '].mid! Mid should be an Array with middle points.');
@@ -281,33 +278,34 @@
                                     pts.layout.fromRelativeOffset.push(arrow.sourceRelativeOffset === true);
                                     pts.layout.toRelativeOffset.push(arrow.targetRelativeOffset === true);
 
+                                    pts.end.push(arrow.target);
+                                    var from = pts.getStartPoint(index, pts.startSize),
+                                        to = pts.getEndPoint(pts.allTargetPos[arrow.target], index, pts.endSize[arrow.target]);
+
+                                    pts.layout.topLeft.push({
+                                        x: Math.min(from.x, to.x),
+                                        y: Math.min(from.y, to.y)
+                                    });
+                                    pts.layout.size.push({
+                                        width: Math.abs(to.x - from.x),
+                                        height: Math.abs(to.y - from.y)
+                                    });
+
                                     if (arrow.type === 'line') {
                                         pts.mid.push([]);
                                     } else {
                                         var midPoints = [], i, qt;
                                         for (i = 0, qt = arrow.mid.length; i < qt; i += 2) {
-                                            // middle points are relative to the width and height, e.g., a point(.2, .5) means that is located 20% (of size.width) to the right of topLeft.x,
-                                            // and 50% (of size.height) below topLeft.y. Using relative middle points allows an efficient and simple way to repositionate these points,
-                                            // when the start and end points change (when size and topLeft changes)
                                             midPoints.push({
-                                                x: util.isZero(arrow.bounds[2]) ? 0 : (arrow.mid[i] - arrow.bounds[0])/arrow.bounds[2],
-                                                y: util.isZero(arrow.bounds[3]) ? 0 : (arrow.mid[i + 1] - arrow.bounds[1])/arrow.bounds[3]
+                                                x: arrow.mid[i],
+                                                y: arrow.mid[i + 1]
                                             });
                                         }
                                         if (opts.processMidPoints) {
-                                            opts.processMidPoints(arrow.type, midPoints);
+                                            opts.processMidPoints(pts, arrow.type, midPoints, index);
                                         }
                                         pts.mid.push(midPoints);
                                     }
-                                    pts.end.push(arrow.target);
-                                    pts.layout.topLeft.push({
-                                        x: arrow.bounds[0],
-                                        y: arrow.bounds[1]
-                                    });
-                                    pts.layout.size.push({
-                                        width: arrow.bounds[2],
-                                        height: arrow.bounds[3]
-                                    });
                                 });
                             } else {
                                 var fromOffset = this.getElementCenterPos();
@@ -373,42 +371,14 @@
                         };
                     }
                 },
-                getBoundsRect: opts.overrideGetBoundsRect || function () {
-                    var bounds = {},
-                        setBounds = function (pnt) {
-                            bounds.left = Math.min(bounds.left === undefined ? pnt.x : bounds.left, pnt.x);
-                            bounds.top = Math.min(bounds.top === undefined ? pnt.y : bounds.top, pnt.y);
-                            bounds.bottom = Math.max(bounds.bottom === undefined ? pnt.y : bounds.bottom, pnt.y);
-                            bounds.right = Math.max(bounds.right === undefined ? pnt.x : bounds.right, pnt.x);
-                        },
-                        maxSize = Math.max(data.shapeRelSize.circle, Math.max(data.shapeRelSize.square, data.shapeRelSize.pointer)),
-                        pts = this.points;
-                    this.points.mid.forEach(function (pnts, index) {
-                        for (var pnt in pnts) {
-                            if (pnts.hasOwnProperty(pnt)) {
-                                setBounds(pts.getMidPoint(pnts[pnt], index));
-                            }
-                        }
-                    });
-                    this.points.end.forEach(function (targetIdx, index) {
-                        setBounds(pts.getStartPoint(index));
-                        setBounds(pts.getEndPoint(pts.allTargetPos[targetIdx], index));
-                    });
-                    bounds.top -= opts.marker.size*maxSize;
-                    bounds.left -= opts.marker.size*maxSize;
-                    bounds.right += opts.marker.size*maxSize;
-                    bounds.bottom += opts.marker.size*maxSize;
-                    if (opts.shadow.visible) {
-                        bounds.top -= opts.shadow.offsetY > 0 ? 0 : -opts.shadow.offsetY - opts.shadow.blur;
-                        bounds.left -= opts.shadow.offsetX > 0 ? 0 : -opts.shadow.offsetX - opts.shadow.blur;
-                        bounds.right += opts.shadow.offsetX > 0 ? opts.shadow.offsetX + opts.shadow.blur : 0;
-                        bounds.bottom += opts.shadow.offsetY > 0 ? opts.shadow.offsetY + opts.shadow.blur : 0;
-                    }
-                    bounds.top = Math.floor(bounds.top);
-                    bounds.left = Math.floor(bounds.left);
-                    bounds.right = Math.ceil(bounds.right);
-                    bounds.bottom = Math.ceil(bounds.bottom);
-                    return bounds;
+                getBoundsRect: function () {
+                    var $document = $(document);
+                    return {
+                        left: 0,
+                        top: 0,
+                        right: $document.width(),
+                        bottom: $document.height()
+                    };
                 },
                 init: function () {
                     if (this.points.init()) {
