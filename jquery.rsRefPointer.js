@@ -38,7 +38,7 @@
                     allTargetPos: null, // Position of all targets
                                         //   [{x, y}, {x, y}, {x, y}]
                     
-                    // The length of arrowTypes, mid, end, layout.fromOffset, layout.toOffset, layout.topLeft, layout.size are always the same. They match the number of arrows.
+                    // The length of arrowTypes, mid, end, layout.fromOffset, layout.toOffset, layout.startPnt, layout.size are always the same. They match the number of arrows.
                     // The length of allTargetPos and endSize are always the same. They match the number of targets.
 
                     startSize: null,  // {with, height} representing the dimension of the start element.
@@ -53,7 +53,7 @@
                                               // The first element is an Array of absolute offsets {dx, dy}.
                                               // The second element is an Array of relative offsets {dx, dy}.
 
-                        topLeft: [],      // Array of {x, y}. Top left of the box that contains both start and end points
+                        startPnt: [],      // Array of {x, y}. Start point defined as points.start + fromOffset
                         size: [],         // Array of {width, height}. Dimension of the box that contains both start and end points
 
                         fromRelativeOffset: [], // Array of boolean. false: The fromOffset is in absolute pixels; true: The fromOffset is in relative pixels
@@ -126,7 +126,7 @@
                                     startSizeChanged && pts.layout.fromRelativeOffset[index] ||
                                     !util.samePoint(pts.allTargetPos[targetIdx], newTargetPos) ||
                                     pts.layout.toRelativeOffset[index] && !util.sameDimension(pts.endSize[targetIdx], newTargetSize),
-                                oldTopLeft = { x: pts.layout.topLeft[index].x, y: pts.layout.topLeft[index].y },
+                                oldStart = { x: pts.layout.startPnt[index].x, y: pts.layout.startPnt[index].y },
                                 oldSize = { width: pts.layout.size[index].width, height: pts.layout.size[index].height };
 
                             changesDone = changesDone || posOrSizeChanged;
@@ -134,14 +134,14 @@
                                 pts.endSize[targetIdx] = newTargetSize;
                                 var newStartPnt = pts.getStartPoint(index, newStartRect),
                                     newEndPnt = pts.getEndPoint(newTargetPos, index, newTargetSize),
-                                    newTopLeft = pts.layout.topLeft[index],
+                                    newStart = pts.layout.startPnt[index],
                                     newSize = pts.layout.size[index];
-                                newTopLeft.x = Math.round(Math.min(newStartPnt.x, newEndPnt.x)*100)/100;
-                                newTopLeft.y = Math.round(Math.min(newStartPnt.y, newEndPnt.y)*100)/100;
-                                newSize.width = Math.round((Math.max(newStartPnt.x, newEndPnt.x) - newTopLeft.x)*100)/100;
-                                newSize.height = Math.round((Math.max(newStartPnt.y, newEndPnt.y) - newTopLeft.y)*100)/100;
+                                newStart.x = Math.round(newStartPnt.x*100)/100;
+                                newStart.y = Math.round(newStartPnt.y*100)/100;
+                                newSize.width = Math.round((newEndPnt.x - newStartPnt.x)*100)/100;
+                                newSize.height = Math.round((newEndPnt.y - newStartPnt.y)*100)/100;
                                 if (posOrSizeChanged && resizeDesignTime && opts.resizeMidPoints) {
-                                    opts.resizeMidPoints(index, pts.mid[index], oldTopLeft, oldSize);
+                                    opts.resizeMidPoints(index, pts.mid[index], oldStart, oldSize);
                                 }
                             }
                         });
@@ -282,13 +282,13 @@
                                     var from = pts.getStartPoint(index, pts.startSize),
                                         to = pts.getEndPoint(pts.allTargetPos[arrow.target], index, pts.endSize[arrow.target]);
 
-                                    pts.layout.topLeft.push({
-                                        x: Math.min(from.x, to.x),
-                                        y: Math.min(from.y, to.y)
+                                    pts.layout.startPnt.push({
+                                        x: from.x,
+                                        y: from.y
                                     });
                                     pts.layout.size.push({
-                                        width: Math.abs(to.x - from.x),
-                                        height: Math.abs(to.y - from.y)
+                                        width: to.x - from.x,
+                                        height: to.y - from.y
                                     });
 
                                     if (arrow.type === 'line') {
@@ -328,13 +328,13 @@
                                     };
                                     pts.mid.push([]);
                                     pts.end.push(index);
-                                    pts.layout.topLeft.push({
-                                        x: Math.min(from.x, to.x),
-                                        y: Math.min(from.y, to.y)
+                                    pts.layout.startPnt.push({
+                                        x: from.x,
+                                        y: from.y
                                     });
                                     pts.layout.size.push({
-                                        width: Math.max(from.x, to.x) - Math.min(from.x, to.x),
-                                        height: Math.max(from.y, to.y) - Math.min(from.y, to.y)
+                                        width: to.x - from.x,
+                                        height: to.y - from.y
                                     });
                                     pts.layout.fromRelativeOffset.push(false);
                                     pts.layout.toRelativeOffset.push(false);
@@ -354,11 +354,11 @@
                         };
                     },
                     getMidPoint: function (relativePnt, index) {
-                        var topLeft = this.layout.topLeft[index],
+                        var startPnt = this.layout.startPnt[index],
                             size = this.layout.size[index];
                         return {
-                            x: topLeft.x + relativePnt.x*size.width,
-                            y: topLeft.y + relativePnt.y*size.height
+                            x: startPnt.x + relativePnt.x*size.width,
+                            y: startPnt.y + relativePnt.y*size.height
                         };
                     },
                     getEndPoint: function (endPos, index, currSize) {

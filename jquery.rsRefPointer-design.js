@@ -84,16 +84,16 @@
                     }
             }
         };
-        options.resizeMidPoints = function (arrowIdx, midPoints, oldTopLeft, oldSize) {
+        options.resizeMidPoints = function (arrowIdx, midPoints, oldStartPnt, oldSize) {
             var relX, relY,
-                newTopLeft = data.points.layout.topLeft[arrowIdx],
+                newStartPnt = data.points.layout.startPnt[arrowIdx],
                 newSize = data.points.layout.size[arrowIdx],
                 dragInfo = designMode.UI.dragInfo;
             for (var i = 0, len = midPoints.length; i < len; ++i) {
-                relX = util.isZero(oldSize.width) ? 0 : (midPoints[i].x - oldTopLeft.x)/oldSize.width;
-                relY = util.isZero(oldSize.height) ? 0 : (midPoints[i].y - oldTopLeft.y)/oldSize.height;
-                midPoints[i].x = newTopLeft.x + relX*newSize.width;
-                midPoints[i].y = newTopLeft.y + relY*newSize.height;
+                relX = util.isZero(oldSize.width) ? 0 : (midPoints[i].x - oldStartPnt.x)/oldSize.width;
+                relY = util.isZero(oldSize.height) ? 0 : (midPoints[i].y - oldStartPnt.y)/oldSize.height;
+                midPoints[i].x = newStartPnt.x + relX*newSize.width;
+                midPoints[i].y = newStartPnt.y + relY*newSize.height;
 
                 designMode.UI.activeArrow.idx = arrowIdx;
                 dragInfo.midIndex = i;
@@ -1345,7 +1345,7 @@
                         data.points.layout.fromOffset[1].push({ dx: 0.5, dy: 0.5 });
                         data.points.layout.toOffset[0].push(data.points.getElementCenterPos(data.$targets.eq(targetIdx)));
                         data.points.layout.toOffset[1].push({ dx: 0.5, dy: 0.5 });
-                        data.points.layout.topLeft.push({ x: 0, y: 0 });
+                        data.points.layout.startPnt.push({ x: 0, y: 0 });
                         data.points.layout.size.push({ width: 0, height: 0 });
                         data.points.layout.fromRelativeOffset.push(false);
                         data.points.layout.toRelativeOffset.push(false);
@@ -1360,16 +1360,12 @@
                         this.addStartEndControlPoints(data.points, idx);
                         this.addMidControlPointsAndLines(data.points, data.points.mid[idx], idx);
                         var $pnt = designMode.UI.$points[idx].eq(0),
-                            fromX = parseInt($pnt.css('cx')),
-                            fromY = parseInt($pnt.css('cy')),
-                            toX, toY;
+                            layout = data.points.layout;
+                        layout.startPnt[idx].x = parseInt($pnt.css('cx'));
+                        layout.startPnt[idx].y = parseInt($pnt.css('cy'));
                         $pnt = designMode.UI.$points[idx].eq(1);
-                        toX = parseInt($pnt.css('cx')),
-                        toY = parseInt($pnt.css('cy'));
-                        data.points.layout.topLeft[idx].x = Math.min(fromX, toX);
-                        data.points.layout.topLeft[idx].y = Math.min(fromY, toY);
-                        data.points.layout.size[idx].width = Math.max(fromX, toX) - data.points.layout.topLeft[idx].x;
-                        data.points.layout.size[idx].height = Math.max(fromY, toY) - data.points.layout.topLeft[idx].y;
+                        layout.size[idx].width = parseInt($pnt.css('cx')) - layout.startPnt[idx].x;
+                        layout.size[idx].height = parseInt($pnt.css('cy')) - layout.startPnt[idx].y;
                         var $li = $('ul li', designMode.UI.menu.$menu);
                         if ($li.length === 1) {
                             $('> a:first-of-type + a + a + a', designMode.UI.menu.$menu).removeClass('disabled');
@@ -1411,7 +1407,7 @@
                         data.points.layout.fromOffset[1].splice(arrowIdx, 1);
                         data.points.layout.toOffset[0].splice(arrowIdx, 1);
                         data.points.layout.toOffset[1].splice(arrowIdx, 1);
-                        data.points.layout.topLeft.splice(arrowIdx, 1);
+                        data.points.layout.startPnt.splice(arrowIdx, 1);
                         data.points.layout.size.splice(arrowIdx, 1);
                         data.points.layout.fromRelativeOffset.splice(arrowIdx, 1);
                         data.points.layout.toRelativeOffset.splice(arrowIdx, 1);
@@ -1811,11 +1807,11 @@
                     var allOpts = $.extend(true, {}, opts),
                         getRelX = function (absX, arrowIdx) {
                             var width = data.points.layout.size[arrowIdx].width;
-                            return util.isZero(width) ? 0 : Math.round((absX - data.points.layout.topLeft[arrowIdx].x)/width*100)/100;
+                            return util.isZero(width) ? 0 : Math.round((absX - data.points.layout.startPnt[arrowIdx].x)/width*100)/100;
                         },
                         getRelY = function (absY, arrowIdx) {
                             var height = data.points.layout.size[arrowIdx].height;
-                            return util.isZero(height) ? 0 : Math.round((absY - data.points.layout.topLeft[arrowIdx].y)/height*100)/100;
+                            return util.isZero(height) ? 0 : Math.round((absY - data.points.layout.startPnt[arrowIdx].y)/height*100)/100;
                         },
                         pushPointFunc = {
                             polyline: function (pnt, index, arrowIdx) { // do not remove the second parameter (index). Caller is sending index
