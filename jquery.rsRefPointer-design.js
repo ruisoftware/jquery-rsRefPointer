@@ -24,10 +24,10 @@
             return this;
         }
         // Seems that this goes against all plug-in good practices, but in design mode, makes no sense at all to accept more than one element.
-        // Design mode has a GUI. How could I display GUI for several instances simultaneously? I could implement some kind of tab control, but let's keep it simple.
+        // Design mode has a GUI that should NEVER be invoked in production. How could I display GUI for several instances simultaneously? I could implement some kind of tab control, but let's keep it simple.
         if (this.length > 1) {
             window.alert(
-                  'Design-time mode cannot run for ' + this.length + ' plug-in instances!\n' +
+                  'The rsRefPointer plug-in in design-time mode cannot run for ' + this.length + ' plug-in instances!\n' +
                   'Make sure you invoke design mode for one instance only.\n\nE.g. if you have 2 anchors on your page, then this fails:\n' + 
                   '   $("a").rsRefPointer();\n' + 
                   'What you need is to run for the first instance:\n' +
@@ -37,6 +37,23 @@
                   'This restriction only applies in design-time mode.\nAt run-time mode, you can run multiple instances at once.');
         }
         if (this.length !== 1) {
+            return this;
+        }
+        
+        if ($("menu.refPointer.design").length) {
+            window.alert(
+                    'There is more than one instance being created for the rsRefPointer plug-in in design-time mode!\n' +
+                    'When this happens, only the first instance can be edited. Further ones are ignored.\n' +
+                    'To edit other instances, please comment out the first instance creation.\n\n' +
+                    'E.g. if you have the following code, then #second is ignored.\n' + 
+                    '   $("#first").rsRefPointer();\n' +
+                    '   $("#second").rsRefPointer();\n\n' +
+                    'The workaround is to:\n' +
+                    '   1. Work on the design for #first.\n' +
+                    '   2. Comment out #first and then you can work on the design for #second:\n' +
+                    '   // $("#first").rsRefPointer();\n' +
+                    '   $("#second").rsRefPointer();\n\n' +
+                    'This restriction only applies in design-time mode.\nAt run-time mode, you can run multiple instances at once.');
             return this;
         }
 
@@ -1466,8 +1483,8 @@
                             switch (data.arrowTypes[index]) {
                                 case 'bezierQ':
                                     $controlLine = DOM.bezier.createControlLine({
-                                        x1: (pnt === 0 ? pts.start.x + pts.layout.fromOffset[0][index].dx : midPnts[pnt - 1].x),
-                                        y1: (pnt === 0 ? pts.start.y + pts.layout.fromOffset[0][index].dy : midPnts[pnt - 1].y),
+                                        x1: (pnt === 0 ? pts.start.x + pts.layout.getFromOffsetX(index, pts.startSize) : midPnts[pnt - 1].x),
+                                        y1: (pnt === 0 ? pts.start.y + pts.layout.getFromOffsetY(index, pts.startSize) : midPnts[pnt - 1].y),
                                         x2: midPnts[pnt].x,
                                         y2: midPnts[pnt].y
                                     });
@@ -1476,10 +1493,10 @@
                                     if (pnt === 0 || (pnt + 1) % 3 !== 0) {
                                         var isPrev = (pnt + 2) % 3 === 0;
                                         $controlLine = DOM.bezier.createControlLine({
-                                            x1: (pnt === 0 ? pts.start.x + pts.layout.fromOffset[0][index].dx : midPnts[pnt].x),
-                                            y1: (pnt === 0 ? pts.start.y + pts.layout.fromOffset[0][index].dy : midPnts[pnt].y),
-                                            x2: pnt === last ? pts.allTargetPos[pts.end[index]].x + pts.layout.toOffset[0][index].dx : midPnts[pnt === 0 ? 0 : (isPrev ? pnt + 1 : pnt - 1)].x,
-                                            y2: pnt === last ? pts.allTargetPos[pts.end[index]].y + pts.layout.toOffset[0][index].dy : midPnts[pnt === 0 ? 0 : (isPrev ? pnt + 1 : pnt - 1)].y
+                                            x1: (pnt === 0 ? pts.start.x + pts.layout.getFromOffsetX(index, pts.startSize) : midPnts[pnt].x),
+                                            y1: (pnt === 0 ? pts.start.y + pts.layout.getFromOffsetY(index, pts.startSize) : midPnts[pnt].y),
+                                            x2: pnt === last ? pts.allTargetPos[pts.end[index]].x + pts.layout.getToOffsetX(index, pts.endSize[pts.end[index]]) : midPnts[pnt === 0 ? 0 : (isPrev ? pnt + 1 : pnt - 1)].x,
+                                            y2: pnt === last ? pts.allTargetPos[pts.end[index]].y + pts.layout.getToOffsetY(index, pts.endSize[pts.end[index]]) : midPnts[pnt === 0 ? 0 : (isPrev ? pnt + 1 : pnt - 1)].y
                                         });
                                     }
                             }
@@ -1492,8 +1509,8 @@
                             $controlLine = DOM.bezier.createControlLine({
                                 x1: pts.mid[index][last].x,
                                 y1: pts.mid[index][last].y,
-                                x2: pts.allTargetPos[pts.end[index]].x + pts.layout.toOffset[0][index].dx,
-                                y2: pts.allTargetPos[pts.end[index]].y + pts.layout.toOffset[0][index].dy
+                                x2: pts.allTargetPos[pts.end[index]].x + pts.layout.getToOffsetX(index, pts.endSize[pts.end[index]]),
+                                y2: pts.allTargetPos[pts.end[index]].y + pts.layout.getToOffsetY(index, pts.endSize[pts.end[index]])
                             });
                             DOM.bezier.controlLines[index].push($controlLine);
                             DOM.$controlLinesSvgGroup.append($controlLine);
