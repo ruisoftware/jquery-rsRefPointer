@@ -74,8 +74,8 @@
                     getElementRect: function ($element) {
                         var clientRect = ($element || $elem)[0].getBoundingClientRect();
                         return {
-                            x: clientRect.left,
-                            y: clientRect.top,
+                            x: clientRect.left + window.scrollX,
+                            y: clientRect.top + window.scrollY,
                             width: clientRect.width,
                             height: clientRect.height
                         }
