@@ -1914,9 +1914,9 @@
                     if (userPluginCall && userPluginCall.length === 1) {
                         userPluginCall = userPluginCall[0].trim();
                     } else {
-                        userPluginCall = '$yourObj.rsRefPointer';
+                        userPluginCall = '$yourObj.rsRefPointer(';
                     }
-                    $('code', designMode.UI.menu.$generatedCode).html(userPluginCall + '({' + snippet + '});');
+                    $('code', designMode.UI.menu.$generatedCode).html(userPluginCall + '{' + snippet + '});');
                     designMode.UI.menu.$generatedCode.show();
                     generateCode.selectAll();
                 }
