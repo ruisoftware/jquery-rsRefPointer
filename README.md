@@ -91,7 +91,7 @@ When you are done, click on "Generate Code", click on "Select all" and copy it.
 
 ### Paste the new code into your page
 Back to your editor, replace your old code<br>
-![screen shot 2016-04-05 at 01 06 55](https://cloud.githubusercontent.com/assets/428736/14265550/c60860f6-faca-11e5-8cbe-1fe49cadf2cc.png)
+![screen shot 2016-04-05 at 01 31 43](https://cloud.githubusercontent.com/assets/428736/14266063/45cd56d6-face-11e5-82c7-04424ab77116.png)
 <br>with the new one<br>
 ![screen shot 2016-04-05 at 01 05 57](https://cloud.githubusercontent.com/assets/428736/14265527/a2520cca-faca-11e5-97c5-a73e640159a0.png)
 
