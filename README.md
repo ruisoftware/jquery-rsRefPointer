@@ -49,8 +49,13 @@ You also need to download jQuery. In the example below, jQuery is downloaded fro
   </style>
 </head>
 <body>
-  Mouse over <span class="source">here</span> to see two arrows pointing to <span class="target">[this target]</span> and this image
+  Mouse over
+  <span class="source">here</span>
+  to see two arrows pointing to
+  <span class="target">[this target]</span>
+  and this image
   <img width="400" height="200" class="target" src="http://lorempixel.com/400/200/sports">
+    
   <p>Shrink your browser width to cause a line break on the image.<br>Watch how the arrow follows the target new location.</p>
 <body>
 </html>
