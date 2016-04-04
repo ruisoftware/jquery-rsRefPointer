@@ -1,5 +1,5 @@
 #jquery-rsRefPointer
-Ease the navigation on your pages, through the use of visual relationships (arrows) between page elements.
+**Eases web navigation, through the use of visual relationships (arrows) between page elements.**
 
 Can be usefull to help the user cross-reference content that might not be noticeable at first sight.
 
@@ -9,14 +9,8 @@ Can be usefull to help the user cross-reference content that might not be notice
  - Shapes available: Line, Polyline, Quadratic Bezier curves and Cubic Bezier curves;
  - Powerfull design-time mode that provides a Photoshop alike GUI. The tool generates JS code with all the parameters filled for you;
  - Small footprint, excluding the design-time mode file, that should never be used in production anyway.
- 
-#Table of Contents
-- [jquery-rsRefPointer](#jquery-rsrefpointer)
-- [Key Features](#key-features)
-- [Installation and Usage](#installation-and-usage)
-- [Design-time mode](#design-time-mode)
 
-#Installation and Usage
+#Installation
 
 You can install from [npm](https://www.npmjs.com/):
 ````bash
@@ -26,9 +20,11 @@ or directly from git:
 ````javascript
 <script src="http://rawgit.com/ruisoftware/jquery-rsrefPointer/master/jquery.rsRefPointer.js"></script>
 ````
-or you downlowd the Zip archive from github, clone or fork this repository and include `jquery.rsRefPointer.js` from your local machine.
+or you can download the Zip archive from github, clone or fork this repository and include `jquery.rsRefPointer.js` from your local machine.
 
 You also need to download jQuery. In the example below, jQuery is downloaded from Google cdn.
+
+# Usage
 ````javascript
 <!doctype html>
 <html>
@@ -108,3 +104,16 @@ Refresh your page. Design-time is gone and now you have your fancy arrows runnin
 
 As you can see, design-time is a temporary tool that should be used to fecth the correct parameters.<br>
 It is not intended to be deployed into production.
+
+# License
+This project is licensed under the terms of the [MIT license](https://opensource.org/licenses/mit-license.php)
+
+# Contributing
+
+### Bug Reports & Feature Requests
+Please use the [issue tracker](https://github.com/ruisoftware/jquery-rsRefPointer/issues) to report any bugs or file feature requests.
+
+### Contributing
+Pull Requests are more than welcome!<br>
+In lieu of a formal styleguide, take care to maintain the existing coding style. Lint and test your code using [grunt](http://gruntjs.com/).
+
