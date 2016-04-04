@@ -4,7 +4,7 @@ Ease the navigation on your pages, through the use of visual relationships (arro
 Can be usefull to help the user cross-reference content that might not be noticeable at first sight.
 
 #Key Features
- - Arrows makes a visual connection from a start element to an end element, even when the position/size of these elements change.
+ - Arrows makes a visual connection from a start element to an end element, even when the position/size of these elements change;
  - Non intrusive. The arrows are hidden by default and only appear when the mouse overs the start element (or when the start element receives focus for mobile devices). Alternatively they can be always visible;
  - Shapes available: Line, Polyline, Quadratic Bezier curves and Cubic Bezier curves;
  - Powerfull design-time mode that provides a Photoshop alike GUI. The tool generates JS code with all the parameters filled for you;
@@ -15,8 +15,6 @@ Can be usefull to help the user cross-reference content that might not be notice
 - [Key Features](#key-features)
 - [Installation and Usage](#installation-and-usage)
 - [Design-time mode](#design-time-mode)
-
-**[Back to top](#table-of-contents)**
 
 #Installation and Usage
 
