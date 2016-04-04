@@ -14,6 +14,7 @@ This might be usefull in situations where there is a need to show to the user re
 - [jquery-rsRefPointer](#jquery-rsrefpointer)
 - [Key Features](#key-features)
 - [Installation and Usage](#installation-and-usage)
+- [Design-time mode](#design-time-mode)
 
 **[Back to top](#table-of-contents)**
 
@@ -52,6 +53,10 @@ You also need to download jQuery. In the example below, jQuery is downloaded fro
 <body>
   Mouse over <span class="source">here</span> to see two arrows pointing to <span class="target">[this target]</span> and this image
   <img width="400" height="200" class="target" src="http://lorempixel.com/400/200/sports">
+  <p>Shrink your browser width to cause a line break on the image.<br>Watch how the arrow follows the target new location.</p>
 <body>
 </html>
 `````
+You can check it out [here](http://codepen.io/ruisoftware/pen/qZVadX "on CodePen") on CodePen.<br>
+In this example, you can see two arrows, one for each `.target` element. Because there is one `.source` element, only one instance of the plug-in is binded to the `.source` element.<br>
+If there was three `.source` elements and two `.target` elements, then three instances of the plug-in would be created (one for each `.source`) and each instance would show 2 arrows. You can test this, by adding more `.source` elements in the CodePen link.
