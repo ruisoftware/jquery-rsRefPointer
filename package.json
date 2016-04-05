@@ -1,0 +1,23 @@
+{
+  "name": "jquery-rsRefPointer",
+  "version": "1.0.1",
+  "description": "SVG arrows between two DOM elements.",
+  "main": "jquery.rsRefPointer.js",
+  "dependencies": {
+    "jslint": "~0.9.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ruisoftware/jquery-rsRefPointer.git"
+  },
+  "author": "Jose Rui Santos <ruisoftware@gmail.com> (http://ruisoftware.com/)",
+  "license": "(MIT)",
+  "bugs": {
+    "url": "https://github.com/ruisoftware/jquery-rsRefPointer/issues"
+  },
+  "homepage": "https://github.com/ruisoftware/jquery-rsRefPointer"
+}
