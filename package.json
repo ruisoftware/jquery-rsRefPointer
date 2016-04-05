@@ -1,0 +1,38 @@
+{
+  "name": "rsRefPointer",
+  "title": "SVG Reference Pointers",
+  "description": "SVG arrows between two DOM elements",
+  "version": "1.0.1",
+  "homepage": "https://github.com/ruisoftware/jquery-rsRefPointer",
+  "author": {
+    "name": "Jose Rui Santos",
+    "email": "ruisoftware@gmail.com",
+    "url": "http://www.ruisoftware.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ruisoftware/jquery-rsRefPointer.git"
+  },
+  "bugs": "https://github.com/ruisoftware/jquery-rsRefPointer/issues",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/mit-license.php"
+    }
+  ],
+  "dependencies": {
+    "jquery": "*"
+  },
+  "scripts": {
+    "test": "grunt qunit"
+  },
+  "devDependencies": {
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-qunit": "~0.2.0",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-uglify": "~0.2.0",
+    "grunt-contrib-watch": "~0.4.0",
+    "grunt-contrib-clean": "~0.4.0",
+    "grunt": "~0.4.5"
+  }
+}
