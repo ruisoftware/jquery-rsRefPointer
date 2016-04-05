@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Reference Pointer</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="jquery.rsRefPointer.js"></script>
+    <script src="jquery.rsRefPointer-design.js"></script>
+    <script>
+        $(document).ready(function () {
+          $("#new").click(function () {
+            $("a").eq(0).rsRefPointer();
+          }).click();
+          
+          $("#clean").click(function () {
+            $("a").rsRefPointer('destroy');
+          });
+          $("#show").click(function () {
+            $("a").rsRefPointer('show');
+          });
+          $("#hide").click(function () {
+            $("a").rsRefPointer('hide');
+          });
+        });
+    </script>
+
+    <style>
+    
+    
+      .refPointerStart {
+        background-color: blue;
+      }
+      .refPointerEnd {
+        color: red;
+      }
+      .target {
+        background-color: #ddd;
+      }
+      #p {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background-color: red;
+      }
+
+      @media print {
+        svg {
+          display: block !important;
+        }
+      }
+    </style>
+
+  </head>
+  <body>
+    <button id="show">show</button><button id="hide">hide</button>
+    <div id="p"></div>
+    <span contenteditable>Type something here to change the target location...</span><span class="target">first target</span><button id="clean">CLEANtest bbbbbcccccccccccccccbbbb click</button><button id="new">NEW</button>
+    This is a diagram with <a tabindex="0" href="#">2 references.</a>thisoiasdio asjdap ojdspoj asd jpo<br><br><br>
+    <span contenteditable>Type something here to change the target location...</span><span class="target">second.............. target</span>
+    <br><br><br><br><br>
+    and the second instance <a tabindex="1" href="#">here</a>
+    <span class="target">third target</span>
+    <br><br><br><span class="target" style="margin-left: 500px;">fourth target</span>
+  </body>
+</html>
