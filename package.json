@@ -24,7 +24,7 @@
     "jquery": "*"
   },
   "scripts": {
-    "test": "grunt qunit"
+    "test": "grunt travis --verbose"
   },
   "devDependencies": {
     "grunt-contrib-jshint": "~0.10.0",
