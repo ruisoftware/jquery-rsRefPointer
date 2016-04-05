@@ -1,4 +1,4 @@
-#jquery-rsRefPointer
+#jquery-rsRefPointer [![Build Status](https://travis-ci.org/ruisoftware/jquery-rsRefPointer.svg?branch=master)](https://travis-ci.org/ruisoftware/jquery-rsRefPointer)
 **Eases web navigation, through the use of visual relationships (arrows) between page elements.**
 
 Can be usefull to help the user cross-reference content that might not be noticeable at first sight.
