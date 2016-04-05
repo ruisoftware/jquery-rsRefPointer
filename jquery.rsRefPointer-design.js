@@ -13,7 +13,6 @@
     var runtime = $.fn.rsRefPointer;
     if (!runtime) {
         (function (msg) {
-            /*jshint -W030 */
             window.console && window.console.error ? window.console.error(msg) : window.alert('Error:\n\n' + msg);
         })('jquery.rsRefPointer.js not loaded!\nPlease, include jquery.rsRefPointer.js before jquery.rsRefPointer-design.js.');
         return this;
@@ -40,7 +39,7 @@
             return this;
         }
         
-        if ($("menu.refPointer.design").length) {
+        if ($('menu.refPointer.design').length) {
             window.alert(
                     'There is more than one instance being created for the rsRefPointer plug-in in design-time mode!\n' +
                     'When this happens, only the first instance can be edited. Further ones are ignored.\n' +
@@ -81,7 +80,7 @@
                 } 
             }).join('');
         };
-        options.processMidPoints = function (pts, arrowType, midPoints, index) {
+        options.processMidPoints = function (pts, arrowType, midPoints) {
             var i, len;
             switch (arrowType) {
                 case 'bezierQ':
@@ -233,7 +232,7 @@
                                     y: attrs.y + attrs.height/2
                                 }).text(this.getTextY(pts, toY));
                         },
-                        hideOffsetBox: function (x, y) {
+                        hideOffsetBox: function () {
                             if (this.$offsetRect) {
                                 this.$offsetRect.remove();
                                 this.$offsetTextX.remove();
@@ -1846,7 +1845,10 @@
                             }
                         },
                         index,
-                        pts = data.points;
+                        pts = data.points,
+                        callFunc = function (pnt, idx) {
+                            func(pnt, idx, index);
+                        };
                     pts.refreshPositions(true);
                     this.getObjDiff('', allOpts, $.fn.rsRefPointer.defaults);
                     pts.startSize = pts.getElementSize();
@@ -1878,9 +1880,7 @@
                                 func = pushPointFunc[data.arrowTypes[index]];
                             if (func) {
                                 arrowOpts.mid = [];
-                                pts.mid[index].forEach(function (pnt, idx) {
-                                    func(pnt, idx, index);
-                                });
+                                pts.mid[index].forEach(callFunc);
                             }
                             allOpts.arrows.push(arrowOpts);
                         }

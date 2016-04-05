@@ -78,7 +78,7 @@
                             y: clientRect.top + window.scrollY,
                             width: clientRect.width,
                             height: clientRect.height
-                        }
+                        };
                     },
                     getElementPos: function ($element) {
                         var rect = this.getElementRect($element);
@@ -185,7 +185,7 @@
                             this.end = [];
                             this.allTargetPos = this.getTargetOffsets();
                             this.startSize = this.getElementSize();
-                            data.$targets.each(function (index) {
+                            data.$targets.each(function () {
                                 pts.endSize.push(pts.getElementSize($(this)));
                             });
 
@@ -302,7 +302,7 @@
                                             });
                                         }
                                         if (opts.processMidPoints) {
-                                            opts.processMidPoints(pts, arrow.type, midPoints, index);
+                                            opts.processMidPoints(pts, arrow.type, midPoints);
                                         }
                                         pts.mid.push(midPoints);
                                     }
@@ -834,14 +834,14 @@
                     if (DOM.$svg.css('display') === 'none') {
                         events.unbindMouseFocusEvents();
                         events.onShowByMouse(true);
-                        $(window).bind("resize", events.resize);
+                        $(window).bind('resize', events.resize);
                     }
                 },
                 onHide: function () {
                     if (DOM.$svg.css('display') !== 'none') {
                         events.bindMouseFocusEvents();
                         events.onHideByMouse(true);
-                        $(window).unbind("resize", events.resize);
+                        $(window).unbind('resize', events.resize);
                     }
                 },
                 onDestroy: function () {
