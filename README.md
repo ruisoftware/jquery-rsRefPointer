@@ -112,5 +112,5 @@ This project is licensed under the terms of the [MIT license](https://opensource
 Please use the [issue tracker](https://github.com/ruisoftware/jquery-rsRefPointer/issues) to report any bugs or file feature requests.
 
 # Contributing
-Please refer to [CONTRIBUTING.md](https://github.com/ruisoftware/jquery-rsRefPointer/blob/master/CONTRIBUTING.md)
+Please refer to the [Contribution page](https://github.com/ruisoftware/jquery-rsRefPointer/blob/master/CONTRIBUTING.md) from more information.
 
