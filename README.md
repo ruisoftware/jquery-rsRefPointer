@@ -3,6 +3,9 @@
 
 Can be usefull to help the user cross-reference content that might not be noticeable at first sight.
 
+![rsrefpointerdemo](https://cloud.githubusercontent.com/assets/428736/14316951/842a4b5a-fc0e-11e5-8080-7d55c3efdf16.gif)
+Demo available at `src/demo/dragonfly.html`
+
 #Key Features
  - Arrows makes a visual connection from a start element to an end element, even when the position/size of these elements change;
  - Non intrusive. The arrows are hidden by default and only appear when the mouse overs the start element (or when the start element receives focus for mobile devices). Alternatively they can be always visible;
