@@ -1,0 +1,37 @@
+aside, img, #taxonomy li {
+    display: inline-block;
+    margin: 0 2em;
+}
+
+aside {
+    margin-top: 1em;
+}
+
+aside ol li {
+    cursor: help;
+    background-color: yellow;
+    margin: .2em 0;
+}
+
+#taxonomy li {
+    background-color: #ddd;
+    padding: 2em;
+    margin: 2em;
+    width: 10vw;
+    text-align: center;
+}
+
+#taxonomy li span {
+    display: block;
+    font-weight: bold;
+}
+
+p {
+    margin: 0;
+}
+
+@media print { /* make sure the arrows are visible for printing */
+    svg {
+        display: block !important;
+    }
+}
