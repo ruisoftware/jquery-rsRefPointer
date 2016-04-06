@@ -1,3 +1,4 @@
+/*global $ */
 $(document).ready(function () {
 
     var $from = $('aside ol li'); // $from is jQuery Object containing 3 elements
