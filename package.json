@@ -13,6 +13,16 @@
     "type": "git",
     "url": "https://github.com/ruisoftware/jquery-rsRefPointer.git"
   },
+  "keywords": [
+    "jquery",
+    "javascript",
+    "plug-in",
+    "plugin",
+    "svg",
+    "arrow",
+    "reference",
+    "link"
+  ],
   "bugs": "https://github.com/ruisoftware/jquery-rsRefPointer/issues",
   "licenses": [
     {
