@@ -777,13 +777,12 @@
         events = {
             resizeTimeoutId: null,
             resize: function () {
-                if (events.resizeTimeoutId) {
-                    clearTimeout(events.resizeTimeoutId);
+                if (!events.resizeTimeoutId) {
+                    events.resizeTimeoutId = setTimeout(function () {
+                        data.points.refreshPositions();
+                        events.resizeTimeoutId = null;
+                    }, 25);
                 }
-                events.resizeTimeoutId = setTimeout(function () {
-                    data.points.refreshPositions();
-                    events.resizeTimeoutId = null;
-                }, 150);
             },
             showTimeoutId: null,
             clearShowTimeout: function () {
