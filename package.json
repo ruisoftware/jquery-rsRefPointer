@@ -2,7 +2,7 @@
   "name": "jquery-rsRefPointer",
   "title": "SVG Reference Pointers",
   "description": "SVG arrows between two DOM elements",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "homepage": "https://github.com/ruisoftware/jquery-rsRefPointer",
   "author": {
     "name": "Jose Rui Santos",
