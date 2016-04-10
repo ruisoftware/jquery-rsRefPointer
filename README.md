@@ -21,7 +21,7 @@ npm install jquery-rsRefPointer --save
 ````
 or directly from git:
 ````javascript
-<script src="http://rawgit.com/ruisoftware/jquery-rsrefPointer/master/jquery.rsRefPointer.js"></script>
+<script src="http://rawgit.com/ruisoftware/jquery-rsRefPointer/master/src/jquery.rsRefPointer.js"></script>
 ````
 or you can download the Zip archive from github, clone or fork this repository and include `jquery.rsRefPointer.js` from your local machine.
 
@@ -34,7 +34,7 @@ You also need to download jQuery. In the example below, jQuery is downloaded fro
 <head>
   <title>jquery-rsRefPointer plug-in</title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-  <script src="http://rawgit.com/ruisoftware/jquery-rsrefPointer/master/jquery.rsRefPointer.js"></script>
+  <script src="http://rawgit.com/ruisoftware/jquery-rsRefPointer/master/src/jquery.rsRefPointer.js"></script>
   <script>
     $(document).ready(function () {
       $('.source').rsRefPointer();
@@ -76,8 +76,8 @@ The workflow is:
 Add the `jquery.rsRefPointer-design.js` script **after** the `jquery.rsRefPointer.js` script:
 ````javascript
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-  <script src="http://rawgit.com/ruisoftware/jquery-rsrefPointer/master/jquery.rsRefPointer.js"></script>
-  <script src="http://rawgit.com/ruisoftware/jquery-rsrefPointer/master/jquery.rsRefPointer-design.js"></script>
+  <script src="http://rawgit.com/ruisoftware/jquery-rsrefPointer/master/src/jquery.rsRefPointer.js"></script>
+  <script src="http://rawgit.com/ruisoftware/jquery-rsrefPointer/master/src/jquery.rsRefPointer-design.js"></script>
 ````
 Save your html and refresh your page.<br>
 Now, you have entered Design-time mode. [Sample](http://codepen.io/ruisoftware/pen/wGPzjw "on CodePen") on CodePen.
@@ -101,7 +101,7 @@ Back to your editor, replace your old code<br>
 Remove the `jquery.rsRefPointer-design.js` script.
 ````javascript
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-  <script src="http://rawgit.com/ruisoftware/jquery-rsrefPointer/master/jquery.rsRefPointer.js"></script>
+  <script src="http://rawgit.com/ruisoftware/jquery-rsrefPointer/master/src/jquery.rsRefPointer.js"></script>
 ````
 Refresh your page. Design-time is gone and now you have your fancy arrows running.<br>[Check it out here](http://codepen.io/ruisoftware/pen/mPqORy "on CodePen")
 
