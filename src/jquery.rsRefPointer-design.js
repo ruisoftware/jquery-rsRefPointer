@@ -1864,13 +1864,13 @@
                                     pts.layout.toOffset[1][index].dy
                                 ]]
                             };
-                            arrowOpts.from = $.map(pts.getStartPoint(index, pts.startSize), function(v) { return Math.round(v); });
+                            arrowOpts.from = $.map(pts.getStartPoint(index, pts.startSize), Math.round);
                             func = pushPointFunc[data.arrowTypes[index]];
                             if (func) {
                                 arrowOpts.mid = [];
                                 pts.mid[index].forEach(func);
                             }
-                            arrowOpts.to = $.map(pts.getEndPoint(pts.allTargetPos[pts.end[index]], index, pts.endSize[pts.end[index]]), function(v) { return Math.round(v); });
+                            arrowOpts.to = $.map(pts.getEndPoint(pts.allTargetPos[pts.end[index]], index, pts.endSize[pts.end[index]]), Math.round);
                             allOpts.arrows.push(arrowOpts);
                         }
                     }
