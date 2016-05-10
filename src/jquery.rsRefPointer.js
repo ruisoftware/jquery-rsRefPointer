@@ -16,13 +16,14 @@
                 arrowTypes: [],    // Specifies the type of each arrow: 'line', 'polyline', 'bezierQ' and 'bezierC'
                 outline: false,    // Whether each row has an outline border
                 $targets: null,
+                $window: $(window),
                 shapeRelSize: {
                     pointer: 8,
                     pointer2: 8,
                     circle: 4,
                     square: 4,
                     getSize: function (type) {
-                        return ((opts.marker.size - 1) * 0.25 + 1) * this[type];
+                        return ((opts.marker.size - 1)*0.25 + 1)*this[type];
                     }
                 },
                 svgPos: {},
@@ -36,7 +37,7 @@
                     allTargetPos: null, // Position of all targets
                                         //   [{x, y}, {x, y}, {x, y}]
                     
-                    // The length of arrowTypes, mid, end, layout.fromOffset, layout.toOffset, layout.startPnt, layout.size are always the same. They match the number of arrows.
+                    // The length of arrowTypes, mid, end, layout.fromOffset, layout.toOffset, layout.originalStartPos, layout.originalHypotenuse and layout.hypotenuse are always the same. They match the number of arrows.
                     // The length of allTargetPos and endSize are always the same. They match the number of targets.
 
                     startSize: null,  // {with, height} representing the dimension of the start element.
@@ -51,8 +52,9 @@
                                               // The first element is an Array of absolute offsets {dx, dy}.
                                               // The second element is an Array of relative offsets {dx, dy}.
 
-                        startPnt: [],      // Array of {x, y}. Start point defined as points.start + fromOffset
-                        size: [],         // Array of {width, height}. Dimension of the box that contains both start and end points
+                        originalStartPos: [],   // Array of {x, y}. Start point defined as points.start + fromOffset
+                        originalHypotenuse: [], // Array of number. Represents the initial hypotenuse of the right-angle triangle with vertices on the Start and End points.
+                        hypotenuse: [],         // Array of number. Represents the hypotenuse of the right-angle triangle with vertices on the Start and End points.
 
                         fromRelativeOffset: [], // Array of boolean. false: The fromOffset is in absolute pixels; true: The fromOffset is in relative pixels
                         toRelativeOffset: [],   // Array of boolean. false: The fromOffset is in absolute pixels; true: The fromOffset is in relative pixels
@@ -116,31 +118,20 @@
                         this.start.y = newStartRect.y;
                         this.startSize.width = newStartRect.width;
                         this.startSize.height = newStartRect.height;
-
                         this.end.forEach(function (targetIdx, index) {
                             var newTargetPos = newTargetPositions[targetIdx],
                                 newTargetSize = pts.getElementSize(data.$targets.eq(targetIdx)),
                                 posOrSizeChanged = startPosChanged ||
                                     startSizeChanged && pts.layout.fromRelativeOffset[index] ||
                                     !util.samePoint(pts.allTargetPos[targetIdx], newTargetPos) ||
-                                    pts.layout.toRelativeOffset[index] && !util.sameDimension(pts.endSize[targetIdx], newTargetSize),
-                                oldStart = { x: pts.layout.startPnt[index].x, y: pts.layout.startPnt[index].y },
-                                oldSize = { width: pts.layout.size[index].width, height: pts.layout.size[index].height };
+                                    pts.layout.toRelativeOffset[index] && !util.sameDimension(pts.endSize[targetIdx], newTargetSize);
 
                             changesDone = changesDone || posOrSizeChanged;
                             if (posOrSizeChanged || onlyUpdateArrowBounds) {
                                 pts.endSize[targetIdx] = newTargetSize;
                                 var newStartPnt = pts.getStartPoint(index, newStartRect),
-                                    newEndPnt = pts.getEndPoint(newTargetPos, index, newTargetSize),
-                                    newStart = pts.layout.startPnt[index],
-                                    newSize = pts.layout.size[index];
-                                newStart.x = Math.round(newStartPnt.x*100)/100;
-                                newStart.y = Math.round(newStartPnt.y*100)/100;
-                                newSize.width = Math.round((newEndPnt.x - newStartPnt.x)*100)/100;
-                                newSize.height = Math.round((newEndPnt.y - newStartPnt.y)*100)/100;
-                                if (posOrSizeChanged && resizeDesignTime && opts.resizeMidPoints) {
-                                    opts.resizeMidPoints(index, pts.mid[index], oldStart, oldSize);
-                                }
+                                    newEndPnt = pts.getEndPoint(newTargetPos, index, newTargetSize);
+                                pts.layout.hypotenuse[index] = util.getHypotenuse(newStartPnt, newEndPnt);
                             }
                         });
                         this.allTargetPos = newTargetPositions;
@@ -156,7 +147,7 @@
                                 height: (bounds.bottom - bounds.top) + 'px'
                             });
                         }
-                        if (onlyUpdateArrowBounds !== true || (changesDone && resizeDesignTime === true)) {
+                        if (onlyUpdateArrowBounds !== true || changesDone && resizeDesignTime === true) {
                             // targetIdx is not used in the function below, but is required by the forEach signature
                             this.end.forEach(function (targetIdx, index) {
                                 DOM.updateArrow(index);
@@ -233,6 +224,23 @@
                                         return;
                                     }
 
+                                    if (!arrow.from) {
+                                        util.error('Missing arrows[' + index + '].from! Should be an Array with 2 numbers.');
+                                        return;
+                                    }
+                                    if (!arrow.to) {
+                                        util.error('Missing arrows[' + index + '].to! Should be an Array with 2 numbers.');
+                                        return;
+                                    }
+                                    if (!(arrow.from instanceof Array) || arrow.from.length !== 2) {
+                                        util.error('Invalid arrows[' + index + '].from! Should be an Array with 2 numbers.');
+                                        return;
+                                    }
+                                    if (!(arrow.to instanceof Array) || arrow.to.length !== 2) {
+                                        util.error('Invalid arrows[' + index + '].to! Should be an Array with 2 numbers.');
+                                        return;
+                                    }
+
                                     if (arrow.type !== 'line') {
                                         if (!arrow.mid) {
                                             util.error('Missing arrows[' + index + '].mid! Mid should be an Array with middle points.');
@@ -275,19 +283,22 @@
                                     });
                                     pts.layout.fromRelativeOffset.push(arrow.sourceRelativeOffset === true);
                                     pts.layout.toRelativeOffset.push(arrow.targetRelativeOffset === true);
-
                                     pts.end.push(arrow.target);
-                                    var from = pts.getStartPoint(index, pts.startSize),
-                                        to = pts.getEndPoint(pts.allTargetPos[arrow.target], index, pts.endSize[arrow.target]);
-
-                                    pts.layout.startPnt.push({
-                                        x: from.x,
-                                        y: from.y
+                                    pts.layout.originalStartPos.push({
+                                        x: arrow.from[0],
+                                        y: arrow.from[1]
                                     });
-                                    pts.layout.size.push({
-                                        width: to.x - from.x,
-                                        height: to.y - from.y
-                                    });
+                                    pts.layout.originalHypotenuse.push(util.getHypotenuse({
+                                        x: arrow.from[0],
+                                        y: arrow.from[1]
+                                    } , {
+                                        x: arrow.to[0],
+                                        y: arrow.to[1]
+                                    }));
+                                    pts.layout.hypotenuse.push(util.getHypotenuse(
+                                        pts.getStartPoint(index, pts.startSize),
+                                        pts.getEndPoint(pts.allTargetPos[arrow.target], index, pts.endSize[arrow.target])
+                                    ));
 
                                     if (arrow.type === 'line') {
                                         pts.mid.push([]);
@@ -316,6 +327,8 @@
                                         from, to;
                                     pts.layout.toOffset[0].push(pts.getElementCenterPos($target, destSize));
                                     pts.layout.toOffset[1].push({ dx: 0.5, dy: 0.5 });
+                                    pts.layout.fromRelativeOffset.push(false);
+                                    pts.layout.toRelativeOffset.push(false);
                                     from = {
                                         x: pts.start.x + fromOffset.dx,
                                         y: pts.start.y + fromOffset.dy
@@ -326,16 +339,13 @@
                                     };
                                     pts.mid.push([]);
                                     pts.end.push(index);
-                                    pts.layout.startPnt.push({
+                                    pts.layout.originalStartPos.push({
                                         x: from.x,
                                         y: from.y
                                     });
-                                    pts.layout.size.push({
-                                        width: to.x - from.x,
-                                        height: to.y - from.y
-                                    });
-                                    pts.layout.fromRelativeOffset.push(false);
-                                    pts.layout.toRelativeOffset.push(false);
+                                    var h = util.getHypotenuse(from, to);
+                                    pts.layout.originalHypotenuse.push(h);
+                                    pts.layout.hypotenuse.push(h);
                                 });
                             }
                             return true;
@@ -351,12 +361,12 @@
                             y: this.start.y + this.layout.getFromOffsetY(index, currSize)
                         };
                     },
-                    getMidPoint: function (relativePnt, index) {
-                        var startPnt = this.layout.startPnt[index],
-                            size = this.layout.size[index];
+                    getMidPoint: function (midPnt, index) {
+                        var factor = this.layout.hypotenuse[index]/this.layout.originalHypotenuse[index],
+                            startPnt = this.getStartPoint(index, this.startSize);
                         return {
-                            x: startPnt.x + relativePnt.x*size.width,
-                            y: startPnt.y + relativePnt.y*size.height
+                            x: (midPnt.x - this.layout.originalStartPos[index].x)*factor + startPnt.x,
+                            y: (midPnt.y - this.layout.originalStartPos[index].y)*factor + startPnt.y
                         };
                     },
                     getEndPoint: function (endPos, index, currSize) {
@@ -369,14 +379,40 @@
                         };
                     }
                 },
-                getBoundsRect: function () {
-                    var $document = $(document);
-                    return {
-                        left: 0,
-                        top: 0,
-                        right: $document.width(),
-                        bottom: $document.height()
-                    };
+                getBoundsRect: opts.overrideGetBoundsRect || function () {
+                    var bounds = {},
+                        setBounds = function (pnt) {
+                            bounds.left = Math.min(bounds.left === undefined ? pnt.x : bounds.left, pnt.x);
+                            bounds.top = Math.min(bounds.top === undefined ? pnt.y : bounds.top, pnt.y);
+                            bounds.bottom = Math.max(bounds.bottom === undefined ? pnt.y : bounds.bottom, pnt.y);
+                            bounds.right = Math.max(bounds.right === undefined ? pnt.x : bounds.right, pnt.x);
+                        },
+                        maxSize = Math.max(data.shapeRelSize.circle, Math.max(data.shapeRelSize.square, data.shapeRelSize.pointer)),
+                        pts = this.points;
+                    this.points.mid.forEach(function (pnts, index) {
+                        for(var pnt in pnts) {
+                            setBounds(pts.getMidPoint(pnts[pnt], index));
+                        }
+                    });
+                    this.points.end.forEach(function (targetIdx, index) {
+                        setBounds(pts.getStartPoint(index, pts.startSize));
+                        setBounds(pts.getEndPoint(pts.allTargetPos[targetIdx], index, pts.endSize[targetIdx]));
+                    });
+                    bounds.top -= opts.marker.size*maxSize;
+                    bounds.left -= opts.marker.size*maxSize;
+                    bounds.right += opts.marker.size*maxSize;
+                    bounds.bottom += opts.marker.size*maxSize;
+                    if (opts.shadow.visible) {
+                        bounds.top -= opts.shadow.offsetY > 0 ? 0 : - opts.shadow.offsetY - opts.shadow.blur;
+                        bounds.left -= opts.shadow.offsetX > 0 ? 0: - opts.shadow.offsetX - opts.shadow.blur;
+                        bounds.right += opts.shadow.offsetX > 0 ? opts.shadow.offsetX + opts.shadow.blur : 0;
+                        bounds.bottom += opts.shadow.offsetY > 0 ? opts.shadow.offsetY + opts.shadow.blur: 0;
+                    }
+                    bounds.top = Math.floor(bounds.top);
+                    bounds.left = Math.floor(bounds.left);
+                    bounds.right = Math.ceil(bounds.right);
+                    bounds.bottom = Math.ceil(bounds.bottom);
+                    return bounds;
                 },
                 init: function () {
                     if (this.points.init()) {
@@ -445,9 +481,7 @@
                     end: null,
                     filter: {
                         shadow: null,
-                        Start: null,
-                        Mid: null,
-                        End: null
+                        Mid: null
                     }
                 },
                 getMarkerAttrs: function (type, size) {
@@ -583,9 +617,7 @@
                     if (opts.shadow.visible) {
                         this.initFilter();
                         getMarkerId = function () { return DOM.markers.ids.filter; };
-                        this.initMarker(opts.marker.start, 'Start', getMarkerId, true);
                         this.initMarker(opts.marker.mid, 'Mid', getMarkerId, true);
-                        this.initMarker(opts.marker.end, 'End', getMarkerId, true);
                     }
                     return this.$defs;
                 }
@@ -614,11 +646,12 @@
                 }).join('');
             },
             getShapeAttrs: function (index, shadeOffset) {
-                var pts = data.points;
+                var pts = data.points,
+                    targetIdx = pts.end[index];
                 switch (data.arrowTypes[index]) {
                     case 'line':
-                        var startPoint = pts.getStartPoint(index),
-                            endPoint = pts.getEndPoint(pts.allTargetPos[pts.end[index]], index);
+                        var startPoint = pts.getStartPoint(index, pts.startSize),
+                            endPoint = pts.getEndPoint(pts.allTargetPos[targetIdx], index, pts.endSize[targetIdx]);
                         return {
                             x1: util.getX(startPoint),
                             y1: util.getY(startPoint),
@@ -627,23 +660,24 @@
                         };
                     case 'bezierQ':
                         return {
-                            d:  'M' + util.pointToStrStart(index) + ' ' +
+                            d:  'M' + util.pointToStrStart(index, pts.startSize) + ' ' +
                                 this.getShapeAttrsMidPointsBezierQ(pts, index, util, shadeOffset) +
-                                (pts.mid[index].length === 1 ? '' : 'T') + util.pointToStrEnd(pts.allTargetPos[pts.end[index]], index)
+                                (pts.mid[index].length === 1 ? '' : 'T') +
+                                util.pointToStrEnd(pts.allTargetPos[pts.end[index]], index, pts.endSize[targetIdx])
                         };
                     case 'bezierC':
                         return {
-                            d:  'M' + util.pointToStrStart(index) + ' ' +
+                            d:  'M' + util.pointToStrStart(index, pts.startSize) + ' ' +
                                 this.getShapeAttrsMidPointsBezierC(pts, index, util, shadeOffset) +
-                                util.pointToStrEnd(pts.allTargetPos[pts.end[index]], index)
+                                util.pointToStrEnd(pts.allTargetPos[pts.end[index]], index, pts.endSize[targetIdx])
                         };
                     case 'polyline':
                         return {
-                            points: util.pointToStrStart(index) + ', ' + 
+                            points: util.pointToStrStart(index, pts.startSize) + ', ' + 
                                     pts.mid[index].map(function (e) {
                                         return util.pointToStrMid(pts.getMidPoint(e, index), shadeOffset);
                                     }).join(',') + ', ' +
-                                    util.pointToStrEnd(pts.allTargetPos[pts.end[index]], index)
+                                    util.pointToStrEnd(pts.allTargetPos[pts.end[index]], index, pts.endSize[targetIdx])
                         };
                 }
             },
@@ -692,11 +726,9 @@
                     attrsShade.stroke = opts.shadow.color;
                     attrsShade.filter = 'url(#' + this.markers.ids.filter.shadow + ')';
                     attrsShade['stroke-width'] = opts.stroke.size;
-                    ['Start', 'Mid', 'End'].forEach(function (e) { 
-                        if (DOM.markers.ids.filter[e]) {
-                            attrsShade['marker-' + e.toLowerCase()] = 'url(#' + DOM.markers.ids.filter[e] + ')';
-                        }
-                    });
+                    if (DOM.markers.ids.filter.Mid) {
+                        attrsShade['marker-mid'] = 'url(#' + DOM.markers.ids.filter.Mid + ')';
+                    }
                     if (this.$shadowGroup === null && replace !== true) {
                         this.$shadowGroup = this.createSvgDom('g');
                         this.markers.$defs.after(this.$shadowGroup);
@@ -831,14 +863,14 @@
                 if (DOM.$svg.css('display') === 'none') {
                     events.unbindMouseFocusEvents();
                     events.onShowByMouse(true);
-                    $(window).bind('resize', events.resize);
+                    data.$window.bind('resize', events.resize);
                 }
             },
             onHide: function () {
                 if (DOM.$svg.css('display') !== 'none') {
                     events.bindMouseFocusEvents();
                     events.onHideByMouse(true);
-                    $(window).unbind('resize', events.resize);
+                    data.$window.unbind('resize', events.resize);
                 }
             },
             onDestroy: function () {
@@ -910,6 +942,9 @@
             },
             pointToStrEnd: function (endPos, index, currSize) {
                 return this.pointToStr(data.points.getEndPoint(endPos, index, currSize));
+            },
+            getHypotenuse: function (pnt1, pnt2) {
+                return Math.sqrt(Math.pow(pnt1.x - pnt2.x, 2) + Math.pow(pnt1.y - pnt2.y, 2));
             },
             init: function () {
                 this.log = window.console && window.console.log ? function (msg, noPrefix) { window.console.log((noPrefix ? '' : 'rsRefPointer: ') + msg); } : function (msg, noPrefix) { window.alert((noPrefix ? '' : 'rsRefPointer Log:\n\n') + msg); };

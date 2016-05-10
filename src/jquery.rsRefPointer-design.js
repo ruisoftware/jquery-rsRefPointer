@@ -58,6 +58,15 @@
 
         var data, DOM, designMode, util;
         options = options || {};
+        options.overrideGetBoundsRect = function () {
+            var $document = $(document);
+            return {
+                left: 0,
+                top: 0,
+                right: $document.width(),
+                bottom: $document.height()
+            };
+        };
         options.overrideShapeAttrsBezierQ = function (pts, index, util, shadeOffset) {
             return pts.mid[index].map(function (e, i) {
                 var point = pts.getMidPoint(e, index),
@@ -100,27 +109,6 @@
                         });
                     }
             }
-        };
-        options.resizeMidPoints = function (arrowIdx, midPoints, oldStartPnt, oldSize) {
-            var relX, relY,
-                newStartPnt = data.points.layout.startPnt[arrowIdx],
-                newSize = data.points.layout.size[arrowIdx],
-                dragInfo = designMode.UI.dragInfo;
-            for (var i = 0, len = midPoints.length; i < len; ++i) {
-                relX = util.isZero(oldSize.width) ? 0 : (midPoints[i].x - oldStartPnt.x)/oldSize.width;
-                relY = util.isZero(oldSize.height) ? 0 : (midPoints[i].y - oldStartPnt.y)/oldSize.height;
-                midPoints[i].x = newStartPnt.x + relX*newSize.width;
-                midPoints[i].y = newStartPnt.y + relY*newSize.height;
-
-                designMode.UI.activeArrow.idx = arrowIdx;
-                dragInfo.midIndex = i;
-                dragInfo.midRef = midPoints[i];
-                dragInfo.pointType = 'mid';
-                dragInfo.$point = designMode.UI.$points[arrowIdx].eq(i + 2).attr({ cx: midPoints[i].x, cy: midPoints[i].y });
-                // simulate a mouse move, to update all control points and control lines
-                designMode.UI.moveMidPoint({ pageX: midPoints[i].x, pageY: midPoints[i].y }, dragInfo, data.points);
-            }
-            DOM.$svg.mouseup();
         };
         runtime.call(this, options);
         var allData = $.fn.rsRefPointer.designData,
@@ -1110,7 +1098,6 @@
                             $this.attr('class', 'selected');
                             switch (index) {
                                 case 0:
-                                    setAttrs($previewPolyline.eq(0).add($previewBezier.eq(0)), selector.marker.shapes.$start, 'marker-start', true);
                                     setAttrs($previewPolyline.eq(2).add($previewBezier.eq(2)), selector.marker.shapes.$start, 'marker-start');
                                     opts.marker.start = getShapeName(selector.marker.shapes.$start);
                                     break;
@@ -1120,7 +1107,6 @@
                                     opts.marker.mid = getShapeName(selector.marker.shapes.$mid);
                                     break;
                                 case 2:
-                                    setAttrs($previewPolyline.eq(0).add($previewBezier.eq(0)), selector.marker.shapes.$end, 'marker-end', true);
                                     setAttrs($previewPolyline.eq(2).add($previewBezier.eq(2)), selector.marker.shapes.$end, 'marker-end');
                                     opts.marker.end = getShapeName(selector.marker.shapes.$end);
                             } 
@@ -1343,37 +1329,42 @@
                    plain arrow is immediatelly created (with a known end point).
                 */
                 doAddArrow: function (type, targetIdx, virtual) {
-                    var $window = $(window),
-                        windowWidth = $window.width(),
-                        windowHeight = $window.height(),
+                    var windowWidth = data.$window.width(),
+                        windowHeight = data.$window.height(),
                         getRandomPoint = function () { // returns a point between 30% and 70% of the width and height
                             return {
                                 x: windowWidth/2 + Math.random()*windowWidth/2.5 - windowWidth/5,
                                 y: windowHeight/2 + Math.random()*windowHeight/2.5 - windowHeight/5
                             };
-                        };
+                        },
+                        pts = data.points;
 
                     data.arrowTypes.push(type);
                     switch (type) {
                         case 'bezierQ':
-                            data.points.mid.push([getRandomPoint()]);
+                            pts.mid.push([getRandomPoint()]);
                             break;
                         case 'bezierC':
-                            data.points.mid.push([getRandomPoint(), getRandomPoint()]);
+                            pts.mid.push([getRandomPoint(), getRandomPoint()]);
                             break;
                         default:
-                            data.points.mid.push([]);
+                            pts.mid.push([]);
                     }
-                    data.points.end.push(targetIdx);
-                    data.points.layout.fromOffset[0].push(data.points.getElementCenterPos());
-                    data.points.layout.fromOffset[1].push({ dx: 0.5, dy: 0.5 });
-                    data.points.layout.toOffset[0].push(data.points.getElementCenterPos(data.$targets.eq(targetIdx)));
-                    data.points.layout.toOffset[1].push({ dx: 0.5, dy: 0.5 });
-                    data.points.layout.startPnt.push({ x: 0, y: 0 });
-                    data.points.layout.size.push({ width: 0, height: 0 });
-                    data.points.layout.fromRelativeOffset.push(false);
-                    data.points.layout.toRelativeOffset.push(false);
-                    var lastArrowIdx = data.arrowTypes.length - 1;
+                    pts.end.push(targetIdx);
+                    pts.layout.fromOffset[0].push(pts.getElementCenterPos());
+                    pts.layout.fromOffset[1].push({ dx: 0.5, dy: 0.5 });
+                    pts.layout.toOffset[0].push(pts.getElementCenterPos(data.$targets.eq(targetIdx)));
+                    pts.layout.toOffset[1].push({ dx: 0.5, dy: 0.5 });
+                    pts.layout.fromRelativeOffset.push(false);
+                    pts.layout.toRelativeOffset.push(false);
+
+                    var lastArrowIdx = data.arrowTypes.length - 1,
+                        startPnt = pts.getStartPoint(lastArrowIdx, pts.startSize),
+                        endPnt = pts.getEndPoint(pts.allTargetPos[targetIdx], lastArrowIdx, pts.endSize[targetIdx]),
+                        h = util.getHypotenuse(startPnt, endPnt);
+                    pts.layout.originalStartPos.push(startPnt);
+                    pts.layout.originalHypotenuse.push(h);
+                    pts.layout.hypotenuse.push(h);
                     DOM.createArrow(lastArrowIdx);
                     if (!virtual) {
                         this.addControlPointsAndLines(lastArrowIdx);
@@ -1383,13 +1374,6 @@
                     this.menu.addArrowLink(idx);
                     this.addStartEndControlPoints(data.points, idx);
                     this.addMidControlPointsAndLines(data.points, data.points.mid[idx], idx);
-                    var $pnt = designMode.UI.$points[idx].eq(0),
-                        layout = data.points.layout;
-                    layout.startPnt[idx].x = parseInt($pnt.css('cx'));
-                    layout.startPnt[idx].y = parseInt($pnt.css('cy'));
-                    $pnt = designMode.UI.$points[idx].eq(1);
-                    layout.size[idx].width = parseInt($pnt.css('cx')) - layout.startPnt[idx].x;
-                    layout.size[idx].height = parseInt($pnt.css('cy')) - layout.startPnt[idx].y;
                     var $li = $('ul li', designMode.UI.menu.$menu);
                     if ($li.length === 1) {
                         $('> a:first-of-type + a + a + a', designMode.UI.menu.$menu).removeClass('disabled');
@@ -1431,8 +1415,9 @@
                     data.points.layout.fromOffset[1].splice(arrowIdx, 1);
                     data.points.layout.toOffset[0].splice(arrowIdx, 1);
                     data.points.layout.toOffset[1].splice(arrowIdx, 1);
-                    data.points.layout.startPnt.splice(arrowIdx, 1);
-                    data.points.layout.size.splice(arrowIdx, 1);
+                    data.points.layout.originalStartPos.splice(arrowIdx, 1);
+                    data.points.layout.originalHypotenuse.splice(arrowIdx, 1);
+                    data.points.layout.hypotenuse.splice(arrowIdx, 1);
                     data.points.layout.fromRelativeOffset.splice(arrowIdx, 1);
                     data.points.layout.toRelativeOffset.splice(arrowIdx, 1);
                     DOM.getArrow(arrowIdx).remove();
@@ -1480,7 +1465,6 @@
                     }
                     var pnt, last = midPnts.length - 1, $controlLine;
                     for (pnt = 0; pnt <= last; ++pnt) {
-                        // this assignment changes the data.points.mid values from relative to absolute
                         midPnts[pnt] = pts.getMidPoint(midPnts[pnt], index);
                     }
                     for (pnt = 0; pnt <= last; ++pnt) {
@@ -1542,8 +1526,8 @@
                         designMode.UI.addMidControlPointsAndLines(pts, midPnts, index);
                     });
 
-                    pts.getMidPoint = function (relativePnt) {
-                        return relativePnt; // in design mode, the mid points are absolute, not relative
+                    pts.getMidPoint = function (pnt) {
+                        return pnt;
                     };
 
                     $('ul li:first-child', designMode.UI.menu.$menu).click(); // initializes the active arrow
@@ -1566,7 +1550,7 @@
                                 offset = pts.layout.fromOffset[0][designMode.UI.activeArrow.idx];
                                 offset.dx = e.pageX - pts.start.x;
                                 offset.dy = e.pageY - pts.start.y;
-                                designMode.UI.updateRelativeFromOffset(designMode.UI.activeArrow.idx, offset);
+                                designMode.UI.updateRelativeFromOffset(designMode.UI.activeArrow.idx);
                                 switch (data.arrowTypes[designMode.UI.activeArrow.idx]) {
                                     case 'bezierQ':
                                         DOM.bezier.Q.updateControlLines(designMode.UI.activeArrow.idx, 'start');
@@ -1583,7 +1567,7 @@
                                 offset = pts.layout.toOffset[0][designMode.UI.activeArrow.idx];
                                 offset.dx = e.pageX - pts.allTargetPos[pts.end[designMode.UI.activeArrow.idx]].x;
                                 offset.dy = e.pageY - pts.allTargetPos[pts.end[designMode.UI.activeArrow.idx]].y; 
-                                designMode.UI.updateRelativeToOffset(designMode.UI.activeArrow.idx, offset);
+                                designMode.UI.updateRelativeToOffset(designMode.UI.activeArrow.idx);
                                 switch (data.arrowTypes[designMode.UI.activeArrow.idx]) {
                                     case 'bezierQ':
                                         DOM.bezier.Q.updateControlLines(designMode.UI.activeArrow.idx, 'end');
@@ -1665,14 +1649,16 @@
                         nextControlPoint.y
                     );
                 },
-                updateRelativeFromOffset: function (index, absOffset) {
+                updateRelativeFromOffset: function (index) {
                     var pts = data.points,
+                        absOffset = pts.layout.fromOffset[0][index],
                         relOffset = pts.layout.fromOffset[1][index];
                     relOffset.dx = util.isZero(pts.startSize.width) ? 0 : Math.round(absOffset.dx/pts.startSize.width*100)/100;
                     relOffset.dy = util.isZero(pts.startSize.height) ? 0 : Math.round(absOffset.dy/pts.startSize.height*100)/100;
                 },
-                updateRelativeToOffset: function (index, absOffset) {
+                updateRelativeToOffset: function (index) {
                     var pts = data.points,
+                        absOffset = pts.layout.toOffset[0][index],
                         relOffset = pts.layout.toOffset[1][index],
                         endSize = pts.endSize[pts.end[index]];
                     relOffset.dx = util.isZero(endSize.width) ? 0 : Math.round(absOffset.dx/endSize.width*100)/100;
@@ -1683,43 +1669,45 @@
                 if (data.$targets.length === 0) {
                     window.alert('No targets found!\n\nThe jQuery call $("' + opts.targetSelector + '") returned zero objects.\nPlease change the targetSelector option.');
                 } else {
-                    var $window = $(window),
-                        $document = $(document),
-                        docWidth = $document.width(),
-                        docHeight = $document.height(),
-                        doResize = function () {
+                    var $document = $(document),
+                        doResize = function (noDelay) {
                             DOM.$svg.add(designMode.UI.activeArrow.$backgroundArrowsRect).attr({
-                                'width': Math.max($window.width(), docWidth) + 'px',
-                                'height': Math.max($window.height(), docHeight) + 'px'
+                                'width': Math.max(data.$window.width(), $document.width()) + 'px',
+                                'height': Math.max(data.$window.height(), $document.height()) + 'px'
                             });
-                            var pts = data.points;
+                            var pts = data.points,
+                                performResize = function () {
+                                    if (pts.refreshPositions(false, true)) {
+                                        pts.end.forEach(function (targetIdx, arrowIdx) {
+                                            designMode.UI.$points[arrowIdx].eq(0).attr({
+                                                cx: pts.start.x + pts.layout.getFromOffsetX(arrowIdx, pts.startSize),
+                                                cy: pts.start.y + pts.layout.getFromOffsetY(arrowIdx, pts.startSize)
+                                            }).end().eq(1).attr({
+                                                cx: pts.allTargetPos[targetIdx].x + pts.layout.getToOffsetX(arrowIdx, pts.endSize[targetIdx]),
+                                                cy: pts.allTargetPos[targetIdx].y + pts.layout.getToOffsetY(arrowIdx, pts.endSize[targetIdx])
+                                            });
+                                            switch (data.arrowTypes[arrowIdx]) {
+                                                case 'bezierQ':
+                                                case 'bezierC':
+                                                    if (data.arrowTypes[arrowIdx] === 'bezierQ') {
+                                                        DOM.bezier.Q.updateBezierEndControlLine(pts, arrowIdx);
+                                                    } else {
+                                                        DOM.bezier.C.updateBezierEndControlLine(pts, arrowIdx);
+                                                    }
+                                                    DOM.bezier.updateBezierStartControlLine(pts, arrowIdx);
+                                            }
+                                        });
+                                    }
+                                    pts.resizeTimeoutId = null;
+                                };
                             if (pts.resizeTimeoutId) {
                                 clearTimeout(pts.resizeTimeoutId);
                             }
-                            pts.resizeTimeoutId = setTimeout(function () {
-                                if (pts.refreshPositions(false, true)) {
-                                    pts.end.forEach(function (targetIdx, arrowIdx) {
-                                        designMode.UI.$points[arrowIdx].eq(0).attr({
-                                            cx: pts.start.x + pts.layout.getFromOffsetX(arrowIdx, pts.startSize),
-                                            cy: pts.start.y + pts.layout.getFromOffsetY(arrowIdx, pts.startSize)
-                                        }).end().eq(1).attr({
-                                            cx: pts.allTargetPos[targetIdx].x + pts.layout.getToOffsetX(arrowIdx, pts.endSize[targetIdx]),
-                                            cy: pts.allTargetPos[targetIdx].y + pts.layout.getToOffsetY(arrowIdx, pts.endSize[targetIdx])
-                                        });
-                                        switch (data.arrowTypes[arrowIdx]) {
-                                            case 'bezierQ':
-                                            case 'bezierC':
-                                                if (data.arrowTypes[arrowIdx] === 'bezierQ') {
-                                                    DOM.bezier.Q.updateBezierEndControlLine(pts, arrowIdx);
-                                                } else {
-                                                    DOM.bezier.C.updateBezierEndControlLine(pts, arrowIdx);
-                                                }
-                                                DOM.bezier.updateBezierStartControlLine(pts, arrowIdx);
-                                        }
-                                    });
-                                }
-                                pts.resizeTimeoutId = null;
-                            }, 150);
+                            if (noDelay === true) { // because when fired via resize event, noDelay is an event object
+                                performResize();
+                            } else {
+                                pts.resizeTimeoutId = setTimeout(performResize, 150);
+                            }
                         };
                     DOM.$svg.css('pointer-events', '');
                     designMode.UI.activeArrow.$backgroundArrowsRect = DOM.createSvgDom('rect', {
@@ -1729,8 +1717,8 @@
                         fill: 'rgba(255,255,255,.75)',
                         'pointer-events': 'none'
                     }).appendTo(DOM.$svg);
-                    $window.resize(doResize);
-                    doResize();
+                    data.$window.resize(doResize);
+                    doResize(true);
                     this.UI.init();
                     events.unbindMouseFocusEvents();
                     DOM.$svg.css('opacity', 1).show();
@@ -1830,56 +1818,45 @@
                 getCode: function () {
                     var allOpts = $.extend(true, {}, opts),
                         arrowOpts,
-                        getRelX = function (absX, arrowIdx) {
-                            var width = data.points.layout.size[arrowIdx].width;
-                            return util.isZero(width) ? 0 : Math.round((absX - data.points.layout.startPnt[arrowIdx].x)/width*100)/100;
-                        },
-                        getRelY = function (absY, arrowIdx) {
-                            var height = data.points.layout.size[arrowIdx].height;
-                            return util.isZero(height) ? 0 : Math.round((absY - data.points.layout.startPnt[arrowIdx].y)/height*100)/100;
-                        },
                         pushPointFunc = {
-                            polyline: function (pnt, index, arrowIdx) { // do not remove the second parameter (index). Caller is sending index
-                                arrowOpts.mid.push(getRelX(pnt.x, arrowIdx), getRelY(pnt.y, arrowIdx));
+                            polyline: function (pnt) {
+                                arrowOpts.mid.push(pnt.x, pnt.y);
                             },
-                            bezierQ: function (pnt, index, arrowIdx) {
+                            bezierQ: function (pnt, index) {
                                 if (index < 2 || index % 2 === 1) {
-                                    arrowOpts.mid.push(getRelX(pnt.x, arrowIdx), getRelY(pnt.y, arrowIdx));
+                                    arrowOpts.mid.push(pnt.x, pnt.y);
                                 }
                             },
-                            bezierC: function (pnt, index, arrowIdx) {
+                            bezierC: function (pnt, index) {
                                 if (index < 3 || index % 3 !== 0) {
-                                    arrowOpts.mid.push(getRelX(pnt.x, arrowIdx), getRelY(pnt.y, arrowIdx));
+                                    arrowOpts.mid.push(pnt.x, pnt.y);
                                 }
                             }
                         },
                         index,
                         pts = data.points,
-                        func,
-                        callFunc = function (pnt, idx) {
-                            func(pnt, idx, index);
-                        };
-                    pts.refreshPositions(true);
+                        func;
                     this.getObjDiff('', allOpts, $.fn.rsRefPointer.defaults);
                     pts.startSize = pts.getElementSize();
                     data.$targets.each(function (index) {
                         pts.endSize[index] = pts.getElementSize($(this));
                     });
+                    pts.refreshPositions(true);
                     allOpts.arrows = [];
                     for (index in data.arrowTypes) {
                         if (data.arrowTypes.hasOwnProperty(index)) {
-                            designMode.UI.updateRelativeFromOffset(index, pts.layout.fromOffset[0][index]);
-                            designMode.UI.updateRelativeToOffset(index, pts.layout.toOffset[0][index]);
+                            designMode.UI.updateRelativeFromOffset(index);
+                            designMode.UI.updateRelativeToOffset(index);
                             arrowOpts = {
                                 type: data.arrowTypes[index],
                                 target: pts.end[index],
                                 sourceRelativeOffset: pts.layout.fromRelativeOffset[index],
                                 targetRelativeOffset: pts.layout.toRelativeOffset[index],
                                 offset: [[
-                                    pts.layout.fromOffset[0][index].dx,
-                                    pts.layout.fromOffset[0][index].dy,
-                                    pts.layout.toOffset[0][index].dx,
-                                    pts.layout.toOffset[0][index].dy
+                                    Math.round(pts.layout.fromOffset[0][index].dx),
+                                    Math.round(pts.layout.fromOffset[0][index].dy),
+                                    Math.round(pts.layout.toOffset[0][index].dx),
+                                    Math.round(pts.layout.toOffset[0][index].dy)
                                 ], [
                                     pts.layout.fromOffset[1][index].dx,
                                     pts.layout.fromOffset[1][index].dy,
@@ -1887,11 +1864,13 @@
                                     pts.layout.toOffset[1][index].dy
                                 ]]
                             };
+                            arrowOpts.from = $.map(pts.getStartPoint(index, pts.startSize), function(v) { return Math.round(v); });
                             func = pushPointFunc[data.arrowTypes[index]];
                             if (func) {
                                 arrowOpts.mid = [];
-                                pts.mid[index].forEach(callFunc);
+                                pts.mid[index].forEach(func);
                             }
+                            arrowOpts.to = $.map(pts.getEndPoint(pts.allTargetPos[pts.end[index]], index, pts.endSize[pts.end[index]]), function(v) { return Math.round(v); });
                             allOpts.arrows.push(arrowOpts);
                         }
                     }
@@ -1944,9 +1923,7 @@
             this.markers.ids.mid =
             this.markers.ids.end =
             this.markers.ids.filter.shadow =
-            this.markers.ids.filter.Start =
             this.markers.ids.filter.Mid =
-            this.markers.ids.filter.End =
             this.$shadowGroup = null;
             this.arrowsShadow = [];
         };
@@ -2071,7 +2048,7 @@
                 var pts = data.points;
                 pts.layout.fromOffset[0][arrowIdx].dx = pts.mid[arrowIdx][0].x - pts.start.x;
                 pts.layout.fromOffset[0][arrowIdx].dy = pts.mid[arrowIdx][0].y - pts.start.y;
-                designMode.UI.updateRelativeFromOffset(arrowIdx, pts.layout.fromOffset[0][arrowIdx]);
+                designMode.UI.updateRelativeFromOffset(arrowIdx);
                 pts.mid[arrowIdx].splice(0, 1);
                 designMode.UI.$points[arrowIdx].eq(0).remove();
                 var $newStartPoint = designMode.UI.$points[arrowIdx].eq(2).detach();
@@ -2089,7 +2066,7 @@
                     lastMid = pts.mid[arrowIdx].length - 1;
                 pts.layout.toOffset[0][arrowIdx].dx = pts.mid[arrowIdx][lastMid].x - pts.allTargetPos[pts.end[arrowIdx]].x;
                 pts.layout.toOffset[0][arrowIdx].dy = pts.mid[arrowIdx][lastMid].y - pts.allTargetPos[pts.end[arrowIdx]].y;
-                designMode.UI.updateRelativeToOffset(arrowIdx, pts.layout.toOffset[0][arrowIdx]);
+                designMode.UI.updateRelativeToOffset(arrowIdx);
                 pts.mid[arrowIdx].splice(lastMid, 1);
                 designMode.UI.$points[arrowIdx].eq(1).remove();
                 var $newEndPoint = designMode.UI.$points[arrowIdx].eq(lastMid + 2).detach();
@@ -2255,7 +2232,7 @@
                     var pts = data.points;
                     pts.layout.fromOffset[0][arrowIdx].dx = pts.mid[arrowIdx][1].x - pts.start.x;
                     pts.layout.fromOffset[0][arrowIdx].dy = pts.mid[arrowIdx][1].y - pts.start.y;
-                    designMode.UI.updateRelativeFromOffset(arrowIdx, pts.layout.fromOffset[0][arrowIdx]);
+                    designMode.UI.updateRelativeFromOffset(arrowIdx);
                     pts.mid[arrowIdx].splice(0, 2);
                     designMode.UI.$points[arrowIdx].eq(0).remove();
                     designMode.UI.$points[arrowIdx].eq(2).remove();
@@ -2271,7 +2248,7 @@
                     var pts = data.points;
                     pts.layout.toOffset[0][arrowIdx].dx = pts.mid[arrowIdx][lastMid - 1].x - pts.allTargetPos[pts.end[arrowIdx]].x;
                     pts.layout.toOffset[0][arrowIdx].dy = pts.mid[arrowIdx][lastMid - 1].y - pts.allTargetPos[pts.end[arrowIdx]].y;
-                    designMode.UI.updateRelativeToOffset(arrowIdx, pts.layout.toOffset[0][arrowIdx]);
+                    designMode.UI.updateRelativeToOffset(arrowIdx);
                     pts.mid[arrowIdx].splice(lastMid - 1, 2);
                     designMode.UI.$points[arrowIdx].eq(1).remove();
                     designMode.UI.$points[arrowIdx].eq(lastMid + 2).remove();
@@ -2446,7 +2423,7 @@
                     var pts = data.points;
                     pts.layout.fromOffset[0][arrowIdx].dx = pts.mid[arrowIdx][2].x - pts.start.x;
                     pts.layout.fromOffset[0][arrowIdx].dy = pts.mid[arrowIdx][2].y - pts.start.y;
-                    designMode.UI.updateRelativeFromOffset(arrowIdx, pts.layout.fromOffset[0][arrowIdx]);
+                    designMode.UI.updateRelativeFromOffset(arrowIdx);
                     pts.mid[arrowIdx].splice(0, 3);
                     designMode.UI.$points[arrowIdx].eq(0).remove();
                     designMode.UI.$points[arrowIdx].slice(2, 4).remove();
@@ -2462,7 +2439,7 @@
                     var pts = data.points;
                     pts.layout.toOffset[0][arrowIdx].dx = pts.mid[arrowIdx][lastMid - 2].x - pts.allTargetPos[pts.end[arrowIdx]].x;
                     pts.layout.toOffset[0][arrowIdx].dy = pts.mid[arrowIdx][lastMid - 2].y - pts.allTargetPos[pts.end[arrowIdx]].y;
-                    designMode.UI.updateRelativeToOffset(arrowIdx, pts.layout.toOffset[0][arrowIdx]);
+                    designMode.UI.updateRelativeToOffset(arrowIdx);
                     pts.mid[arrowIdx].splice(lastMid - 2, 3);
                     designMode.UI.$points[arrowIdx].eq(1).remove();
                     designMode.UI.$points[arrowIdx].slice(lastMid + 1, lastMid + 3).remove();

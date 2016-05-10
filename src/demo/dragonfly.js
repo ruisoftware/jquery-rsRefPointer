@@ -28,18 +28,22 @@ $(document).ready(function () {
             sourceRelativeOffset: false,
             targetRelativeOffset: false,
             offset: [
-                [59.31,9,118.375,128.125],
-                [0.5,0.5,0.29,0.46]
-            ]
+                [59,9,113,134],
+                [0.5,0.5,0.27,0.49]
+            ],
+            from: [139,345],
+            to: [380,250]
         }, {
             type: "line",
             target: 0,
             sourceRelativeOffset: false,
             targetRelativeOffset: false,
             offset: [
-                [59.31,9,302.375,137.125],
-                [0.5,0.5,0.73,0.5]
-            ]
+                [59,9,303,134],
+                [0.5,0.5,0.73,0.49]
+            ],
+            from: [139,345],
+            to: [570,250]
         }]
     });
 
@@ -51,20 +55,24 @@ $(document).ready(function () {
             sourceRelativeOffset: false,
             targetRelativeOffset: false,
             offset: [
-                [59.31,9,192.375,124.125],
-                [0.5,0.5,0.46,0.45]
+                [59,9,250,119],
+                [0.5,0.5,0.6,0.43]
             ],
-            mid: [0.52,0.89]
+            from: [139,366],
+            mid: [534,385],
+            to: [517,235]
         }, {
             type: "bezierQ",
             target: 0,
             sourceRelativeOffset: false,
             targetRelativeOffset: false,
             offset: [
-                [59.31,9,247.375,123.125],
-                [0.5,0.5,0.6,0.45]
+                [59,9,186,115],
+                [0.5,0.5,0.45,0.42]
             ],
-            mid: [0.84,-0.05]
+            from: [139,366],
+            mid: [269,247],
+            to: [453,231]
         }]
     });
 
@@ -76,13 +84,14 @@ $(document).ready(function () {
             sourceRelativeOffset: false,
             targetRelativeOffset: false,
             offset: [
-                [59.31,9,211.375,209.125],
-                [0.5,0.5,0.51,0.76]
+                [59,9,212,208],
+                [0.5,0.5,0.51,0.75]
             ],
-            mid: [0.06,-0.67,1.08,-0.03]
+            from: [139,387],
+            mid: [153,439,516,408],
+            to: [479,324]
         }]
     });
-
 
     var $taxonomy = $("#taxonomy li");
     $.extend(true, $.fn.rsRefPointer.defaults, {
@@ -103,11 +112,14 @@ $(document).ready(function () {
             sourceRelativeOffset: true,
             targetRelativeOffset: true,
             offset: [
-                [160,48.125,8.703125,48.125],
-                [0.95,0.5,0.05,0.5]
-            ]
+                [180,60,-6,60],
+                [1,0.5,0,0.5]
+            ],
+            from: [260,520],
+            to: [321,520]
         }]
     });
+
     $taxonomy.eq(1).rsRefPointer({
         targetSelector: "#taxonomy li:eq(2)",
         arrows: [{
@@ -116,9 +128,11 @@ $(document).ready(function () {
             sourceRelativeOffset: true,
             targetRelativeOffset: true,
             offset: [
-                [168.703125,48.125,8.703125,48.125],
-                [0.95,0.5,0.05,0.5]
-            ]
+                [174,60,-12,60],
+                [1,0.5,0,0.5]
+            ],
+            from: [501,520],
+            to: [560,520]
         }]
     });
 
@@ -130,12 +144,13 @@ $(document).ready(function () {
             sourceRelativeOffset: true,
             targetRelativeOffset: true,
             offset: [
-                [186,48.125,18,54.125],
-                [0.95,0.5,0.05,0.5]
-            ]
+                [188,60,1,60],
+                [1,0.5,0,0.5]
+            ],
+            from: [759,520],
+            to: [821,520]
         }]
     });
-
 
     $taxonomy.eq(3).rsRefPointer({
         targetSelector: "#taxonomy li:eq(4)",
@@ -145,9 +160,11 @@ $(document).ready(function () {
             sourceRelativeOffset: true,
             targetRelativeOffset: true,
             offset: [
-                [249.9375,51.125,8.25,49.125],
-                [0.95,0.5,0.05,0.5]
-            ]
+                [181,60,20,56],
+                [1,0.5,0,0.5]
+            ],
+            from: [1000,520],
+            to: [100,680]
         }]
     });
     $taxonomy.rsRefPointer('show'); // call the show method
