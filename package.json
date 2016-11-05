@@ -1,5 +1,5 @@
 {
-  "name": "jquery-rsRefPointer",
+  "name": "jquery.rsRefPointer",
   "title": "SVG Reference Pointers",
   "description": "SVG arrows between two DOM elements",
   "version": "1.0.5",
