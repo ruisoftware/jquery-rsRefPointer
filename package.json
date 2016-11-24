@@ -21,7 +21,12 @@
     "svg",
     "arrow",
     "reference",
-    "link"
+    "link",
+    "design",
+    "code",
+    "generation",
+    "relationship",
+    "content"
   ],
   "bugs": "https://github.com/ruisoftware/jquery-rsRefPointer/issues",
   "licenses": [
