@@ -17,7 +17,7 @@ Demo available at `src/demo/dragonfly.html`
 
 You can install from [npm](https://www.npmjs.com/):
 ````bash
-npm install jquery-rsRefPointer --save
+npm install jquery.rsRefPointer --save
 ````
 or directly from git:
 ````javascript
