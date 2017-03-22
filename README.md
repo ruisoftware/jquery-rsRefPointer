@@ -1,4 +1,4 @@
-#jquery-rsRefPointer [![Build Status](https://travis-ci.org/ruisoftware/jquery-rsRefPointer.svg?branch=master)](https://travis-ci.org/ruisoftware/jquery-rsRefPointer)
+# jquery-rsRefPointer [![Build Status](https://travis-ci.org/ruisoftware/jquery-rsRefPointer.svg?branch=master)](https://travis-ci.org/ruisoftware/jquery-rsRefPointer)
 **Eases web navigation, through the use of visual relationships (arrows) between page elements.**
 
 Can be usefull to help the user cross-reference content that might not be noticeable at first sight.
@@ -6,14 +6,14 @@ Can be usefull to help the user cross-reference content that might not be notice
 ![rsrefpointerdemo](https://cloud.githubusercontent.com/assets/428736/14316951/842a4b5a-fc0e-11e5-8080-7d55c3efdf16.gif)
 Demo available at `src/demo/dragonfly.html`
 
-#Key Features
+# Key Features
  - Arrows makes a visual connection from a start element to an end element, even when the position/size of these elements change;
  - Non intrusive. The arrows are hidden by default and only appear when the mouse overs the start element (or when the start element receives focus for mobile devices). Alternatively they can be always visible;
  - Shapes available: Line, Polyline, Quadratic Bezier curves and Cubic Bezier curves;
  - Powerfull design-time mode that provides a Photoshop alike GUI. The tool generates JS code with all the parameters filled for you;
  - Small footprint, excluding the design-time mode file, that should never be used in production anyway.
 
-#Installation
+# Installation
 
 You can install from [npm](https://www.npmjs.com/):
 ````bash
@@ -63,7 +63,7 @@ You can check it out [here](http://codepen.io/ruisoftware/pen/qZVadX "on CodePen
 In this example, you can see two arrows, one for each `.target` element. Because there is one `.source` element, only one instance of the plug-in is binded to the `.source` element.<br>
 If there was three `.source` elements and two `.target` elements, then three instances of the plug-in would be created (one for each `.source`) and each instance would show 2 arrows. You can test this, by adding more `.source` elements in the CodePen link.
 
-#Design-time mode
+# Design-time mode
 This mode is nothing more than a tool to help you configure the arrows the way you wish.<br>
 The workflow is:
  1. Enter Design-time mode
